@@ -1,0 +1,228 @@
+/*
+   rsvg-css-engine.c: CSS Engine Abstraction
+
+   Copyright (C) 2026 ...
+*/
+
+#include "config.h"
+#include "rsvg-css-engine.h"
+#include "rsvg-styles.h"
+
+#include <string.h>
+
+typedef struct {
+    RsvgHandle* ctx;
+    RsvgState* state;
+} StylesData;
+
+static void apply_style(const gchar* key, StyleValueData* value, gpointer user_data) {
+    StylesData* data = (StylesData*)user_data;
+
+    rsvg_parse_style_pair(data->ctx, data->state, key, value->value, value->important);
+}
+
+static GHashTable* rsvg_css_rules_new(void) {
+    return g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_hash_table_destroy);
+}
+
+static gboolean rsvg_css_apply_styles_from_props(GHashTable* css_props,
+                                                 RsvgHandle* ctx,
+                                                 const char* target,
+                                                 RsvgState* state) {
+    GHashTable* styles;
+    StylesData data;
+
+    styles = g_hash_table_lookup(css_props, target);
+    if (styles == NULL)
+        return FALSE;
+
+    data.ctx = ctx;
+    data.state = state;
+    g_hash_table_foreach(styles, (GHFunc)apply_style, &data);
+
+    return TRUE;
+}
+
+static gboolean rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, const char* target, RsvgState* state) {
+    gboolean found = FALSE;
+
+    /* Apply document styles first, then user stylesheet to allow overriding. */
+    found = found || rsvg_css_apply_styles_from_props(engine->doc_css_props, engine->ctx, target, state);
+    found = found || rsvg_css_apply_styles_from_props(engine->user_css_props, engine->ctx, target, state);
+
+    return found;
+}
+
+void rsvg_css_engine_init(RsvgCssEngine* engine, const RsvgCssEngineVtable* vtable, RsvgHandle* ctx) {
+    engine->vtable = vtable;
+    engine->ctx = ctx;
+    engine->doc_css_props = rsvg_css_rules_new();
+    engine->user_css_props = rsvg_css_rules_new();
+}
+
+void rsvg_css_engine_finalize(RsvgCssEngine* engine) {
+    if (engine->doc_css_props) {
+        g_hash_table_destroy(engine->doc_css_props);
+        engine->doc_css_props = NULL;
+    }
+
+    if (engine->user_css_props) {
+        g_hash_table_destroy(engine->user_css_props);
+        engine->user_css_props = NULL;
+    }
+
+    engine->ctx = NULL;
+}
+
+void rsvg_css_define_style(GHashTable* css_props,
+                           const gchar* selector,
+                           const gchar* style_name,
+                           const gchar* style_value,
+                           gboolean important) {
+    GHashTable* styles;
+    gboolean need_insert = FALSE;
+
+    styles = g_hash_table_lookup(css_props, selector);
+    if (styles == NULL) {
+        styles = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)rsvg_style_value_data_free);
+        g_hash_table_insert(css_props, (gpointer)g_strdup(selector), styles);
+        need_insert = TRUE;
+    }
+    else {
+        StyleValueData* current_value = g_hash_table_lookup(styles, style_name);
+        if (current_value == NULL || !current_value->important)
+            need_insert = TRUE;
+    }
+
+    if (need_insert) {
+        g_hash_table_insert(styles, (gpointer)g_strdup(style_name),
+                            (gpointer)rsvg_style_value_data_new(style_value, important));
+    }
+}
+
+RsvgCssEngine* rsvg_css_engine_new(RsvgHandle* ctx) {
+    return rsvg_css_engine_native_new(ctx);
+}
+
+void rsvg_css_engine_free(RsvgCssEngine* engine) {
+    if (engine && engine->vtable && engine->vtable->free) {
+        engine->vtable->free(engine);
+    }
+}
+
+gboolean rsvg_css_engine_parse_stylesheet(RsvgCssEngine* engine, const char* data, size_t len) {
+    if (engine && engine->vtable && engine->vtable->parse_stylesheet_into_props) {
+        return engine->vtable->parse_stylesheet_into_props(engine, engine->doc_css_props, data, len, TRUE);
+    }
+    return FALSE;
+}
+
+gboolean rsvg_css_engine_set_user_stylesheet(RsvgCssEngine* engine, const char* data, size_t len) {
+    if (engine && engine->vtable && engine->vtable->parse_stylesheet_into_props) {
+        GHashTable* new_props = rsvg_css_rules_new();
+        gboolean ok = engine->vtable->parse_stylesheet_into_props(engine, new_props, data, len, FALSE);
+
+        if (!ok) {
+            g_hash_table_destroy(new_props);
+            return FALSE;
+        }
+
+        g_hash_table_destroy(engine->user_css_props);
+        engine->user_css_props = new_props;
+        return TRUE;
+    }
+    return FALSE;
+}
+
+void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
+                                  RsvgNode* node,
+                                  RsvgState* state,
+                                  const char* tag,
+                                  const char* klass,
+                                  const char* id,
+                                  RsvgPropertyBag* atts) {
+    int i = 0;
+    int j = 0;
+    char* target = NULL;
+    gboolean found = FALSE;
+    GString* klazz_list = NULL;
+
+    if (engine == NULL)
+        return;
+
+    if (atts != NULL && rsvg_property_bag_size(atts) > 0)
+        rsvg_parse_style_pairs(engine->ctx, state, atts);
+
+    /* * */
+    rsvg_css_engine_lookup_apply_css_style(engine, "*", state);
+
+    /* tag */
+    if (tag != NULL)
+        rsvg_css_engine_lookup_apply_css_style(engine, tag, state);
+
+    if (klass != NULL) {
+        i = strlen(klass);
+        while (j < i) {
+            found = FALSE;
+            klazz_list = g_string_new(".");
+
+            while (j < i && g_ascii_isspace(klass[j]))
+                j++;
+
+            while (j < i && !g_ascii_isspace(klass[j]))
+                g_string_append_c(klazz_list, klass[j++]);
+
+            /* tag.class#id */
+            if (tag != NULL && klazz_list->len != 1 && id != NULL) {
+                target = g_strdup_printf("%s%s#%s", tag, klazz_list->str, id);
+                found = found || rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                g_free(target);
+            }
+
+            /* class#id */
+            if (klazz_list->len != 1 && id != NULL) {
+                target = g_strdup_printf("%s#%s", klazz_list->str, id);
+                found = found || rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                g_free(target);
+            }
+
+            /* tag.class */
+            if (tag != NULL && klazz_list->len != 1) {
+                target = g_strdup_printf("%s%s", tag, klazz_list->str);
+                found = found || rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                g_free(target);
+            }
+
+            if (!found)
+                found = found || rsvg_css_engine_lookup_apply_css_style(engine, klazz_list->str, state);
+
+            g_string_free(klazz_list, TRUE);
+        }
+    }
+
+    /* #id */
+    if (id != NULL) {
+        target = g_strdup_printf("#%s", id);
+        rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+        g_free(target);
+    }
+
+    /* tag#id */
+    if (tag != NULL && id != NULL) {
+        target = g_strdup_printf("%s#%s", tag, id);
+        rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+        g_free(target);
+    }
+
+    if (atts != NULL && rsvg_property_bag_size(atts) > 0) {
+        const char* value;
+
+        if ((value = rsvg_property_bag_lookup(atts, "style")) != NULL)
+            rsvg_parse_style(engine->ctx, state, value);
+        if ((value = rsvg_property_bag_lookup(atts, "transform")) != NULL)
+            rsvg_parse_transform_attr(engine->ctx, state, value);
+    }
+    else if (node != NULL && node->style_attr != NULL) {
+        rsvg_parse_style(engine->ctx, state, node->style_attr);
+    }
+}

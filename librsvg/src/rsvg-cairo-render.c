@@ -1,0 +1,611 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
+/* vim: set sw=4 sts=4 ts=4 expandtab: */
+/*
+   rsvg-cairo-render.c: The cairo backend plugin
+
+   Copyright (C) 2005 Dom Lachowicz <cinamod@hotmail.com>
+   Caleb Moore <c.moore@student.unsw.edu.au>
+
+   This program is free software; you can redistribute it and/or
+   modify it under the terms of the GNU Library General Public License as
+   published by the Free Software Foundation; either version 2 of the
+   License, or (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   Library General Public License for more details.
+
+   You should have received a copy of the GNU Library General Public
+   License along with this program; if not, write to the
+   Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+   Boston, MA 02111-1307, USA.
+
+   Authors: Dom Lachowicz <cinamod@hotmail.com>
+   Caleb Moore <c.moore@student.unsw.edu.au>
+*/
+
+#include "config.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <glib.h>
+#include <math.h>
+#include <string.h>
+
+#include "rsvg.h"
+#include "rsvg-private.h"
+#include "rsvg-cairo.h"
+#include "rsvg-cairo-draw.h"
+#include "rsvg-cairo-render.h"
+#include "rsvg-styles.h"
+#include "rsvg-structure.h"
+
+static void rsvg_cairo_render_free(RsvgRender* self) {
+    RsvgCairoRender* me = RSVG_CAIRO_RENDER(self);
+
+    while (me->cr_stack) {
+        cairo_destroy(me->cr);
+        me->cr = (cairo_t*)me->cr_stack->data;
+        me->cr_stack = g_list_delete_link(me->cr_stack, me->cr_stack);
+    }
+
+    while (me->bb_stack) {
+        g_free(me->bb_stack->data);
+        me->bb_stack = g_list_delete_link(me->bb_stack, me->bb_stack);
+    }
+
+    while (me->surfaces_stack) {
+        cairo_surface_destroy((cairo_surface_t*)me->surfaces_stack->data);
+        me->surfaces_stack = g_list_delete_link(me->surfaces_stack, me->surfaces_stack);
+    }
+
+#ifdef HAVE_PANGOFT2
+    if (me->font_map_for_testing) {
+        g_object_unref(me->font_map_for_testing);
+        me->font_map_for_testing = NULL;
+    }
+
+    if (me->font_config_for_testing) {
+        FcConfigDestroy(me->font_config_for_testing);
+        me->font_config_for_testing = NULL;
+    }
+#endif
+
+    g_free(me);
+}
+
+RsvgCairoRender* rsvg_cairo_render_new(cairo_t* cr, double width, double height) {
+    RsvgCairoRender* cairo_render = g_new0(RsvgCairoRender, 1);
+    cairo_matrix_t matrix;
+
+    cairo_render->super.type = RSVG_RENDER_TYPE_CAIRO;
+    cairo_render->super.free = rsvg_cairo_render_free;
+    cairo_render->super.create_pango_context = rsvg_cairo_create_pango_context;
+    cairo_render->super.render_pango_layout = rsvg_cairo_render_pango_layout;
+    cairo_render->super.render_surface = rsvg_cairo_render_surface;
+    cairo_render->super.render_path = rsvg_cairo_render_path;
+    cairo_render->super.pop_discrete_layer = rsvg_cairo_pop_discrete_layer;
+    cairo_render->super.push_discrete_layer = rsvg_cairo_push_discrete_layer;
+    cairo_render->super.add_clipping_rect = rsvg_cairo_add_clipping_rect;
+    cairo_render->super.get_surface_of_node = rsvg_cairo_get_surface_of_node;
+    cairo_render->width = width;
+    cairo_render->height = height;
+    cairo_render->offset_x = 0;
+    cairo_render->offset_y = 0;
+    cairo_render->initial_cr = cr;
+    cairo_render->cr = cr;
+    cairo_render->cr_stack = NULL;
+    cairo_render->bb_stack = NULL;
+    cairo_render->surfaces_stack = NULL;
+
+#ifdef HAVE_PANGOFT2
+    cairo_render->font_config_for_testing = NULL;
+    cairo_render->font_map_for_testing = NULL;
+#endif
+
+    cairo_matrix_init_identity(&matrix);
+    rsvg_bbox_init(&cairo_render->bbox, &matrix);
+
+    return cairo_render;
+}
+
+static void rsvg_cairo_transformed_image_bounding_box(cairo_matrix_t* transform,
+                                                      double width,
+                                                      double height,
+                                                      double* x0,
+                                                      double* y0,
+                                                      double* x1,
+                                                      double* y1) {
+    double x00 = 0, x01 = 0, x10 = width, x11 = width;
+    double y00 = 0, y01 = height, y10 = 0, y11 = height;
+    double t;
+
+    /* transform the four corners of the image */
+    cairo_matrix_transform_point(transform, &x00, &y00);
+    cairo_matrix_transform_point(transform, &x01, &y01);
+    cairo_matrix_transform_point(transform, &x10, &y10);
+    cairo_matrix_transform_point(transform, &x11, &y11);
+
+    /* find minimum and maximum coordinates */
+    t = x00 < x01 ? x00 : x01;
+    t = t < x10 ? t : x10;
+    *x0 = floor(t < x11 ? t : x11);
+
+    t = y00 < y01 ? y00 : y01;
+    t = t < y10 ? t : y10;
+    *y0 = floor(t < y11 ? t : y11);
+
+    t = x00 > x01 ? x00 : x01;
+    t = t > x10 ? t : x10;
+    *x1 = ceil(t > x11 ? t : x11);
+
+    t = y00 > y01 ? y00 : y01;
+    t = t > y10 ? t : y10;
+    *y1 = ceil(t > y11 ? t : y11);
+}
+
+RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx(cairo_t* cr, RsvgHandle* handle) {
+    RsvgDimensionData data;
+    RsvgDrawingCtx* draw;
+    RsvgCairoRender* render;
+    RsvgState* state;
+    cairo_matrix_t affine;
+    double bbx0, bby0, bbx1, bby1;
+
+    rsvg_handle_get_dimensions(handle, &data);
+    if (data.width == 0 || data.height == 0)
+        return NULL;
+
+    draw = g_new(RsvgDrawingCtx, 1);
+
+    cairo_get_matrix(cr, &affine);
+
+    /* find bounding box of image as transformed by the current cairo context
+     * The size of this bounding box determines the size of the intermediate
+     * surfaces allocated during drawing. */
+    rsvg_cairo_transformed_image_bounding_box(&affine, data.width, data.height, &bbx0, &bby0, &bbx1, &bby1);
+
+    render = rsvg_cairo_render_new(cr, bbx1 - bbx0, bby1 - bby0);
+
+    if (!render)
+        return NULL;
+
+    draw->render = (RsvgRender*)render;
+    render->offset_x = bbx0;
+    render->offset_y = bby0;
+
+    draw->state = NULL;
+
+    draw->defs = handle->priv->defs;
+    draw->dpi_x = handle->priv->dpi_x;
+    draw->dpi_y = handle->priv->dpi_y;
+    draw->vb.rect.width = data.em;
+    draw->vb.rect.height = data.ex;
+    draw->num_elements_acquired = 0;
+    draw->pango_context = NULL;
+    draw->drawsub_stack = NULL;
+    draw->acquired_nodes = NULL;
+    draw->is_testing = handle->priv->is_testing;
+
+    rsvg_state_push(draw);
+    state = rsvg_current_state(draw);
+
+    /* apply cairo transformation to our affine transform */
+    cairo_matrix_multiply(&state->affine, &affine, &state->affine);
+
+    /* scale according to size set by size_func callback */
+    cairo_matrix_init_scale(&affine, data.width / data.em, data.height / data.ex);
+    cairo_matrix_multiply(&state->affine, &affine, &state->affine);
+
+    /* adjust transform so that the corner of the bounding box above is
+     * at (0,0) - we compensate for this in _set_rsvg_affine() in
+     * rsvg-cairo-render.c and a few other places */
+    state->affine.x0 -= render->offset_x;
+    state->affine.y0 -= render->offset_y;
+
+    rsvg_bbox_init(&((RsvgCairoRender*)draw->render)->bbox, &state->affine);
+
+    return draw;
+}
+
+/**
+ * rsvg_handle_render_cairo_sub:
+ * @handle: A #RsvgHandle
+ * @cr: A Cairo renderer
+ * @id: (nullable): An element's id within the SVG, or %NULL to render
+ *   the whole SVG. For example, if you have a layer called "layer1"
+ *   that you wish to render, pass "##layer1" as the id.
+ *
+ * Draws a subset of a SVG to a Cairo surface
+ *
+ * Returns: %TRUE if drawing succeeded.
+ *
+ * Since: 2.14
+ */
+gboolean rsvg_handle_render_cairo_sub(RsvgHandle* handle, cairo_t* cr, const char* id) {
+    RsvgDrawingCtx* draw;
+    RsvgNode* drawsub = NULL;
+    gboolean retval = FALSE;
+
+    g_return_val_if_fail(handle != NULL, FALSE);
+
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
+        return FALSE;
+
+    if (id && *id)
+        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+
+    if (drawsub == NULL && id != NULL) {
+        /* todo: there's no way to signal that @id doesn't exist */
+        return FALSE;
+    }
+
+    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
+    if (!draw)
+        return FALSE;
+
+    while (drawsub != NULL) {
+        draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, drawsub);
+        drawsub = drawsub->parent;
+    }
+
+    rsvg_state_push(draw);
+    cairo_save(cr);
+
+    rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
+
+    if (rsvg_drawing_ctx_limits_exceeded(draw)) {
+        retval = FALSE;
+    }
+    else {
+        retval = TRUE;
+    }
+
+    cairo_restore(cr);
+    rsvg_state_pop(draw);
+    rsvg_drawing_ctx_free(draw);
+
+    return retval;
+}
+
+/**
+ * rsvg_handle_render_cairo:
+ * @handle: A #RsvgHandle
+ * @cr: A Cairo renderer
+ *
+ * Draws a SVG to a Cairo surface
+ *
+ * Returns: %TRUE if drawing succeeded.
+ * Since: 2.14
+ */
+gboolean rsvg_handle_render_cairo(RsvgHandle* handle, cairo_t* cr) {
+    return rsvg_handle_render_cairo_sub(handle, cr, NULL);
+}
+
+/**
+ * rsvg_handle_render_document:
+ * @handle: A #RsvgHandle
+ * @cr: A Cairo renderer
+ * @viewport: (nullable): viewport to render into, in pixels
+ * @error: (out) (optional): return location for a #GError, or %NULL
+ *
+ * Draws an SVG to a Cairo surface, scaled into the provided viewport.
+ *
+ * Returns: %TRUE if drawing succeeded.
+ */
+gboolean rsvg_handle_render_document(RsvgHandle* handle, cairo_t* cr, const RsvgRectangle* viewport, GError** error) {
+    RsvgDimensionData dimensions;
+    gdouble intrinsic_width = 0.0;
+    gdouble intrinsic_height = 0.0;
+    gboolean retval;
+
+    g_return_val_if_fail(handle != NULL, FALSE);
+    g_return_val_if_fail(cr != NULL, FALSE);
+
+    if (!viewport) {
+        retval = rsvg_handle_render_cairo(handle, cr);
+        if (!retval && error && *error == NULL)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
+        return retval;
+    }
+
+    if (!rsvg_handle_get_intrinsic_size_in_pixels(handle, &intrinsic_width, &intrinsic_height)) {
+        rsvg_handle_get_dimensions(handle, &dimensions);
+        intrinsic_width = dimensions.width;
+        intrinsic_height = dimensions.height;
+    }
+
+    if (intrinsic_width == 0.0 || intrinsic_height == 0.0) {
+        if (error && *error == NULL)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "SVG has invalid intrinsic size");
+        return FALSE;
+    }
+
+    cairo_save(cr);
+    cairo_translate(cr, viewport->x, viewport->y);
+    cairo_scale(cr, viewport->width / intrinsic_width, viewport->height / intrinsic_height);
+
+    retval = rsvg_handle_render_cairo(handle, cr);
+
+    cairo_restore(cr);
+
+    return retval;
+}
+
+gboolean rsvg_handle_render_layer(RsvgHandle* handle,
+                                  cairo_t* cr,
+                                  const char* id,
+                                  const RsvgRectangle* viewport,
+                                  GError** error) {
+    RsvgDimensionData dimensions;
+    gdouble intrinsic_width = 0.0;
+    gdouble intrinsic_height = 0.0;
+    gboolean retval;
+
+    g_return_val_if_fail(handle != NULL, FALSE);
+    g_return_val_if_fail(cr != NULL, FALSE);
+
+    if (!viewport) {
+        retval = rsvg_handle_render_cairo_sub(handle, cr, id);
+        if (!retval && error && *error == NULL)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
+        return retval;
+    }
+
+    if (!rsvg_handle_get_intrinsic_size_in_pixels(handle, &intrinsic_width, &intrinsic_height)) {
+        rsvg_handle_get_dimensions(handle, &dimensions);
+        intrinsic_width = dimensions.width;
+        intrinsic_height = dimensions.height;
+    }
+
+    if (intrinsic_width == 0.0 || intrinsic_height == 0.0) {
+        if (error && *error == NULL)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "SVG has invalid intrinsic size");
+        return FALSE;
+    }
+
+    cairo_save(cr);
+    cairo_translate(cr, viewport->x, viewport->y);
+    cairo_scale(cr, viewport->width / intrinsic_width, viewport->height / intrinsic_height);
+
+    retval = rsvg_handle_render_cairo_sub(handle, cr, id);
+
+    cairo_restore(cr);
+
+    if (!retval && error && *error == NULL)
+        g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
+
+    return retval;
+}
+
+gboolean rsvg_handle_render_element(RsvgHandle* handle,
+                                    cairo_t* cr,
+                                    const char* id,
+                                    const RsvgRectangle* element_viewport,
+                                    GError** error) {
+    RsvgDrawingCtx* draw;
+    RsvgNode* drawsub = NULL;
+    gboolean retval = FALSE;
+    cairo_matrix_t my_affine, inv_parent, parent_aff;
+
+    g_return_val_if_fail(handle != NULL, FALSE);
+    g_return_val_if_fail(cr != NULL, FALSE);
+
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
+        return FALSE;
+
+    if (id && *id)
+        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+
+    if (drawsub == NULL) {
+        if (error)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Element not found");
+        return FALSE;
+    }
+
+    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
+    if (!draw)
+        return FALSE;
+
+    /* Calculate the transform to isolate the element */
+    my_affine = drawsub->state->affine;
+    parent_aff = drawsub->state->personal_affine;
+    if (cairo_matrix_invert(&parent_aff) != CAIRO_STATUS_SUCCESS) {
+        cairo_matrix_init_identity(&parent_aff);
+    }
+    cairo_matrix_multiply(&inv_parent, &parent_aff, &my_affine);
+    if (cairo_matrix_invert(&inv_parent) != CAIRO_STATUS_SUCCESS) {
+        cairo_matrix_init_identity(&inv_parent);
+    }
+
+    cairo_save(cr);
+    if (element_viewport) {
+        cairo_translate(cr, element_viewport->x, element_viewport->y);
+    }
+
+    cairo_transform(cr, &inv_parent);
+
+    RsvgNode* p = drawsub->parent;
+    while (p != NULL) {
+        draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, p);
+        p = p->parent;
+    }
+    draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, drawsub);
+
+    rsvg_state_push(draw);
+    rsvg_node_draw(drawsub, draw, 0);
+
+    if (rsvg_drawing_ctx_limits_exceeded(draw))
+        retval = FALSE;
+    else
+        retval = TRUE;
+
+    cairo_restore(cr);
+    rsvg_state_pop(draw);
+    rsvg_drawing_ctx_free(draw);
+
+    return retval;
+}
+
+gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
+                                            const char* id,
+                                            const RsvgRectangle* viewport,
+                                            RsvgRectangle* out_ink_rect,
+                                            RsvgRectangle* out_logical_rect,
+                                            GError** error) {
+    cairo_surface_t* surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+    cairo_t* cr = cairo_create(surf);
+    RsvgDrawingCtx* draw;
+    RsvgNode* drawsub = NULL;
+    gboolean retval = FALSE;
+    RsvgCairoRender* render;
+
+    if (id && *id)
+        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+    else
+        drawsub = (RsvgNode*)handle->priv->treebase;
+
+    if (!drawsub) {
+        if (error)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Element not found");
+        cairo_destroy(cr);
+        cairo_surface_destroy(surf);
+        return FALSE;
+    }
+
+    if (viewport) {
+        RsvgDimensionData dimensions;
+        gdouble i_w = 0, i_h = 0;
+        if (!rsvg_handle_get_intrinsic_size_in_pixels(handle, &i_w, &i_h)) {
+            rsvg_handle_get_dimensions(handle, &dimensions);
+            i_w = dimensions.width;
+            i_h = dimensions.height;
+        }
+        if (i_w > 0 && i_h > 0) {
+            cairo_translate(cr, viewport->x, viewport->y);
+            cairo_scale(cr, viewport->width / i_w, viewport->height / i_h);
+        }
+    }
+
+    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
+    if (!draw) {
+        cairo_destroy(cr);
+        cairo_surface_destroy(surf);
+        return FALSE;
+    }
+
+    if (id && *id) {
+        RsvgNode* p = drawsub->parent;
+        GSList* stack_head = NULL;
+        while (p) {
+            stack_head = g_slist_prepend(stack_head, p);
+            p = p->parent;
+        }
+        draw->drawsub_stack = stack_head;
+    }
+
+    rsvg_state_push(draw);
+    rsvg_node_draw(drawsub, draw, 0);
+
+    render = RSVG_CAIRO_RENDER(draw->render);
+
+    if (out_ink_rect) {
+        out_ink_rect->x = render->bbox.rect.x;
+        out_ink_rect->y = render->bbox.rect.y;
+        out_ink_rect->width = render->bbox.rect.width;
+        out_ink_rect->height = render->bbox.rect.height;
+    }
+    if (out_logical_rect) {
+        out_logical_rect->x = render->bbox.rect.x;
+        out_logical_rect->y = render->bbox.rect.y;
+        out_logical_rect->width = render->bbox.rect.width;
+        out_logical_rect->height = render->bbox.rect.height;
+    }
+
+    retval = !rsvg_drawing_ctx_limits_exceeded(draw);
+
+    rsvg_state_pop(draw);
+    rsvg_drawing_ctx_free(draw);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surf);
+
+    return retval;
+}
+
+gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
+                                              const char* id,
+                                              RsvgRectangle* out_ink_rect,
+                                              RsvgRectangle* out_logical_rect,
+                                              GError** error) {
+    cairo_surface_t* surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+    cairo_t* cr = cairo_create(surf);
+    RsvgDrawingCtx* draw;
+    RsvgNode* drawsub = NULL;
+    gboolean retval = FALSE;
+    cairo_matrix_t my_affine, inv_parent, parent_aff;
+    RsvgCairoRender* render;
+
+    if (id && *id)
+        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+
+    if (!drawsub) {
+        if (error)
+            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Element not found");
+        cairo_destroy(cr);
+        cairo_surface_destroy(surf);
+        return FALSE;
+    }
+
+    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
+    if (!draw) {
+        cairo_destroy(cr);
+        cairo_surface_destroy(surf);
+        return FALSE;
+    }
+
+    my_affine = drawsub->state->affine;
+    parent_aff = drawsub->state->personal_affine;
+    if (cairo_matrix_invert(&parent_aff) != CAIRO_STATUS_SUCCESS)
+        cairo_matrix_init_identity(&parent_aff);
+    cairo_matrix_multiply(&inv_parent, &parent_aff, &my_affine);
+    if (cairo_matrix_invert(&inv_parent) != CAIRO_STATUS_SUCCESS)
+        cairo_matrix_init_identity(&inv_parent);
+
+    cairo_transform(cr, &inv_parent);
+
+    RsvgNode* p = drawsub->parent;
+    GSList* stack = NULL;
+    while (p) {
+        stack = g_slist_prepend(stack, p);
+        p = p->parent;
+    }
+    draw->drawsub_stack = stack;
+
+    rsvg_state_push(draw);
+    rsvg_node_draw(drawsub, draw, 0);
+
+    render = RSVG_CAIRO_RENDER(draw->render);
+
+    if (out_ink_rect) {
+        out_ink_rect->x = render->bbox.rect.x;
+        out_ink_rect->y = render->bbox.rect.y;
+        out_ink_rect->width = render->bbox.rect.width;
+        out_ink_rect->height = render->bbox.rect.height;
+    }
+    if (out_logical_rect) {
+        out_logical_rect->x = render->bbox.rect.x;
+        out_logical_rect->y = render->bbox.rect.y;
+        out_logical_rect->width = render->bbox.rect.width;
+        out_logical_rect->height = render->bbox.rect.height;
+    }
+
+    retval = !rsvg_drawing_ctx_limits_exceeded(draw);
+
+    rsvg_state_pop(draw);
+    rsvg_drawing_ctx_free(draw);
+    cairo_destroy(cr);
+    cairo_surface_destroy(surf);
+
+    return retval;
+}
