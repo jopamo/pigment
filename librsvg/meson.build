@@ -9,23 +9,24 @@ cc = meson.get_compiler('c')
 rsvg_c_args = cc.get_supported_arguments(['-Wno-c23-extensions', '-Wno-#warnings'])
 m_dep = cc.find_library('m', required: false)
 
-glib_dep = dependency('glib-2.0', version: '>=2.12.0')
-gobject_dep = dependency('gobject-2.0')
-gio_dep = dependency('gio-2.0', version: '>=2.24.0')
-gio_unix_dep = dependency('gio-unix-2.0')
+glib_dep = dependency('glib-2.0', version: '>=2.12.0', allow_fallback: false)
+gobject_dep = dependency('gobject-2.0', allow_fallback: false)
+gio_dep = dependency('gio-2.0', version: '>=2.24.0', allow_fallback: false)
+gio_unix_dep = dependency('gio-unix-2.0', allow_fallback: false)
 gdk_pixbuf_dep = gdkpixbuf_dep
-libxml_dep = dependency('libxml-2.0', version: '>=2.9.0')
-pangocairo_dep = dependency('pangocairo', version: '>=1.38.0')
-pangoft2_dep = dependency('pangoft2', version: '>=1.38.0')
-fontconfig_dep = dependency('fontconfig')
-cairo_dep = dependency('cairo', version: '>=1.2.0')
-cairo_png_dep = dependency('cairo-png', version: '>=1.2.0')
+libxml_dep = dependency('libxml-2.0', version: '>=2.9.0', allow_fallback: false)
+pangocairo_dep = dependency('pangocairo', version: '>=1.38.0', allow_fallback: false)
+pangoft2_dep = dependency('pangoft2', version: '>=1.38.0', allow_fallback: false)
+fontconfig_dep = dependency('fontconfig', allow_fallback: false)
+cairo_dep = dependency('cairo', version: '>=1.2.0', allow_fallback: false)
+cairo_png_dep = dependency('cairo-png', version: '>=1.2.0', allow_fallback: false)
 
 introspection_feature = get_option('introspection')
 gi_dep = dependency(
   'gobject-introspection-1.0',
   version: '>=0.10.8',
   required: introspection_feature,
+  allow_fallback: false,
 )
 
 bsymbolic_link_args = []
@@ -54,7 +55,7 @@ configure_file(
 
 config_inc = include_directories('.')
 
-css_dep = dependency('liblexa', version: '>=0.1.0', required: true)
+css_dep = dependency('liblexa', version: '>=0.1.0', required: true, allow_fallback: false)
 
 src_inc = include_directories('src')
 incdir = join_paths(get_option('includedir'), 'librsvg-2.0', 'librsvg')

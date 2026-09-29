@@ -48,13 +48,13 @@ gdk_pixbuf_loaderdir = join_paths(gdk_pixbuf_libdir, 'gdk-pixbuf-@0@/@1@/loaders
 # Dependencies
 glib_req_version = '>= 2.56.0'
 glib_dep = dependency('glib-2.0', version: glib_req_version,
-                      fallback : ['glib', 'libglib_dep'])
+                      allow_fallback: false)
 gobject_dep = dependency('gobject-2.0', version: glib_req_version,
-                         fallback : ['glib', 'libgobject_dep'])
+                         allow_fallback: false)
 gmodule_dep = dependency('gmodule-no-export-2.0', version: glib_req_version,
-                         fallback : ['glib', 'libgmodule_dep'])
+                         method: 'pkg-config', allow_fallback: false)
 gio_dep = dependency('gio-2.0', version: glib_req_version,
-                     fallback : ['glib', 'libgio_dep'])
+                     allow_fallback: false)
 
 # Configurations
 gdk_pixbuf_conf = configuration_data()
@@ -185,7 +185,7 @@ endif
 shared_mime_dep = []
 use_gio_mime = false
 if get_option('gio_sniffing') and host_system not in ['windows', 'darwin', 'android']
-  shared_mime_dep += dependency('shared-mime-info')
+  shared_mime_dep += dependency('shared-mime-info', allow_fallback: false)
   gdk_pixbuf_conf.set('GDK_PIXBUF_USE_GIO_MIME', 1)
   use_gio_mime = true
 endif
@@ -219,11 +219,7 @@ gdk_pixbuf_deps = [
 ]
 
 # Check if we can build shared modules
-if gmodule_dep.type_name() == 'pkgconfig'
-  build_modules = gmodule_dep.get_variable(pkgconfig: 'gmodule_supported') == 'true'
-else
-  build_modules = subproject('glib').get_variable('g_module_impl') != '0'
-endif
+build_modules = gmodule_dep.get_variable(pkgconfig: 'gmodule_supported') == 'true'
 gdk_pixbuf_conf.set('USE_GMODULE', build_modules)
 
 # Check which loaders should be built into gdk-pixbuf
@@ -245,18 +241,8 @@ loaders_deps = []
 
 png_opt = get_option('png')
 if not png_opt.disabled()
-  png_dep = dependency(is_msvc_like ? 'png' : 'libpng', required: false)
-
-  # Finally, look for the dependency in a fallback subproject if allowed by
-  # the --wrap-mode option. We don't directly call subproject() here because
-  # that will bypass --wrap-mode and cause issues for distro packagers.
-  # See: https://mesonbuild.com/Reference-manual.html#dependency
-  if not png_dep.found()
-    png_dep = dependency('libpng',
-      fallback: ['libpng', 'libpng_dep'],
-      required: png_opt,
-    )
-  endif
+  png_dep = dependency(is_msvc_like ? 'png' : 'libpng',
+    required: png_opt, allow_fallback: false)
 
   if png_dep.found()
     enabled_loaders += 'png'
@@ -304,27 +290,15 @@ endif
 # Don't check and build the jpeg loader if native_windows_loaders is true
 jpeg_opt = get_option('jpeg')
 if not jpeg_opt.disabled() and not native_windows_loaders
-  jpeg_dep = dependency(is_msvc_like ? 'jpeg' : 'libjpeg', required: false)
-
-  # Finally, look for the dependency in a fallback
-  if not jpeg_dep.found()
-    jpeg_dep = dependency('libjpeg',
-      fallback: ['libjpeg-turbo', 'jpeg_dep'],
-      required: jpeg_opt,
-    )
-  endif
+  jpeg_dep = dependency(is_msvc_like ? 'jpeg' : 'libjpeg',
+    required: jpeg_opt, allow_fallback: false)
 
   if jpeg_dep.found()
     enabled_loaders += 'jpeg'
     loaders_deps += jpeg_dep
 
-    if jpeg_dep.type_name() == 'internal'
-      has_destroy_decompress = true
-      has_simple_progression = true
-    else
-      has_destroy_decompress = cc.has_function('jpeg_destroy_decompress', dependencies: jpeg_dep)
-      has_simple_progression = cc.has_function('jpeg_simple_progression', dependencies: jpeg_dep)
-    endif
+    has_destroy_decompress = cc.has_function('jpeg_destroy_decompress', dependencies: jpeg_dep)
+    has_simple_progression = cc.has_function('jpeg_simple_progression', dependencies: jpeg_dep)
 
     if has_destroy_decompress and has_simple_progression
       gdk_pixbuf_conf.set('HAVE_PROGRESSIVE_JPEG', has_simple_progression)
@@ -335,9 +309,8 @@ endif
 # Don't check and build the tiff loader if native_windows_loaders is true
 tiff_opt = get_option('tiff')
 if not tiff_opt.disabled() and not native_windows_loaders
-  # We currently don't have a fallback subproject, but this handles error
-  # reporting if tiff_opt is enabled.
-  tiff_dep = dependency(is_msvc_like ? 'tiff' : 'libtiff-4', required: tiff_opt)
+  tiff_dep = dependency(is_msvc_like ? 'tiff' : 'libtiff-4',
+    required: tiff_opt, allow_fallback: false)
 
   if tiff_dep.found()
     enabled_loaders += 'tiff'
