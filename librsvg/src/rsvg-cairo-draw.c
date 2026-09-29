@@ -376,16 +376,10 @@ static void set_font_options_for_testing(PangoContext* context) {
 }
 
 static void create_font_config_for_testing(RsvgCairoRender* render) {
-    const char* font_path = SRCDIR "/tests/resources/LiberationSans-Regular.ttf";
-
     if (render->font_config_for_testing != NULL)
         return;
 
-    render->font_config_for_testing = FcConfigCreate();
-
-    if (!FcConfigAppFontAddFile(render->font_config_for_testing, (const FcChar8*)font_path)) {
-        g_error("Could not load font file \"%s\" for tests; aborting", font_path);
-    }
+    render->font_config_for_testing = FcInitLoadConfigAndFonts();
 }
 
 static PangoFontMap* get_font_map_for_testing(RsvgCairoRender* render) {

@@ -1,6 +1,6 @@
 glib_mkenums = find_program('glib-mkenums')
 
-version_parts = meson.project_version().split('.')
+version_parts = rsvg_version.split('.')
 micro_version = 0
 if version_parts.length() > 2
   micro_version = version_parts[2].to_int()
@@ -9,7 +9,7 @@ features_conf = configuration_data()
 features_conf.set('LIBRSVG_MAJOR_VERSION', version_parts[0].to_int())
 features_conf.set('LIBRSVG_MINOR_VERSION', version_parts[1].to_int())
 features_conf.set('LIBRSVG_MICRO_VERSION', micro_version)
-features_conf.set('PACKAGE_VERSION', meson.project_version())
+features_conf.set('PACKAGE_VERSION', rsvg_version)
 
 features_header = configure_file(
   input: 'librsvg-features.h.in',
@@ -136,20 +136,20 @@ lib_includes = [
   include_directories('.'),
 ]
 
-lib_c_args = [
+lib_c_args = rsvg_c_args + [
   '-DG_LOG_DOMAIN="librsvg"',
   '-DRSVG_DISABLE_DEPRECATION_WARNINGS',
   '-DRSVG_COMPILATION',
-  '-DSRCDIR="@0@"'.format(meson.project_source_root()),
 ]
 
 librsvg_lib = both_libraries(
   'rsvg-' + api_major,
   sources: lib_sources + [enum_source, enum_header],
+  override_options: ['c_std=c99'],
   c_args: lib_c_args,
   include_directories: lib_includes,
   dependencies: lib_deps,
-  version: meson.project_version(),
+  version: rsvg_version,
   soversion: api_major,
   link_args: bsymbolic_link_args,
   install: true,
@@ -162,16 +162,9 @@ librsvg_dep = declare_dependency(
   sources: [enum_header, features_header],
 )
 
-librsvg_private_dep = declare_dependency(
-  link_with: librsvg_lib.get_static_lib(),
-  include_directories: lib_includes,
-  dependencies: lib_deps,
-  sources: [enum_header, features_header],
-)
-
 pkgconfig.generate(
   libraries: librsvg_lib,
-  version: meson.project_version(),
+  version: rsvg_version,
   name: 'librsvg-2.0',
   filebase: 'librsvg-2.0',
   description: 'Library to render SVG files',
@@ -190,7 +183,7 @@ pkgconfig.generate(
   ],
 )
 
-if gi_dep.found()
+if gi_dep.found() and build_gir
   gir_extra_args = [
     '--c-include=librsvg/rsvg.h',
     '--symbol-prefix=rsvg',
@@ -208,7 +201,7 @@ if gi_dep.found()
       'GObject-2.0',
       'Gio-2.0',
       'cairo-1.0',
-      'GdkPixbuf-2.0',
+      gdkpixbuf_gir[0],
     ],
     export_packages: 'librsvg-2.0',
     header: 'librsvg/rsvg.h',

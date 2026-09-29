@@ -1,21 +1,10 @@
-project('gdk-pixbuf', 'c',
-  version: '2.42.13',
-  license: 'LGPL-2.1-or-later',
-  default_options: [
-    'buildtype=debugoptimized',
-    'warning_level=1',
-    'c_std=gnu99',
-  ],
-  meson_version: '>= 0.55.3',
-)
-
 add_project_arguments([ '-D_POSIX_C_SOURCE=200809L', '-D_DEFAULT_SOURCE', '-D_XOPEN_SOURCE=700' ], language: 'c')
 
 cc = meson.get_compiler('c')
 host_system = host_machine.system()
 
 # Versioning
-gdk_pixbuf_version = meson.project_version()
+gdk_pixbuf_version = '2.42.13'
 version_arr = gdk_pixbuf_version.split('.')
 gdk_pixbuf_version_major = version_arr[0].to_int()
 gdk_pixbuf_version_minor = version_arr[1].to_int()
@@ -24,7 +13,7 @@ gdk_pixbuf_version_micro = version_arr[2].to_int()
 gdk_pixbuf_api_version = '2.0'
 gdk_pixbuf_binary_version = '2.10.0'
 
-gdk_pixbuf_api_name = '@0@-@1@'.format(meson.project_name(), gdk_pixbuf_api_version)
+gdk_pixbuf_api_name = 'gdk-pixbuf-@0@'.format(gdk_pixbuf_api_version)
 
 if gdk_pixbuf_version_minor.is_odd()
   gdk_pixbuf_interface_age = 0
@@ -368,7 +357,7 @@ if relocatable
   add_project_arguments([ '-DGDK_PIXBUF_RELOCATABLE' ], language: 'c')
 endif
 
-gdk_pixbuf_conf.set_quoted('GETTEXT_PACKAGE', meson.project_name())
+gdk_pixbuf_conf.set_quoted('GETTEXT_PACKAGE', 'gdk-pixbuf')
 
 configure_file(output: 'config.h', configuration: gdk_pixbuf_conf)
 add_project_arguments([ '-DHAVE_CONFIG_H=1' ], language: 'c')
@@ -376,12 +365,7 @@ add_project_arguments([ '-DHAVE_CONFIG_H=1' ], language: 'c')
 root_inc = include_directories('.')
 
 # Auxiliary scripts
-gen_resources = find_program('build-aux/gen-resources.py')
-gen_installed_test = find_program('build-aux/gen-installed-test.py')
 gen_thumbnailer = find_program('build-aux/gen-thumbnailer.py')
-
-# Needed by gen-resources.py
-glib_compile_resources = find_program('glib-compile-resources')
 
 gnome = import('gnome')
 
@@ -391,15 +375,8 @@ subdir('gdk-pixbuf')
 subdir('po')
 
 if not meson.is_cross_build()
-  if get_option('tests')
-    subdir('tests')
-  endif
   subdir('thumbnailer')
 endif
-
-# Documentation
-build_docs = get_option('gtk_doc') or get_option('docs')
-subdir('docs')
 
 if not meson.is_cross_build()
   meson.add_install_script('build-aux/post-install.py',
@@ -407,10 +384,6 @@ if not meson.is_cross_build()
     gdk_pixbuf_libdir,
     gdk_pixbuf_binary_version,
   )
-endif
-
-if not meson.is_subproject()
-  meson.add_dist_script('build-aux/dist.py')
 endif
 
 summary('Shared modules', build_modules, section: 'Loaders')
@@ -422,11 +395,7 @@ summary('Optimization', get_option('optimization'), section: 'Build')
 summary('GIO MIME sniffing', use_gio_mime, section: 'Build')
 summary('MediaLib', use_medialib, section: 'Build')
 summary('Introspection', build_gir, section: 'Build')
-summary('Documentation', build_docs, section: 'Build')
-summary('Manual pages', get_option('man'), section: 'Build')
 summary('Relocatable', relocatable, section: 'Build')
-summary('Build tests', get_option('tests'), section: 'Build')
-summary('Installed tests', get_option('installed_tests'), section: 'Build')
 
 summary('prefix', gdk_pixbuf_prefix, section: 'Directories')
 summary('libdir', gdk_pixbuf_libdir, section: 'Directories')

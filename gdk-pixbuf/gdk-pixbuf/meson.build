@@ -81,7 +81,7 @@ gdkpixbuf_features_conf = configuration_data()
 gdkpixbuf_features_conf.set('GDK_PIXBUF_MAJOR', gdk_pixbuf_version_major)
 gdkpixbuf_features_conf.set('GDK_PIXBUF_MINOR', gdk_pixbuf_version_minor)
 gdkpixbuf_features_conf.set('GDK_PIXBUF_MICRO', gdk_pixbuf_version_micro)
-gdkpixbuf_features_conf.set('GDK_PIXBUF_VERSION', meson.project_version())
+gdkpixbuf_features_conf.set('GDK_PIXBUF_VERSION', gdk_pixbuf_version)
 gdkpixbuf_features_conf.set('GDK_PIXBUF_API_VERSION', gdk_pixbuf_api_version)
 gdkpixbuf_features_conf.set('LT_CURRENT_MINUS_AGE', current_minus_age)
 
@@ -267,6 +267,7 @@ else
 endif
 
 gdkpixbuf_dep = declare_dependency(
+  version: gdk_pixbuf_version,
   link_with: gdkpixbuf,
   include_directories: root_inc,
   dependencies: gdk_pixbuf_deps,
@@ -370,6 +371,7 @@ endif
 pkgconfig = import('pkgconfig')
 pkgconfig.generate(
   gdkpixbuf,
+  version: gdk_pixbuf_version,
   name: 'GdkPixbuf',
   description: 'Image loading and scaling',
   variables: [

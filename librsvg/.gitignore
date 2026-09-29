@@ -1,6 +1,0 @@
-build*/
-ref/
-
-# Python artifacts (tests use python helpers)
-__pycache__/
-*.py[cod]

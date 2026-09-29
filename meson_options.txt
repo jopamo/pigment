@@ -23,24 +23,11 @@ option('builtin_loaders',
        type: 'array',
        choices: ['all', 'none', 'windows', 'png', 'bmp', 'gif', 'ico', 'ani', 'jpeg', 'pnm', 'tiff', 'xpm', 'xbm', 'tga', 'icns', 'qtif'],
        value: ['png', 'jpeg'])
-option('gtk_doc',
-       description: 'Whether to generate the API reference',
-       type: 'boolean',
-       value: false,
-       yield: true)
-option('docs',
-       description: 'Whether to generate the whole documentation (see: gtk_doc and man options) [Deprecated]',
-       type: 'boolean',
-       value: false)
 option('introspection',
        description: 'Whether to generate the API introspection data (requires GObject-Introspection)',
        type: 'feature',
        value: 'auto',
        yield: true)
-option('man',
-       description: 'Whether to generate man pages (requires rst2man)',
-       type: 'boolean',
-       value: true)
 option('relocatable',
        description: 'Whether to enable application bundle relocation support',
        type: 'boolean',
@@ -49,16 +36,10 @@ option('native_windows_loaders',
        description: 'Use Windows system components to handle BMP, EMF, GIF, ICO, JPEG, TIFF and WMF images, overriding jpeg and tiff.  To build this into gdk-pixbuf, pass in windows" with the other loaders to build in or use "all" with the builtin_loaders option',
        type: 'boolean',
        value: false)
-option('tests',
-       description: 'Build the test suite',
-       type: 'boolean',
-       value: true)
-option('installed_tests',
-       description: 'Install the test suite',
-       type: 'boolean',
-       value: true)
 option('gio_sniffing',
        description: 'Perform file type detection using GIO (Unused on MacOS and Windows)',
        type: 'boolean',
        value: true)
 
+option('svg', type: 'boolean', value: true, description: 'Build SVG rendering')
+option('gdk_pixbuf_loader', type: 'boolean', value: true, description: 'Build the SVG loader')
