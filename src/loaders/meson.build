@@ -1,7 +1,7 @@
 loader = shared_module(
   'pixbufloader-svg',
   'io-svg.c',
-  include_directories: [src_inc, config_inc],
+  include_directories: lib_includes,
   c_args: ['-DGDK_PIXBUF_ENABLE_BACKEND'],
   dependencies: [
     librsvg_dep,
