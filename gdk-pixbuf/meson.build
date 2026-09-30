@@ -338,22 +338,19 @@ add_project_arguments([ '-DHAVE_CONFIG_H=1' ], language: 'c')
 root_inc = include_directories('.', '../include')
 
 # Auxiliary scripts
-gen_thumbnailer = find_program('build-aux/gen-thumbnailer.py')
-gen_loader_cache = find_program('build-aux/gen-loader-cache.py')
+gen_thumbnailer = find_program('../build-aux/gen-thumbnailer.py')
+gen_loader_cache = find_program('../build-aux/gen-loader-cache.py')
 
 gnome = import('gnome')
 
 subdir('gdk-pixbuf')
-
-# i18n
-subdir('po')
 
 if not meson.is_cross_build()
   subdir('thumbnailer')
 endif
 
 if not meson.is_cross_build()
-  meson.add_install_script('build-aux/post-install.py',
+  meson.add_install_script('../build-aux/post-install.py',
     gdk_pixbuf_bindir,
     gdk_pixbuf_libdir,
     gdk_pixbuf_binary_version,
