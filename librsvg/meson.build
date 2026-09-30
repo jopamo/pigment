@@ -61,7 +61,3 @@ src_inc = [include_directories('src'), svg_public_inc, svg_inc]
 incdir = join_paths(get_option('includedir'), 'librsvg-2.0', 'librsvg')
 
 subdir('src')
-
-if get_option('gdk_pixbuf_loader')
-  subdir('gdk-pixbuf-loader')
-endif

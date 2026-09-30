@@ -14,4 +14,7 @@ if get_option('svg')
   subdir('include/librsvg')
   subdir('src/svg')
   subdir('librsvg')
+  if get_option('gdk_pixbuf_loader')
+    subdir('src/loaders')
+  endif
 endif
