@@ -57,7 +57,7 @@ config_inc = include_directories('.')
 
 css_dep = dependency('liblexa', version: '>=0.1.0', required: true, allow_fallback: false)
 
-src_inc = [include_directories('src'), svg_inc]
+src_inc = [include_directories('src'), svg_public_inc, svg_inc]
 incdir = join_paths(get_option('includedir'), 'librsvg-2.0', 'librsvg')
 
 subdir('src')

@@ -12,16 +12,12 @@ features_conf.set('LIBRSVG_MICRO_VERSION', micro_version)
 features_conf.set('PACKAGE_VERSION', rsvg_version)
 
 features_header = configure_file(
-  input: 'librsvg-features.h.in',
+  input: svg_features_template,
   output: 'librsvg-features.h',
   configuration: features_conf,
   install_dir: incdir,
 )
 
-
-enum_headers = [
-  'rsvg.h',
-]
 
 enum_header = gnome.mkenums(
   'librsvg-enum-types.h',
@@ -75,12 +71,6 @@ enum_source = gnome.mkenums(
 ''',
 )
 
-public_headers = [
-  'rsvg.h',
-  'rsvg-cairo.h',
-  'rsvg-deprecated.h',
-]
-
 install_headers(public_headers, subdir: 'librsvg-2.0/librsvg')
 
 lib_deps = [
@@ -103,6 +93,7 @@ endif
 
 lib_includes = [
   config_inc,
+  svg_public_inc,
   svg_inc,
   include_directories('.'),
 ]
