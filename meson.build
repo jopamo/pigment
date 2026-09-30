@@ -6,10 +6,10 @@ project('pigment', 'c',
 )
 
 subdir('src/internal')
-subdir('src/pixbuf')
+subdir('build-aux/pixbuf')
 subdir('include/gdk-pixbuf')
+subdir('src/pixbuf')
 subdir('tools')
-subdir('gdk-pixbuf')
 subdir('po')
 if get_option('svg')
   subdir('include/librsvg')
@@ -19,3 +19,27 @@ if get_option('svg')
     subdir('src/loaders')
   endif
 endif
+
+if not meson.is_cross_build()
+  meson.add_install_script('build-aux/post-install.py',
+    gdk_pixbuf_bindir,
+    gdk_pixbuf_libdir,
+    gdk_pixbuf_binary_version,
+  )
+endif
+
+summary('Shared modules', build_modules, section: 'Loaders')
+summary('Enabled loaders', enabled_loaders, section: 'Loaders')
+summary('Builtin loaders', builtin_loaders, section: 'Loaders')
+
+summary('Debugging', get_option('debug'), section: 'Build')
+summary('Optimization', get_option('optimization'), section: 'Build')
+summary('GIO MIME sniffing', use_gio_mime, section: 'Build')
+summary('MediaLib', use_medialib, section: 'Build')
+summary('Introspection', build_gir, section: 'Build')
+summary('Relocatable', relocatable, section: 'Build')
+
+summary('prefix', gdk_pixbuf_prefix, section: 'Directories')
+summary('libdir', gdk_pixbuf_libdir, section: 'Directories')
+summary('datadir', gdk_pixbuf_datadir, section: 'Directories')
+summary('libexecdir', gdk_pixbuf_libdir, section: 'Directories')

@@ -335,40 +335,10 @@ gdk_pixbuf_conf.set_quoted('GETTEXT_PACKAGE', 'gdk-pixbuf')
 configure_file(output: 'config.h', configuration: gdk_pixbuf_conf)
 add_project_arguments([ '-DHAVE_CONFIG_H=1' ], language: 'c')
 
-root_inc = include_directories('.', '../include')
+root_inc = include_directories('.', '../../include')
 
 # Auxiliary scripts
-gen_thumbnailer = find_program('../build-aux/gen-thumbnailer.py')
-gen_loader_cache = find_program('../build-aux/gen-loader-cache.py')
+gen_thumbnailer = find_program('../gen-thumbnailer.py')
+gen_loader_cache = find_program('../gen-loader-cache.py')
 
 gnome = import('gnome')
-
-subdir('gdk-pixbuf')
-
-if not meson.is_cross_build()
-  subdir('thumbnailer')
-endif
-
-if not meson.is_cross_build()
-  meson.add_install_script('../build-aux/post-install.py',
-    gdk_pixbuf_bindir,
-    gdk_pixbuf_libdir,
-    gdk_pixbuf_binary_version,
-  )
-endif
-
-summary('Shared modules', build_modules, section: 'Loaders')
-summary('Enabled loaders', enabled_loaders, section: 'Loaders')
-summary('Builtin loaders', builtin_loaders, section: 'Loaders')
-
-summary('Debugging', get_option('debug'), section: 'Build')
-summary('Optimization', get_option('optimization'), section: 'Build')
-summary('GIO MIME sniffing', use_gio_mime, section: 'Build')
-summary('MediaLib', use_medialib, section: 'Build')
-summary('Introspection', build_gir, section: 'Build')
-summary('Relocatable', relocatable, section: 'Build')
-
-summary('prefix', gdk_pixbuf_prefix, section: 'Directories')
-summary('libdir', gdk_pixbuf_libdir, section: 'Directories')
-summary('datadir', gdk_pixbuf_datadir, section: 'Directories')
-summary('libexecdir', gdk_pixbuf_libdir, section: 'Directories')
