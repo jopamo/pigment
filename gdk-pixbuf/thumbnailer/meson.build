@@ -1,5 +1,5 @@
 bin = executable('gdk-pixbuf-thumbnailer',
-           [ 'gdk-pixbuf-thumbnailer.c', 'gnome-thumbnailer-skeleton.c' ],
+           thumbnailer_sources,
            c_args: common_cflags + [
              '-DTHUMBNAILER_RETURNS_PIXBUF',
              '-DTHUMBNAILER_USAGE="Thumbnail images"',
@@ -9,12 +9,12 @@ bin = executable('gdk-pixbuf-thumbnailer',
 meson.override_find_program('gdk-pixbuf-thumbnailer', bin)
 
 gdk_pixbuf_print_mime_types = executable('gdk-pixbuf-print-mime-types',
-                                         'gdk-pixbuf-print-mime-types.c',
+                                         print_mime_types_source,
                                          c_args: common_cflags,
                                          dependencies: gdk_pixbuf_deps + [ gdkpixbuf_dep ])
 
 custom_target('thumbnailer',
-              input: 'gdk-pixbuf-thumbnailer.thumbnailer.in',
+              input: thumbnailer_template,
               output: 'gdk-pixbuf-thumbnailer.thumbnailer',
               command: [
                 gen_thumbnailer,

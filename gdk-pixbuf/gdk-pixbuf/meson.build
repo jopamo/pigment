@@ -301,15 +301,9 @@ if native_windows_loaders
   endif
 endif
 
-gdkpixbuf_bin = [
-  [ 'gdk-pixbuf-csource' ],
-  [ 'gdk-pixbuf-pixdata' ],
-  [ 'gdk-pixbuf-query-loaders', [ 'queryloaders.c' ] ],
-]
-
 foreach bin: gdkpixbuf_bin
   bin_name = bin[0]
-  bin_source = bin.get(1, bin_name + '.c')
+  bin_source = bin[1]
 
   bin = executable(bin_name, bin_source,
                    gdkpixbuf_enum_h,
