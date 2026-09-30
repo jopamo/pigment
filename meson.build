@@ -7,6 +7,7 @@ project('pigment', 'c',
 
 subdir('src/internal')
 subdir('src/pixbuf')
+subdir('include/gdk-pixbuf')
 subdir('gdk-pixbuf')
 if get_option('svg')
   subdir('librsvg')

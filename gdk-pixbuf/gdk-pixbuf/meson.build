@@ -59,7 +59,7 @@ loaders = {
   },
 }
 
-gdk_pixbuf_inc = include_directories('.')
+gdk_pixbuf_inc = include_directories('.', '../../include/gdk-pixbuf')
 
 gdk_pixbuf_cflags = [
   '-DG_LOG_STRUCTURED=1',
@@ -84,24 +84,12 @@ gdkpixbuf_features_conf.set('GDK_PIXBUF_VERSION', gdk_pixbuf_version)
 gdkpixbuf_features_conf.set('GDK_PIXBUF_API_VERSION', gdk_pixbuf_api_version)
 gdkpixbuf_features_conf.set('LT_CURRENT_MINUS_AGE', current_minus_age)
 
-gdk_pixbuf_features_h = configure_file(input: 'gdk-pixbuf-features.h.in',
+gdk_pixbuf_features_h = configure_file(input: gdkpixbuf_features_template,
                                        output: 'gdk-pixbuf-features.h',
                                        configuration: gdkpixbuf_features_conf,
                                        install_dir: join_paths(gdk_pixbuf_includedir, gdk_pixbuf_api_path))
 
-gdkpixbuf_headers = [
-  'gdk-pixbuf.h',
-  'gdk-pixbuf-animation.h',
-  'gdk-pixbuf-autocleanups.h',
-  'gdk-pixbuf-core.h',
-  'gdk-pixbuf-io.h',
-  'gdk-pixbuf-loader.h',
-  'gdk-pixbuf-macros.h',
-  'gdk-pixbuf-simple-anim.h',
-  'gdk-pixbuf-transform.h',
-]
-
-install_headers(gdkpixbuf_headers + [ 'gdk-pixdata.h' ], subdir: gdk_pixbuf_api_path)
+install_headers(gdkpixbuf_headers + gdkpixdata_header, subdir: gdk_pixbuf_api_path)
 
 gdkpixbuf_marshals = gnome.genmarshal('gdk-pixbuf-marshal',
                                       sources: 'gdk-pixbuf-marshal.list',
@@ -111,8 +99,8 @@ gdkpixbuf_marshals = gnome.genmarshal('gdk-pixbuf-marshal',
 
 gdkpixbuf_enums = gnome.mkenums('gdk-pixbuf-enum-types',
                                 sources: gdkpixbuf_headers,
-                                c_template: 'gdk-pixbuf-enum-types.c.template',
-                                h_template: 'gdk-pixbuf-enum-types.h.template',
+                                c_template: gdkpixbuf_enum_c_template,
+                                h_template: gdkpixbuf_enum_h_template,
                                 install_header: true,
                                 install_dir: join_paths(gdk_pixbuf_includedir, gdk_pixbuf_api_path))
 gdkpixbuf_enum_h = gdkpixbuf_enums[1]
@@ -192,6 +180,7 @@ gdkpixbuf = library('gdk_pixbuf-2.0',
                     link_args: common_ldflags,
                     include_directories: [
                       root_inc,
+                      gdk_pixbuf_inc,
                       pixops_inc,
                       internal_inc,
                     ],
@@ -233,7 +222,7 @@ if build_gir
 
   gdkpixdata_gir = gnome.generate_gir(
     gdkpixbuf,
-    sources: gdkpixdata_sources + ['gdk-pixdata.h'],
+    sources: gdkpixdata_sources + gdkpixdata_header,
     namespace: 'GdkPixdata',
     nsversion: gdk_pixbuf_api_version,
     identifier_prefix: 'Gdk',

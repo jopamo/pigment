@@ -335,7 +335,7 @@ gdk_pixbuf_conf.set_quoted('GETTEXT_PACKAGE', 'gdk-pixbuf')
 configure_file(output: 'config.h', configuration: gdk_pixbuf_conf)
 add_project_arguments([ '-DHAVE_CONFIG_H=1' ], language: 'c')
 
-root_inc = include_directories('.')
+root_inc = include_directories('.', '../include')
 
 # Auxiliary scripts
 gen_thumbnailer = find_program('build-aux/gen-thumbnailer.py')
