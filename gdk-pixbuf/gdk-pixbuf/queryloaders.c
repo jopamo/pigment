@@ -33,7 +33,7 @@
 #endif
 
 #include "gdk-pixbuf/gdk-pixbuf.h"
-#include "gdk-pixbuf/gdk-pixbuf-private.h"
+#include "gdk-pixbuf-private.h"
 
 #ifdef USE_LA_MODULES
 #define SOEXT ".la"

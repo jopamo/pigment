@@ -103,22 +103,6 @@ gdkpixbuf_headers = [
 
 install_headers(gdkpixbuf_headers + [ 'gdk-pixdata.h' ], subdir: gdk_pixbuf_api_path)
 
-gdkpixbuf_sources = [
-  'gdk-pixbuf.c',
-  'gdk-pixbuf-animation.c',
-  'gdk-pixbuf-data.c',
-  'gdk-pixbuf-io.c',
-  'gdk-pixbuf-loader.c',
-  'gdk-pixbuf-scale.c',
-  'gdk-pixbuf-simple-anim.c',
-  'gdk-pixbuf-scaled-anim.c',
-  'gdk-pixbuf-util.c',
-]
-
-gdkpixdata_sources = [
-  'gdk-pixdata.c',
-]
-
 gdkpixbuf_marshals = gnome.genmarshal('gdk-pixbuf-marshal',
                                       sources: 'gdk-pixbuf-marshal.list',
                                       prefix: '_gdk_pixbuf_marshal',
@@ -340,7 +324,7 @@ foreach bin: gdkpixbuf_bin
   bin = executable(bin_name, bin_source,
                    gdkpixbuf_enum_h,
                    dependencies: gdk_pixbuf_deps + [ gdkpixbuf_dep ],
-                   include_directories: [ root_inc, gdk_pixbuf_inc ],
+                   include_directories: [ root_inc, gdk_pixbuf_inc, pixops_inc ],
                    c_args: common_cflags + gdk_pixbuf_cflags,
                    install: true)
   meson.override_find_program(bin_name, bin)

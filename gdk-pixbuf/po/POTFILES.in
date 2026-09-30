@@ -1,11 +1,11 @@
 # List of source files which contain translatable strings.
-gdk-pixbuf/gdk-pixbuf/gdk-pixbuf-animation.c
-gdk-pixbuf/gdk-pixbuf/gdk-pixbuf.c
-gdk-pixbuf/gdk-pixbuf/gdk-pixbuf-data.c
-gdk-pixbuf/gdk-pixbuf/gdk-pixbuf-io.c
-gdk-pixbuf/gdk-pixbuf/gdk-pixbuf-loader.c
-gdk-pixbuf/gdk-pixbuf/gdk-pixbuf-simple-anim.c
-gdk-pixbuf/gdk-pixbuf/gdk-pixdata.c
+src/pixbuf/gdk-pixbuf-animation.c
+src/pixbuf/gdk-pixbuf.c
+src/pixbuf/gdk-pixbuf-data.c
+src/pixbuf/gdk-pixbuf-io.c
+src/pixbuf/gdk-pixbuf-loader.c
+src/pixbuf/gdk-pixbuf-simple-anim.c
+src/pixbuf/gdk-pixdata.c
 src/codecs/io-ani.c
 src/codecs/io-bmp.c
 src/codecs/io-gdip-bmp.c
