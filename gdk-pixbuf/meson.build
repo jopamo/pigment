@@ -339,6 +339,7 @@ root_inc = include_directories('.')
 
 # Auxiliary scripts
 gen_thumbnailer = find_program('build-aux/gen-thumbnailer.py')
+gen_loader_cache = find_program('build-aux/gen-loader-cache.py')
 
 gnome = import('gnome')
 

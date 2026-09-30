@@ -351,12 +351,12 @@ foreach bin: gdkpixbuf_bin
 endforeach
 
 if not meson.is_cross_build()
-  # The 'loaders.cache' used for testing, so we don't accidentally
-  # load the installed cache; we always build it by default
+  # Generate the cache from this build's selected dynamic modules.
   loaders_cache = custom_target('loaders.cache',
                                 output: 'loaders.cache',
                                 capture: true,
                                 command: [
+                                  gen_loader_cache,
                                   gdk_pixbuf_query_loaders,
                                   dynamic_loaders,
                                 ],
