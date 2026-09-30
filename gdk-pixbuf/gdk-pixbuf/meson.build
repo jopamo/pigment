@@ -1,5 +1,3 @@
-subdir('pixops')
-
 # Loaders
 #  - sources: additional source files
 #  - c_args: additional C compiler arguments
@@ -209,7 +207,7 @@ gdkpixbuf = library('gdk_pixbuf-2.0',
                     link_args: common_ldflags,
                     include_directories: [
                       root_inc,
-                      include_directories('pixops'),
+                      pixops_inc,
                     ],
                     dependencies: [
                       gdk_pixbuf_deps,

@@ -5,6 +5,7 @@ project('pigment', 'c',
   default_options: ['buildtype=debugoptimized', 'c_std=gnu99', 'warning_level=1', 'wrap_mode=nofallback'],
 )
 
+subdir('src/pixbuf')
 subdir('gdk-pixbuf')
 if get_option('svg')
   subdir('librsvg')

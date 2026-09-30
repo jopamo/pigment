@@ -21,7 +21,7 @@
 #include <math.h>
 #include <glib.h>
 
-#include "../fallback-c89.c"
+#include "fallback-c89.c"
 #include "pixops.h"
 
 #define SUBSAMPLE_BITS 4

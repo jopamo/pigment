@@ -23,7 +23,7 @@
 #include <string.h>
 #include "gdk-pixbuf-transform.h"
 #include "gdk-pixbuf-private.h"
-#include "pixops/pixops.h"
+#include "pixops.h"
 
 /**
  * gdk_pixbuf_scale:
