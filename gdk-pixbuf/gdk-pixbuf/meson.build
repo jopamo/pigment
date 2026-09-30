@@ -3,57 +3,58 @@
 #  - c_args: additional C compiler arguments
 #  - enabled: condition for building
 
+codec_dir = '../../src/codecs'
 loaders = {
   'png': {
-    'sources': [ 'io-png.c' ],
+    'sources': [ codec_dir / 'io-png.c' ],
     'enabled': enabled_loaders.contains('png'),
   },
   'bmp': {
-    'sources': [ 'io-bmp.c' ],
+    'sources': [ codec_dir / 'io-bmp.c' ],
     'enabled': enabled_loaders.contains('bmp') and not native_windows_loaders,
   },
   'gif': {
-    'sources': [ 'io-gif.c', 'io-gif-animation.c', 'lzw.c' ],
+    'sources': [ codec_dir / 'io-gif.c', codec_dir / 'io-gif-animation.c', codec_dir / 'lzw.c' ],
     'enabled': enabled_loaders.contains('gif') and not native_windows_loaders,
   },
   'ico': {
-    'sources': [ 'io-ico.c' ],
+    'sources': [ codec_dir / 'io-ico.c' ],
     'enabled': enabled_loaders.contains('ico') and not native_windows_loaders,
   },
   'ani': {
-    'sources': [ 'io-ani.c', 'io-ani-animation.c' ],
+    'sources': [ codec_dir / 'io-ani.c', codec_dir / 'io-ani-animation.c' ],
     'enabled': enabled_loaders.contains('ani'),
   },
   'jpeg': {
-    'sources': [ 'io-jpeg.c' ],
+    'sources': [ codec_dir / 'io-jpeg.c' ],
     'enabled': enabled_loaders.contains('jpeg'),
   },
   'pnm': {
-    'sources': [ 'io-pnm.c' ],
+    'sources': [ codec_dir / 'io-pnm.c' ],
     'enabled': enabled_loaders.contains('pnm'),
   },
   'tiff': {
-    'sources': [ 'io-tiff.c' ],
+    'sources': [ codec_dir / 'io-tiff.c' ],
     'enabled': enabled_loaders.contains('tiff'),
   },
   'xpm': {
-    'sources': [ 'io-xpm.c' ],
+    'sources': [ codec_dir / 'io-xpm.c' ],
     'enabled': enabled_loaders.contains('xpm'),
   },
   'xbm': {
-    'sources': [ 'io-xbm.c' ],
+    'sources': [ codec_dir / 'io-xbm.c' ],
     'enabled': enabled_loaders.contains('xbm'),
   },
   'tga': {
-    'sources': [ 'io-tga.c', 'gdk-pixbuf-buffer-queue.c' ],
+    'sources': [ codec_dir / 'io-tga.c', codec_dir / 'gdk-pixbuf-buffer-queue.c' ],
     'enabled': enabled_loaders.contains('tga'),
   },
   'icns': {
-    'sources': [ 'io-icns.c' ],
+    'sources': [ codec_dir / 'io-icns.c' ],
     'enabled': enabled_loaders.contains('icns'),
   },
   'qtif': {
-    'sources': [ 'io-qtif.c' ],
+    'sources': [ codec_dir / 'io-qtif.c' ],
     'enabled': enabled_loaders.contains('qtif'),
   },
 }
@@ -168,7 +169,7 @@ endforeach
 
 # List of formats supported by the native Windows components-based loader(s)
 windows_native_loader_formats = [ 'bmp', 'emf', 'gif', 'ico', 'jpeg', 'tiff', 'wmf' ]
-windows_base_loader_sources = [ 'io-gdip-utils.c', 'io-gdip-animation.c' ]
+windows_base_loader_sources = [ codec_dir / 'io-gdip-utils.c', codec_dir / 'io-gdip-animation.c' ]
 
 # Build the loaders using native Windows components as static modules, if requested
 if native_windows_loaders
@@ -177,7 +178,7 @@ if native_windows_loaders
     included_loaders_cflags += cflag_for_included_loader
     win_loader_sources = windows_base_loader_sources
     foreach loader: windows_native_loader_formats
-      win_loader_sources += 'io-gdip-@0@.c'.format(loader)
+      win_loader_sources += codec_dir / 'io-gdip-@0@.c'.format(loader)
     endforeach
 
     mod = static_library('staticpixbufloader-gdiplus',
@@ -310,7 +311,7 @@ endforeach
 if native_windows_loaders
   if not (builtin_loaders.contains('windows') or builtin_all_loaders)
     foreach loader: windows_native_loader_formats
-      loader_sources = windows_base_loader_sources + [ 'io-gdip-@0@.c'.format(loader) ]
+      loader_sources = windows_base_loader_sources + [ codec_dir / 'io-gdip-@0@.c'.format(loader) ]
 
       mod = shared_module('pixbufloader-gdip-@0@'.format(loader),
                           loader_sources,
