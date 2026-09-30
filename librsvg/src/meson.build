@@ -83,36 +83,6 @@ public_headers = [
 
 install_headers(public_headers, subdir: 'librsvg-2.0/librsvg')
 
-lib_sources = files(
-  'librsvg-features.c',
-  'rsvg-base-file-util.c',
-  'rsvg-base.c',
-  'rsvg-cairo-clip.c',
-  'rsvg-cairo-draw.c',
-  'rsvg-cairo-render.c',
-  'rsvg-cond.c',
-  'rsvg-css-engine.c',
-  'rsvg-css-engine-native.c',
-  'rsvg-css.c',
-  'rsvg-defs.c',
-  'rsvg-file-util.c',
-  'rsvg-filter.c',
-  'rsvg-gobject.c',
-  'rsvg-image.c',
-  'rsvg-io.c',
-  'rsvg-marker.c',
-  'rsvg-mask.c',
-  'rsvg-paint-server.c',
-  'rsvg-path.c',
-  'rsvg-shapes.c',
-  'rsvg-size-callback.c',
-  'rsvg-structure.c',
-  'rsvg-styles.c',
-  'rsvg-text.c',
-  'rsvg-xml.c',
-  'rsvg.c',
-)
-
 lib_deps = [
   glib_dep,
   gobject_dep,
@@ -133,6 +103,7 @@ endif
 
 lib_includes = [
   config_inc,
+  svg_inc,
   include_directories('.'),
 ]
 

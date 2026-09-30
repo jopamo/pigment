@@ -11,5 +11,6 @@ subdir('include/gdk-pixbuf')
 subdir('tools')
 subdir('gdk-pixbuf')
 if get_option('svg')
+  subdir('src/svg')
   subdir('librsvg')
 endif
