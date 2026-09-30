@@ -144,7 +144,7 @@ foreach name, loader: loaders
                          sources,
                          gdkpixbuf_enum_h,
                          dependencies: loaders_deps + gdk_pixbuf_deps,
-                         include_directories: [ root_inc, gdk_pixbuf_inc ],
+                         include_directories: [ root_inc, gdk_pixbuf_inc, internal_inc ],
                          c_args: common_cflags + gdk_pixbuf_cflags + cflags + cflag_for_included_loader)
 
     included_loaders_deps += declare_dependency(link_with: mod)
@@ -169,7 +169,7 @@ if native_windows_loaders
                          win_loader_sources,
                          gdkpixbuf_enum_h,
                          dependencies: loaders_deps + gdk_pixbuf_deps,
-                         include_directories: [ root_inc, gdk_pixbuf_inc ],
+                         include_directories: [ root_inc, gdk_pixbuf_inc, internal_inc ],
                          c_args: common_cflags + gdk_pixbuf_cflags + cflag_for_included_loader)
 
     included_loaders_deps += declare_dependency(link_with: mod)
@@ -193,6 +193,7 @@ gdkpixbuf = library('gdk_pixbuf-2.0',
                     include_directories: [
                       root_inc,
                       pixops_inc,
+                      internal_inc,
                     ],
                     dependencies: [
                       gdk_pixbuf_deps,
@@ -279,7 +280,7 @@ foreach name, loader: loaders
                         sources,
                         gdkpixbuf_enum_h,
                         dependencies: loaders_deps + gdk_pixbuf_deps + [ gdkpixbuf_dep ],
-                        include_directories: [ root_inc, gdk_pixbuf_inc ],
+                        include_directories: [ root_inc, gdk_pixbuf_inc, internal_inc ],
                         c_args: common_cflags + gdk_pixbuf_cflags + cflags,
                         name_suffix: name_suffix,
                         install: true,
@@ -301,7 +302,7 @@ if native_windows_loaders
                           loader_sources,
                           gdkpixbuf_enum_h,
                           dependencies: loaders_deps + gdk_pixbuf_deps + [ gdkpixbuf_dep ],
-                          include_directories: [ root_inc, gdk_pixbuf_inc ],
+                          include_directories: [ root_inc, gdk_pixbuf_inc, internal_inc ],
                           c_args: common_cflags + gdk_pixbuf_cflags + cflags,
                           install: true,
                           install_dir: gdk_pixbuf_loaderdir)
