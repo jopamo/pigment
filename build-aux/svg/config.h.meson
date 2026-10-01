@@ -1,6 +1,5 @@
 #pragma once
 
-#mesondefine HAVE_FLOAT_H
 #mesondefine HAVE_LC_MESSAGES
 #mesondefine HAVE_STRINGS_H
 #mesondefine HAVE_STRTOK_R
