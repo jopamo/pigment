@@ -28,7 +28,6 @@
 #define _GNU_SOURCE 1
 
 #include "rsvg.h"
-#include "rsvg-compat.h"
 #include "rsvg-private.h"
 #include "rsvg-css.h"
 #include "rsvg-css-engine.h"
@@ -2484,13 +2483,11 @@ void rsvg_handle_internal_set_testing(RsvgHandle* handle, gboolean testing) {
 /**
  * rsvg_init:
  *
- * Initializes librsvg
+ * This function does nothing.
  * Since: 2.9
  * Deprecated: 2.36: Use g_type_init()
  **/
-void rsvg_init(void) {
-    RSVG_G_TYPE_INIT;
-}
+void rsvg_init(void) {}
 
 /**
  * rsvg_term:
