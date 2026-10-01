@@ -27,6 +27,13 @@
 #include "config.h"
 #define _GNU_SOURCE 1
 
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <gio/gunixinputstream.h>
+#endif
+
 #include "rsvg.h"
 #include "rsvg-private.h"
 #include "rsvg-css.h"
@@ -2810,12 +2817,85 @@ void rsvg_return_if_fail_warning(const char* pretty_function, const char* expres
     g_set_error(error, RSVG_ERROR, 0, _("%s: assertion `%s' failed"), pretty_function, expression);
 }
 
-static gboolean rsvg_allow_load(GFile* base_gfile, const char* uri, GError** error) {
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+/* Consume the directory descriptor, retaining at most two descriptors while
+ * walking canonical components. Replacement symlinks must not redirect a read.
+ */
+static int rsvg_open_components(int fd, char* path, gboolean directory, GCancellable* cancellable, GError** error) {
+    char* component = path;
+    while (*component) {
+        char* slash = strchr(component, '/');
+        int flags = O_NOFOLLOW | O_CLOEXEC;
+        int next, saved_errno;
+        if (g_cancellable_set_error_if_cancelled(cancellable, error)) {
+            close(fd);
+            return -1;
+        }
+        if (slash)
+            *slash = '\0';
+        flags |= slash || directory ? O_PATH | O_DIRECTORY : O_RDONLY;
+        next = openat(fd, component, flags);
+        saved_errno = errno;
+        if (slash)
+            *slash = '/';
+        close(fd);
+        if (next < 0) {
+            g_set_error(error, G_IO_ERROR, g_io_error_from_errno(saved_errno), "Cannot open resource component: %s",
+                        g_strerror(saved_errno));
+            return -1;
+        }
+        fd = next;
+        if (!slash)
+            break;
+        component = slash + 1;
+    }
+    return fd;
+}
+
+static char* rsvg_read_file_descriptor(int fd,
+                                       const char* uri,
+                                       char** mime_type,
+                                       gsize* out_len,
+                                       GCancellable* cancellable,
+                                       GError** error) {
+    g_autoptr(GInputStream) input = g_unix_input_stream_new(fd, TRUE);
+    g_autoptr(GOutputStream) output = g_memory_output_stream_new(NULL, 0, g_try_realloc, g_free);
+    gsize len;
+    char* data;
+
+    if (g_output_stream_splice(output, input, G_OUTPUT_STREAM_SPLICE_CLOSE_SOURCE, cancellable, error) < 0)
+        return NULL;
+    len = g_memory_output_stream_get_data_size(G_MEMORY_OUTPUT_STREAM(output));
+    if (!g_output_stream_write_all(output, "", 1, NULL, cancellable, error) ||
+        !g_output_stream_close(output, cancellable, error))
+        return NULL;
+    data = g_memory_output_stream_steal_data(G_MEMORY_OUTPUT_STREAM(output));
+    if (mime_type) {
+        g_autoptr(GFile) file = g_file_new_for_uri(uri);
+        g_autofree char* path = g_file_get_path(file);
+        g_autofree char* type = g_content_type_guess(path, (guchar*)data, len, NULL);
+        *mime_type = type ? g_content_type_get_mime_type(type) : NULL;
+    }
+    if (out_len)
+        *out_len = len;
+    return data;
+}
+#endif
+
+static gboolean rsvg_allow_load(GFile* base_gfile,
+                                const char* uri,
+                                int* file_fd,
+                                GCancellable* cancellable,
+                                GError** error) {
     GFile* base;
     char *path, *dir;
     char *scheme = NULL, *cpath = NULL, *cdir = NULL;
 
     g_assert(error == NULL || *error == NULL);
+    *file_fd = -1;
+#ifndef HAVE_RSVG_ROOTED_FILE_IO
+    (void)cancellable;
+#endif
 
     scheme = g_uri_parse_scheme(uri);
 
@@ -2849,13 +2929,21 @@ static gboolean rsvg_allow_load(GFile* base_gfile, const char* uri, GError** err
 
     dir = g_file_get_path(base);
     g_object_unref(base);
+    if (dir == NULL)
+        goto deny;
 
     cdir = realpath(dir, NULL);
     g_free(dir);
     if (cdir == NULL)
         goto deny;
 
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+    GFile* target = g_file_new_for_uri(uri);
+    path = g_file_get_path(target);
+    g_object_unref(target);
+#else
     path = g_filename_from_uri(uri, NULL, NULL);
+#endif
     if (path == NULL)
         goto deny;
 
@@ -2869,7 +2957,25 @@ static gboolean rsvg_allow_load(GFile* base_gfile, const char* uri, GError** err
     if (!g_str_has_prefix(cpath, cdir) || cpath[strlen(cdir)] != G_DIR_SEPARATOR)
         goto deny;
 
-    /* Allow load! */
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+    /* Walk the canonical base from the filesystem root as well: changing a
+     * base ancestor to a symlink must not redirect the directory capability.
+     */
+    int fd = open("/", O_PATH | O_DIRECTORY | O_CLOEXEC);
+    if (fd < 0) {
+        int saved_errno = errno;
+        g_set_error(error, G_IO_ERROR, g_io_error_from_errno(saved_errno), "Cannot open filesystem root: %s",
+                    g_strerror(saved_errno));
+        goto failed;
+    }
+    fd = rsvg_open_components(fd, cdir + 1, TRUE, cancellable, error);
+    if (fd < 0)
+        goto failed;
+    fd = rsvg_open_components(fd, cpath + strlen(cdir) + 1, FALSE, cancellable, error);
+    if (fd < 0)
+        goto failed;
+    *file_fd = fd;
+#endif
 
 allow:
     g_free(scheme);
@@ -2878,11 +2984,14 @@ allow:
     return TRUE;
 
 deny:
+    g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, "File may not link to URI \"%s\"", uri);
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+failed:
+#endif
     g_free(scheme);
     free(cpath);
     free(cdir);
 
-    g_set_error(error, G_IO_ERROR, G_IO_ERROR_PERMISSION_DENIED, "File may not link to URI \"%s\"", uri);
     return FALSE;
 }
 
@@ -2913,7 +3022,7 @@ char* rsvg_handle_resolve_uri(RsvgHandle* handle, const char* uri) {
 /* Both resource readers must authorize the resolved URI before any I/O.
  * Top-level file/stream APIs are caller-authorized and do not use this gate.
  */
-static char* rsvg_handle_resolve_resource_uri(RsvgHandle* handle, const char* url, GError** error) {
+static char* rsvg_handle_resolve_resource_uri(RsvgHandle* handle, const char* url, int* file_fd, GError** error) {
     char* uri;
 
     if (url == NULL || *url == '\0') {
@@ -2922,7 +3031,7 @@ static char* rsvg_handle_resolve_resource_uri(RsvgHandle* handle, const char* ur
     }
 
     uri = rsvg_handle_resolve_uri(handle, url);
-    if (!rsvg_allow_load(handle->priv->base_gfile, uri, error)) {
+    if (!rsvg_allow_load(handle->priv->base_gfile, uri, file_fd, handle->priv->cancellable, error)) {
         g_free(uri);
         return NULL;
     }
@@ -2931,21 +3040,34 @@ static char* rsvg_handle_resolve_resource_uri(RsvgHandle* handle, const char* ur
 }
 
 char* _rsvg_handle_acquire_data(RsvgHandle* handle, const char* url, char** content_type, gsize* len, GError** error) {
-    g_autofree char* uri = rsvg_handle_resolve_resource_uri(handle, url, error);
+    int fd = -1;
+    g_autofree char* uri = rsvg_handle_resolve_resource_uri(handle, url, &fd, error);
 
     if (uri == NULL)
         return NULL;
 
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+    if (fd >= 0)
+        return rsvg_read_file_descriptor(fd, uri, content_type, len, handle->priv->cancellable, error);
+#endif
     return _rsvg_io_acquire_data(uri, rsvg_handle_get_base_uri(handle), content_type, len, handle->priv->cancellable,
                                  error);
 }
 
 GInputStream* _rsvg_handle_acquire_stream(RsvgHandle* handle, const char* url, char** content_type, GError** error) {
-    g_autofree char* uri = rsvg_handle_resolve_resource_uri(handle, url, error);
+    int fd = -1;
+    g_autofree char* uri = rsvg_handle_resolve_resource_uri(handle, url, &fd, error);
 
     if (uri == NULL)
         return NULL;
 
+#ifdef HAVE_RSVG_ROOTED_FILE_IO
+    if (fd >= 0) {
+        gsize size;
+        char* data = rsvg_read_file_descriptor(fd, uri, content_type, &size, handle->priv->cancellable, error);
+        return data ? g_memory_input_stream_new_from_data(data, size, g_free) : NULL;
+    }
+#endif
     return _rsvg_io_acquire_stream(uri, rsvg_handle_get_base_uri(handle), content_type, handle->priv->cancellable,
                                    error);
 }

@@ -6,6 +6,7 @@
 #mesondefine HAVE_STRINGS_H
 #mesondefine HAVE_STRTOK_R
 #mesondefine HAVE_UNISTD_H
+#mesondefine HAVE_RSVG_ROOTED_FILE_IO
 
 #define PACKAGE "@PACKAGE@"
 #define PACKAGE_NAME "@PACKAGE_NAME@"

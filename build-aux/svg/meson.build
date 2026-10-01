@@ -35,6 +35,22 @@ if cc.has_link_argument('-Wl,-Bsymbolic-functions')
 endif
 
 config_conf = configuration_data()
+rooted_file_io = false
+if host_machine.system() == 'linux'
+  rooted_file_io = cc.links('''
+    #define _GNU_SOURCE 1
+    #include <fcntl.h>
+    #include <unistd.h>
+    int main(void) {
+      int fd = openat(AT_FDCWD, "/", O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
+      return close(fd);
+    }
+  ''', name: 'directory-relative SVG file reads')
+  if not rooted_file_io
+    error('Linux SVG file reads require openat and no-follow directory descriptors')
+  endif
+endif
+config_conf.set('HAVE_RSVG_ROOTED_FILE_IO', rooted_file_io)
 config_conf.set('HAVE_STRINGS_H', cc.has_header('strings.h'))
 config_conf.set('HAVE_STRTOK_R', cc.has_function('strtok_r'))
 config_conf.set('HAVE_LC_MESSAGES', cc.has_header_symbol('locale.h', 'LC_MESSAGES'))

@@ -43,6 +43,9 @@ lib_deps = [
   css_dep,
   fontconfig_dep,
 ]
+if rooted_file_io
+  lib_deps += gio_unix_dep.partial_dependency(compile_args: true, includes: true)
+endif
 
 if m_dep.found()
   lib_deps += m_dep
