@@ -355,7 +355,6 @@ static void _set_rsvg_affine(RsvgCairoRender* render, cairo_matrix_t* affine) {
     cairo_set_matrix(cr, &matrix);
 }
 
-#ifdef HAVE_PANGOFT2
 static cairo_font_options_t* get_font_options_for_testing(void) {
     cairo_font_options_t* options;
 
@@ -392,34 +391,27 @@ static PangoFontMap* get_font_map_for_testing(RsvgCairoRender* render) {
 
     return render->font_map_for_testing;
 }
-#endif
 
 PangoContext* rsvg_cairo_create_pango_context(RsvgDrawingCtx* ctx) {
     PangoFontMap* fontmap;
     PangoContext* context;
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
 
-#ifdef HAVE_PANGOFT2
     if (ctx->is_testing) {
         fontmap = get_font_map_for_testing(render);
     }
     else {
-#endif
         fontmap = pango_cairo_font_map_get_default();
-#ifdef HAVE_PANGOFT2
     }
-#endif
 
     context = pango_font_map_create_context(fontmap);
     pango_cairo_update_context(render->cr, context);
 
     pango_cairo_context_set_resolution(context, ctx->dpi_y);
 
-#ifdef HAVE_PANGOFT2
     if (ctx->is_testing) {
         set_font_options_for_testing(context);
     }
-#endif
 
     return context;
 }

@@ -56,7 +56,6 @@ config_conf.set('HAVE_XML_PARSE_NO_XXE',
 config_conf.set('HAVE_STRINGS_H', cc.has_header('strings.h'))
 config_conf.set('HAVE_STRTOK_R', cc.has_function('strtok_r'))
 config_conf.set('HAVE_LC_MESSAGES', cc.has_header_symbol('locale.h', 'LC_MESSAGES'))
-config_conf.set('HAVE_PANGOFT2', pangoft2_dep.found())
 config_conf.set('HAVE_FLOAT_H', cc.has_header('float.h'))
 
 configure_file(
