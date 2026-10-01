@@ -180,26 +180,38 @@ GdkPixbuf* gnome_desktop_thumbnail_scale_down_pixbuf(GdkPixbuf* pixbuf, int dest
 }
 #endif
 
-static char* get_target_uri(GFile* file) {
+static char* get_target_uri(GFile* file, GError** error) {
     GFileInfo* info;
     char* target;
 
-    info = g_file_query_info(file, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI, G_FILE_QUERY_INFO_NONE, NULL, NULL);
+    info = g_file_query_info(file, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI, G_FILE_QUERY_INFO_NONE, NULL, error);
     if (info == NULL)
         return NULL;
-    target = g_strdup(g_file_info_get_attribute_string(info, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI));
+    if (g_file_info_get_attribute_type(info, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI) != G_FILE_ATTRIBUTE_TYPE_STRING) {
+        g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_INVALID_DATA, "Target URI is missing or is not a string");
+        target = NULL;
+    }
+    else {
+        target = g_strdup(g_file_info_get_attribute_string(info, G_FILE_ATTRIBUTE_STANDARD_TARGET_URI));
+        if (target == NULL || *target == '\0') {
+            g_clear_pointer(&target, g_free);
+            g_set_error_literal(error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND, "Target URI is missing or empty");
+        }
+    }
     g_object_unref(info);
 
     return target;
 }
 
-static char* get_target_path(GFile* input) {
+static char* get_target_path(GFile* input, GError** error) {
     if (g_file_has_uri_scheme(input, "trash") != FALSE || g_file_has_uri_scheme(input, "recent") != FALSE) {
         GFile* file;
         char* input_uri;
         char* input_path;
 
-        input_uri = get_target_uri(input);
+        input_uri = get_target_uri(input, error);
+        if (input_uri == NULL)
+            return NULL;
         file = g_file_new_for_uri(input_uri);
         g_free(input_uri);
         input_path = g_file_get_path(file);
@@ -266,11 +278,12 @@ int main(int argc, char** argv) {
     }
 
     input = g_file_new_for_commandline_arg(filenames[0]);
-    input_filename = get_target_path(input);
+    input_filename = get_target_path(input, &error);
     g_object_unref(input);
 
     if (input_filename == NULL) {
-        g_warning("Could not get file path for %s", filenames[0]);
+        g_warning("Could not get file path for %s: %s", filenames[0], error ? error->message : "No local file path");
+        g_clear_error(&error);
         return 1;
     }
 
