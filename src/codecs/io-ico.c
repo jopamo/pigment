@@ -1141,26 +1141,24 @@ static gboolean gdk_pixbuf__ico_image_save(FILE* f, GdkPixbuf* pixbuf, gchar** k
             gint64 out;
             if (strcmp(*kiter, "depth") == 0) {
                 if (!ascii_strtoll(*viter, 1, 32, &out, error))
-                    return FALSE;
+                    goto fail;
                 icon->depth = out;
             }
             else if (strcmp(*kiter, "x_hot") == 0) {
                 if (!ascii_strtoll(*viter, G_MININT, G_MAXINT, &out, error))
-                    return FALSE;
+                    goto fail;
                 hot_x = out;
             }
             else if (strcmp(*kiter, "y_hot") == 0) {
                 if (!ascii_strtoll(*viter, G_MININT, G_MAXINT, &out, error))
-                    return FALSE;
+                    goto fail;
                 hot_y = out;
             }
         }
     }
 
-    if (!fill_entry(icon, pixbuf, hot_x, hot_y, error)) {
-        free_entry(icon);
-        return FALSE;
-    }
+    if (!fill_entry(icon, pixbuf, hot_x, hot_y, error))
+        goto fail;
 
     entries = g_slist_append(entries, icon);
     write_icon(f, entries);
@@ -1169,6 +1167,10 @@ static gboolean gdk_pixbuf__ico_image_save(FILE* f, GdkPixbuf* pixbuf, gchar** k
     g_slist_free(entries);
 
     return TRUE;
+
+fail:
+    free_entry(icon);
+    return FALSE;
 }
 
 static gboolean gdk_pixbuf__ico_is_save_option_supported(const gchar* option_key) {
