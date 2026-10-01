@@ -59,17 +59,9 @@ gio_dep = dependency('gio-2.0', version: glib_req_version,
 # Configurations
 gdk_pixbuf_conf = configuration_data()
 
-check_headers = [
-  'unistd.h',
-  'sys/resource.h',
-  'sys/time.h'
-]
-
-foreach h: check_headers
-  if cc.has_header(h)
-    gdk_pixbuf_conf.set('HAVE_' + h.underscorify().to_upper(), 1)
-  endif
-endforeach
+if cc.has_header('unistd.h')
+  gdk_pixbuf_conf.set('HAVE_UNISTD_H', 1)
+endif
 
 # Look for the math library first, since we use it to test for round() and lrint()
 mathlib_dep = cc.find_library('m', required: false)
@@ -86,10 +78,6 @@ endif
 intl_dep = cc.find_library('intl', required: false)
 if cc.has_function('bind_textdomain_codeset', prefix: '#include <libintl.h>', dependencies: intl_dep)
   gdk_pixbuf_conf.set('HAVE_BIND_TEXTDOMAIN_CODESET', 1)
-endif
-
-if cc.has_function('setrlimit', prefix: '#include <sys/time.h>\n#include <sys/resource.h>')
-  gdk_pixbuf_conf.set('HAVE_SETRLIMIT', 1)
 endif
 
 # We use links() because sigsetjmp() is often a macro hidden behind other macros
