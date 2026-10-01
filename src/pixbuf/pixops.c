@@ -1303,12 +1303,12 @@ static void pixops_process(guchar* dest_buf,
      * So, run_end_index is the smallest i for which this pixel is src_width,
      * i.e, for which:
      *
-     *  (i + render_x0) * x_step >= ((src_width - filter->x.n + 1) << SCALE_SHIFT) - scaled_x_offset
+     *  (i + render_x0) * x_step >= (src_width - filter->x.n + 1) * (1 << SCALE_SHIFT) - scaled_x_offset
      *
      */
 #define MYDIV(a, b) ((a) > 0 ? (a) / (b) : ((a) - (b) + 1) / (b)) /* Division so that -1/5 = -1 */
 
-    run_end_x = (((src_width - filter->x.n + 1) << SCALE_SHIFT) - scaled_x_offset);
+    run_end_x = ((gint64)src_width - filter->x.n + 1) * (1 << SCALE_SHIFT) - scaled_x_offset;
     run_end_index = MYDIV(run_end_x + x_step - 1, x_step) - render_x0;
     run_end_index = MIN(run_end_index, render_x1 - render_x0);
 
