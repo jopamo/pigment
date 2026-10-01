@@ -459,8 +459,13 @@ int main(int argc, char** argv) {
             }
         }
     }
-    else
+    else {
         g_print("%s\n", contents->str);
+        if (fflush(stdout) != 0 || ferror(stdout)) {
+            g_fprintf(stderr, "Error writing loader cache to standard output\n");
+            status = 1;
+        }
+    }
 
     g_string_free(contents, TRUE);
 
