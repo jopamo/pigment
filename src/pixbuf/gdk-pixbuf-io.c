@@ -824,6 +824,7 @@ GdkPixbufModule* _gdk_pixbuf_get_module(guchar* buffer, guint size, const gchar*
 
     GdkPixbufModule* selected = NULL;
     gchar* display_name = NULL;
+    gboolean use_signatures = TRUE;
 #ifdef GDK_PIXBUF_USE_GIO_MIME
     gchar* mime_type;
     gchar** mimes;
@@ -838,7 +839,12 @@ GdkPixbufModule* _gdk_pixbuf_get_module(guchar* buffer, guint size, const gchar*
         mime_type = g_content_type_guess(filename, buffer, size, NULL);
     }
 
-    for (modules = get_file_formats(); modules; modules = g_slist_next(modules)) {
+    /* GIO's cursor magic also matches TGA headers with a zero icon count. */
+    type = g_content_type_from_mime_type("image/x-win-bitmap");
+    use_signatures = g_content_type_equals(type, mime_type) && size >= 6 && buffer[4] == 0 && buffer[5] == 0;
+    g_free(type);
+
+    for (modules = get_file_formats(); modules && !use_signatures; modules = g_slist_next(modules)) {
         GdkPixbufModule* module = (GdkPixbufModule*)modules->data;
         GdkPixbufFormat* info = module->info;
 
@@ -866,24 +872,25 @@ GdkPixbufModule* _gdk_pixbuf_get_module(guchar* buffer, guint size, const gchar*
         }
     }
     g_free(mime_type);
-#else
-    gint score, best = 0;
-
-    for (modules = get_file_formats(); modules; modules = g_slist_next(modules)) {
-        GdkPixbufModule* module = (GdkPixbufModule*)modules->data;
-
-        if (module->info->disabled)
-            continue;
-
-        score = format_check(module, buffer, size);
-        if (score > best) {
-            best = score;
-            selected = module;
-        }
-        if (score >= 100)
-            break;
-    }
 #endif
+    if (use_signatures) {
+        gint score, best = 0;
+
+        for (modules = get_file_formats(); modules; modules = g_slist_next(modules)) {
+            GdkPixbufModule* module = (GdkPixbufModule*)modules->data;
+
+            if (module->info->disabled)
+                continue;
+
+            score = format_check(module, buffer, size);
+            if (score > best) {
+                best = score;
+                selected = module;
+            }
+            if (score >= 100)
+                break;
+        }
+    }
 
     if (selected != NULL)
         return selected;
