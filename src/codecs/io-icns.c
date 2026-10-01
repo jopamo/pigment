@@ -68,7 +68,7 @@ static gboolean load_resources(unsigned size,
                                OUT gsize* plen,
                                OUT guchar** mask,
                                OUT gsize* mlen) {
-    IcnsBlockHeader* header = NULL;
+    IcnsBlockHeader header;
     const char* bytes = NULL;
     const char* current = NULL;
     guint32 blocklen = 0;
@@ -84,18 +84,18 @@ static gboolean load_resources(unsigned size,
     *plen = *mlen = 0;
 
     bytes = data;
-    header = (IcnsBlockHeader*)data;
-    if (memcmp(header->id, "icns", 4) != 0)
+    memcpy(&header, data, sizeof header);
+    if (memcmp(header.id, "icns", 4) != 0)
         return FALSE;
 
-    icnslen = GUINT32_FROM_BE(header->size);
+    icnslen = GUINT32_FROM_BE(header.size);
     if ((icnslen > datalen) || (icnslen < 2 * sizeof(guint32)))
         return FALSE;
 
     current = bytes + sizeof(IcnsBlockHeader);
     while ((current - bytes < icnslen) && (icnslen - (current - bytes) >= sizeof(IcnsBlockHeader))) {
-        header = (IcnsBlockHeader*)current;
-        blocklen = GUINT32_FROM_BE(header->size);
+        memcpy(&header, current, sizeof header);
+        blocklen = GUINT32_FROM_BE(header.size);
 
         /* Check that blocklen isn't garbage */
         if (blocklen > icnslen - (current - bytes) || blocklen < sizeof(IcnsBlockHeader))
@@ -104,8 +104,8 @@ static gboolean load_resources(unsigned size,
         switch (size) {
             case 256:
             case 512:
-                if (memcmp(header->id, "ic08", 4) == 0     /* 256x256 icon */
-                    || memcmp(header->id, "ic09", 4) == 0) /* 512x512 icon */
+                if (memcmp(header.id, "ic08", 4) == 0     /* 256x256 icon */
+                    || memcmp(header.id, "ic09", 4) == 0) /* 512x512 icon */
                 {
                     *picture = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *plen = blocklen - sizeof(IcnsBlockHeader);
@@ -113,52 +113,54 @@ static gboolean load_resources(unsigned size,
                 needs_mask = FALSE;
                 break;
             case 128:
-                if (memcmp(header->id, "it32", 4) == 0) /* 128x128 icon */
+                if (memcmp(header.id, "it32", 4) == 0) /* 128x128 icon */
                 {
                     *picture = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *plen = blocklen - sizeof(IcnsBlockHeader);
+                    if (*plen < 4)
+                        return FALSE;
                     if (memcmp(*picture, "\0\0\0\0", 4) == 0) {
                         *picture += 4;
                         *plen -= 4;
                     }
                 }
-                if (memcmp(header->id, "t8mk", 4) == 0) /* 128x128 mask */
+                if (memcmp(header.id, "t8mk", 4) == 0) /* 128x128 mask */
                 {
                     *mask = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *mlen = blocklen - sizeof(IcnsBlockHeader);
                 }
                 break;
             case 48:
-                if (memcmp(header->id, "ih32", 4) == 0) /* 48x48 icon */
+                if (memcmp(header.id, "ih32", 4) == 0) /* 48x48 icon */
                 {
                     *picture = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *plen = blocklen - sizeof(IcnsBlockHeader);
                 }
-                if (memcmp(header->id, "h8mk", 4) == 0) /* 48x48 mask */
+                if (memcmp(header.id, "h8mk", 4) == 0) /* 48x48 mask */
                 {
                     *mask = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *mlen = blocklen - sizeof(IcnsBlockHeader);
                 }
                 break;
             case 32:
-                if (memcmp(header->id, "il32", 4) == 0) /* 32x32 icon */
+                if (memcmp(header.id, "il32", 4) == 0) /* 32x32 icon */
                 {
                     *picture = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *plen = blocklen - sizeof(IcnsBlockHeader);
                 }
-                if (memcmp(header->id, "l8mk", 4) == 0) /* 32x32 mask */
+                if (memcmp(header.id, "l8mk", 4) == 0) /* 32x32 mask */
                 {
                     *mask = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *mlen = blocklen - sizeof(IcnsBlockHeader);
                 }
                 break;
             case 16:
-                if (memcmp(header->id, "is32", 4) == 0) /* 16x16 icon */
+                if (memcmp(header.id, "is32", 4) == 0) /* 16x16 icon */
                 {
                     *picture = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *plen = blocklen - sizeof(IcnsBlockHeader);
                 }
-                if (memcmp(header->id, "s8mk", 4) == 0) /* 16x16 mask */
+                if (memcmp(header.id, "s8mk", 4) == 0) /* 16x16 mask */
                 {
                     *mask = (gpointer)(current + sizeof(IcnsBlockHeader));
                     *mlen = blocklen - sizeof(IcnsBlockHeader);
@@ -185,55 +187,53 @@ static gboolean load_resources(unsigned size,
  * otherwise, it indicates the number of non-repeating bytes - 1
  *	(non-repeating values are stored next: n bytes)
  */
-static gboolean uncompress(unsigned size, INOUT guchar** source, OUT guchar* target, INOUT gsize* _remaining) {
+static gboolean uncompress(unsigned size, INOUT guchar** source, OUT guchar* target, INOUT gsize* source_remaining) {
     guchar* data = *source;
-    gsize remaining;
+    gsize remaining = size * size;
+    gsize available = *source_remaining;
     gsize i = 0;
-
-    /* The first time we're called, set remaining */
-    if (*_remaining == 0) {
-        remaining = size * size;
-    }
-    else {
-        remaining = *_remaining;
-    }
 
     while (remaining > 0) {
         guint8 count = 0;
+
+        if (available == 0)
+            return FALSE;
 
         if (data[0] & 0x80) /* repeating byte */
         {
             count = data[0] - 125;
 
-            if (count > remaining)
+            if (count > remaining || available < 2)
                 return FALSE;
 
             for (i = 0; i < count; i++) {
-                *target = data[1];
-                target += 4;
+                target[i * 4] = data[1];
             }
 
             data += 2;
+            available -= 2;
         }
         else /* non-repeating bytes */
         {
             count = data[0] + 1;
 
-            if (count > remaining)
+            if (count > remaining || available < (gsize)count + 1)
                 return FALSE;
 
             for (i = 0; i < count; i++) {
-                *target = data[i + 1];
-                target += 4;
+                target[i * 4] = data[i + 1];
             }
             data += count + 1;
+            available -= count + 1;
         }
 
         remaining -= count;
+        if (remaining != 0)
+            target += count * 4;
     }
 
     *source = data;
-    *_remaining = remaining;
+    *source_remaining = available;
     return TRUE;
 }
 
@@ -284,7 +284,7 @@ static GdkPixbuf* load_icon(unsigned size, IN gpointer data, gsize datalen) {
         }
     else {
         guchar* data = icon;
-        gsize remaining = 0;
+        gsize remaining = isize;
 
         /* R */
         if (!uncompress(size, &data, image, &remaining))
@@ -388,11 +388,16 @@ static gpointer gdk_pixbuf__icns_image_begin_load(GdkPixbufModuleSizeFunc size_f
 
 static gboolean gdk_pixbuf__icns_image_stop_load(gpointer data, GError** error) {
     IcnsProgressiveState* context = data;
+    gboolean complete;
 
     g_return_val_if_fail(context != NULL, TRUE);
 
+    complete = context->pixbuf != NULL;
+    if (!complete)
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                            _("Premature end-of-file encountered"));
     context_free(context);
-    return TRUE;
+    return complete;
 }
 
 static gboolean gdk_pixbuf__icns_image_load_increment(gpointer data, const guchar* buf, guint size, GError** error) {
@@ -400,6 +405,9 @@ static gboolean gdk_pixbuf__icns_image_load_increment(gpointer data, const gucha
     int i;
     guint32 filesize;
     gint w, h;
+
+    if (context->pixbuf)
+        return TRUE;
 
     context->byte_array = g_byte_array_append(context->byte_array, buf, size);
 
