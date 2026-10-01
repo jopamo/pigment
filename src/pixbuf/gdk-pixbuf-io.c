@@ -171,15 +171,20 @@ G_LOCK_DEFINE_STATIC(init_lock);
 static gboolean file_formats_inited;
 static GSList* file_formats = NULL;
 
-static gboolean gdk_pixbuf_io_init(void);
+static void gdk_pixbuf_io_init(void);
 
 static GSList* get_file_formats(void) {
+    GSList* formats;
+
     G_LOCK(init_lock);
-    if (file_formats == NULL || !file_formats_inited)
-        file_formats_inited = gdk_pixbuf_io_init();
+    if (!file_formats_inited) {
+        gdk_pixbuf_io_init();
+        file_formats_inited = TRUE;
+    }
+    formats = file_formats;
     G_UNLOCK(init_lock);
 
-    return file_formats;
+    return formats;
 }
 
 #ifdef GDK_PIXBUF_RELOCATABLE  // implies that gdk-pixbuf is built as a dll on windows
@@ -627,17 +632,13 @@ static void gdk_pixbuf_io_init_builtin(void) {
 #undef load_one_builtin_module
 }
 
-static gboolean gdk_pixbuf_io_init(void) {
-    char* module_file;
-    gboolean ret;
-
+static void gdk_pixbuf_io_init(void) {
     gdk_pixbuf_io_init_builtin();
 #ifdef USE_GMODULE
-    module_file = gdk_pixbuf_get_module_file();
-#endif
-    ret = gdk_pixbuf_io_init_modules(module_file, NULL);
+    char* module_file = gdk_pixbuf_get_module_file();
+    gdk_pixbuf_io_init_modules(module_file, NULL);
     g_free(module_file);
-    return ret;
+#endif
 }
 
 #define module(type)                                                    \
