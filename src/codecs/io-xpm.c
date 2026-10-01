@@ -712,7 +712,7 @@ static gpointer gdk_pixbuf__xpm_image_begin_load(GdkPixbufModuleSizeFunc size_fu
     context->updated_func = updated_func;
     context->user_data = user_data;
     context->all_okay = TRUE;
-    fd = g_file_open_tmp("gdkpixbuf-xpm-tmp.XXXXXX", &context->tempname, NULL);
+    fd = g_file_open_tmp("gdkpixbuf-xpm-tmp.XXXXXX", &context->tempname, error);
     if (fd < 0) {
         g_free(context);
         return NULL;
@@ -720,6 +720,11 @@ static gpointer gdk_pixbuf__xpm_image_begin_load(GdkPixbufModuleSizeFunc size_fu
 
     context->file = fdopen(fd, "w+");
     if (context->file == NULL) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to open temporary file"));
+        g_close(fd, NULL);
+        g_unlink(context->tempname);
         g_free(context->tempname);
         g_free(context);
         return NULL;
