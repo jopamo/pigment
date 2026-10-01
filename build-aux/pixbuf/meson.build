@@ -284,13 +284,6 @@ if not jpeg_opt.disabled() and not native_windows_loaders
   if jpeg_dep.found()
     enabled_loaders += 'jpeg'
     loaders_deps += jpeg_dep
-
-    has_destroy_decompress = cc.has_function('jpeg_destroy_decompress', dependencies: jpeg_dep)
-    has_simple_progression = cc.has_function('jpeg_simple_progression', dependencies: jpeg_dep)
-
-    if has_destroy_decompress and has_simple_progression
-      gdk_pixbuf_conf.set('HAVE_PROGRESSIVE_JPEG', has_simple_progression)
-    endif
   endif
 endif
 
