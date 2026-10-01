@@ -398,7 +398,7 @@ static gboolean gdk_pixbuf__icns_image_stop_load(gpointer data, GError** error) 
 static gboolean gdk_pixbuf__icns_image_load_increment(gpointer data, const guchar* buf, guint size, GError** error) {
     IcnsProgressiveState* context = data;
     int i;
-    int filesize;
+    guint32 filesize;
     gint w, h;
 
     context->byte_array = g_byte_array_append(context->byte_array, buf, size);
@@ -406,8 +406,8 @@ static gboolean gdk_pixbuf__icns_image_load_increment(gpointer data, const gucha
     if (context->byte_array->len < 8)
         return TRUE;
 
-    filesize = (context->byte_array->data[4] << 24) | (context->byte_array->data[5] << 16) |
-               (context->byte_array->data[6] << 8) | (context->byte_array->data[7]);
+    memcpy(&filesize, context->byte_array->data + 4, sizeof filesize);
+    filesize = GUINT32_FROM_BE(filesize);
 
     if (context->byte_array->len < filesize)
         return TRUE;
