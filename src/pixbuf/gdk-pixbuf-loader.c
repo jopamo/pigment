@@ -447,8 +447,13 @@ gboolean gdk_pixbuf_loader_write(GdkPixbufLoader* loader, const guchar* buf, gsi
     g_assert(count == 0 || priv->image_module != NULL);
 
     if (count > 0 && priv->image_module->load_increment != NULL) {
-        if (!priv->image_module->load_increment(priv->context, buf, count, error))
-            goto fail;
+        while (count > 0) {
+            guint chunk = MIN(count, (gsize)G_MAXUINT);
+            if (!priv->image_module->load_increment(priv->context, buf, chunk, error))
+                goto fail;
+            count -= chunk;
+            buf += chunk;
+        }
     }
 
     return TRUE;
