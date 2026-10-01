@@ -354,6 +354,31 @@ static gchar* gdk_pixbuf_get_module_file(void) {
     return result;
 }
 
+static void free_cache_module(GdkPixbufModule* module) {
+    if (!module)
+        return;
+
+    GdkPixbufFormat* info = module->info;
+    if (info) {
+        if (info->signature) {
+            for (GdkPixbufModulePattern* pattern = info->signature; pattern->prefix; pattern++) {
+                g_free(pattern->prefix);
+                g_free(pattern->mask);
+            }
+            g_free(info->signature);
+        }
+        g_free(info->name);
+        g_free(info->domain);
+        g_free(info->description);
+        g_strfreev(info->mime_types);
+        g_strfreev(info->extensions);
+        g_free(info->license);
+        g_free(info);
+    }
+    g_free(module->module_path);
+    g_free(module);
+}
+
 #endif /* USE_GMODULE */
 
 static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, GError** error);
@@ -487,6 +512,9 @@ static gboolean gdk_pixbuf_io_init_modules(const char* filename, GError** error)
             pattern->mask = NULL;
             pattern->relevance = 0;
             pattern--;
+            pattern->prefix = NULL;
+            pattern->mask = NULL;
+            pattern->relevance = 0;
             if (!scan_string(&p, tmp_buf))
                 goto context_error;
             pattern->prefix = g_strdup(tmp_buf->str);
@@ -504,9 +532,6 @@ static gboolean gdk_pixbuf_io_init_modules(const char* filename, GError** error)
             goto next_line;
 
         context_error:
-            g_free(pattern->prefix);
-            g_free(pattern->mask);
-            g_free(pattern);
             g_warning("Error parsing loader info in '%s'\n  %s", filename, line_buf);
             have_error = TRUE;
         }
@@ -515,6 +540,7 @@ static gboolean gdk_pixbuf_io_init_modules(const char* filename, GError** error)
     }
     g_string_free(tmp_buf, TRUE);
     g_io_channel_unref(channel);
+    free_cache_module(module);
 
     if (g_slist_length(file_formats) <= num_formats) {
         char* filename_utf8 = g_filename_display_name(filename);
