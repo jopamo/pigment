@@ -1395,21 +1395,24 @@ static gboolean rsvg_handle_write_impl(RsvgHandle* handle, const guchar* buf, gs
         handle->priv->ctxt = create_xml_push_parser(handle, rsvg_handle_get_base_uri(handle));
     }
 
-    result = xmlParseChunk(handle->priv->ctxt, (char*)buf, count, 0);
-    if (result != 0) {
+    do {
+        int chunk = MIN(count, (gsize)G_MAXINT);
+
+        result = xmlParseChunk(handle->priv->ctxt, (const char*)buf, chunk, 0);
+        if (result != 0 || real_error != NULL)
+            break;
+        count -= chunk;
+        buf += chunk;
+    } while (count > 0);
+
+    handle->priv->error = NULL;
+
+    if (result != 0 || real_error != NULL) {
         handle->priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
         if (real_error != NULL)
             g_propagate_error(error, real_error);
         else
             rsvg_xml_set_error(error, handle->priv->ctxt);
-        return FALSE;
-    }
-
-    handle->priv->error = NULL;
-
-    if (real_error != NULL) {
-        handle->priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
-        g_propagate_error(error, real_error);
         return FALSE;
     }
 
@@ -1425,6 +1428,7 @@ static gboolean rsvg_handle_close_impl(RsvgHandle* handle, GError** error) {
         int result;
 
         result = xmlParseChunk(handle->priv->ctxt, "", 0, TRUE);
+        handle->priv->error = NULL;
         if (result != 0) {
             if (real_error != NULL)
                 g_propagate_error(error, real_error);
