@@ -53,25 +53,25 @@ static gboolean rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, co
     return found;
 }
 
-void rsvg_css_engine_init(RsvgCssEngine* engine, const RsvgCssEngineVtable* vtable, RsvgHandle* ctx) {
-    engine->vtable = vtable;
+RsvgCssEngine* rsvg_css_engine_new_with_allocator(RsvgHandle* ctx, const lxa_allocator_t* allocator) {
+    RsvgCssEngine* engine;
+    if (allocator == NULL || allocator->allocate == NULL || allocator->resize == NULL || allocator->release == NULL)
+        return NULL;
+
+    engine = g_new0(RsvgCssEngine, 1);
+    engine->allocator = *allocator;
     engine->ctx = ctx;
     engine->doc_css_props = rsvg_css_rules_new();
     engine->user_css_props = rsvg_css_rules_new();
+    return engine;
 }
 
-void rsvg_css_engine_finalize(RsvgCssEngine* engine) {
-    if (engine->doc_css_props) {
-        g_hash_table_destroy(engine->doc_css_props);
-        engine->doc_css_props = NULL;
-    }
-
-    if (engine->user_css_props) {
-        g_hash_table_destroy(engine->user_css_props);
-        engine->user_css_props = NULL;
-    }
-
-    engine->ctx = NULL;
+void rsvg_css_engine_free(RsvgCssEngine* engine) {
+    if (engine == NULL)
+        return;
+    g_hash_table_destroy(engine->doc_css_props);
+    g_hash_table_destroy(engine->user_css_props);
+    g_free(engine);
 }
 
 void rsvg_css_define_style(GHashTable* css_props,
@@ -101,26 +101,21 @@ void rsvg_css_define_style(GHashTable* css_props,
 }
 
 RsvgCssEngine* rsvg_css_engine_new(RsvgHandle* ctx) {
-    return rsvg_css_engine_native_new(ctx);
-}
-
-void rsvg_css_engine_free(RsvgCssEngine* engine) {
-    if (engine && engine->vtable && engine->vtable->free) {
-        engine->vtable->free(engine);
-    }
+    lxa_allocator_t allocator = lxa_allocator_default();
+    return rsvg_css_engine_new_with_allocator(ctx, &allocator);
 }
 
 gboolean rsvg_css_engine_parse_stylesheet(RsvgCssEngine* engine, const char* data, size_t len) {
-    if (engine && engine->vtable && engine->vtable->parse_stylesheet_into_props) {
-        return engine->vtable->parse_stylesheet_into_props(engine, engine->doc_css_props, data, len, TRUE);
+    if (engine) {
+        return rsvg_css_engine_parse_into_props(engine, engine->doc_css_props, data, len, TRUE);
     }
     return FALSE;
 }
 
 gboolean rsvg_css_engine_set_user_stylesheet(RsvgCssEngine* engine, const char* data, size_t len) {
-    if (engine && engine->vtable && engine->vtable->parse_stylesheet_into_props) {
+    if (engine) {
         GHashTable* new_props = rsvg_css_rules_new();
-        gboolean ok = engine->vtable->parse_stylesheet_into_props(engine, new_props, data, len, FALSE);
+        gboolean ok = rsvg_css_engine_parse_into_props(engine, new_props, data, len, FALSE);
 
         if (!ok) {
             g_hash_table_destroy(new_props);

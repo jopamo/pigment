@@ -9,26 +9,19 @@
 
 #include <glib.h>
 #include <glib-object.h>
+#include <liblexa/base.h>
 #include "rsvg-private.h"
 
 G_BEGIN_DECLS
 
-typedef struct _RsvgCssEngineVtable RsvgCssEngineVtable;
-
-struct _RsvgCssEngineVtable {
-    void (*free)(RsvgCssEngine* engine);
-    gboolean (*parse_stylesheet_into_props)(RsvgCssEngine* engine,
-                                            GHashTable* target_props,
-                                            const char* data,
-                                            size_t len,
-                                            gboolean emit_warnings);
-};
-
 struct _RsvgCssEngine {
-    const RsvgCssEngineVtable* vtable;
     RsvgHandle* ctx;
     GHashTable* doc_css_props;
     GHashTable* user_css_props;
+    /* Conservative retained-style charges across document style elements.
+       A replacement sheet is charged while the old user sheet is still live. */
+    size_t doc_retained, user_retained;
+    lxa_allocator_t allocator; /* fixed before the first parser allocation */
 };
 
 #define RSVG_MAX_CSS_SIZE (1024 * 1024) /* 1MB */
@@ -37,10 +30,11 @@ struct _RsvgCssEngine {
 #define RSVG_MAX_CSS_SELECTOR_LENGTH 512
 
 G_GNUC_INTERNAL
-void rsvg_css_engine_init(RsvgCssEngine* engine, const RsvgCssEngineVtable* vtable, RsvgHandle* ctx);
-
-G_GNUC_INTERNAL
-void rsvg_css_engine_finalize(RsvgCssEngine* engine);
+gboolean rsvg_css_engine_parse_into_props(RsvgCssEngine* engine,
+                                          GHashTable* props,
+                                          const char* data,
+                                          size_t len,
+                                          gboolean emit_warnings);
 
 G_GNUC_INTERNAL
 void rsvg_css_define_style(GHashTable* css_props,
@@ -67,20 +61,13 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
                                   const char* id,
                                   RsvgPropertyBag* atts);
 
-/* Factory for the currently selected CSS engine backend. */
 G_GNUC_INTERNAL
 RsvgCssEngine* rsvg_css_engine_new(RsvgHandle* ctx);
 
-/* Factory for the native stylesheet backend. */
-G_GNUC_INTERNAL
-RsvgCssEngine* rsvg_css_engine_native_new(RsvgHandle* ctx);
-
-#include <liblexa/base.h>
 /* Internal constructor for deterministic allocator-failure qualification.
    The borrowed allocator context outlives the returned engine. */
 G_GNUC_INTERNAL
-RsvgCssEngine* rsvg_css_engine_native_new_with_allocator(
-    RsvgHandle* ctx, const lxa_allocator_t* allocator);
+RsvgCssEngine* rsvg_css_engine_new_with_allocator(RsvgHandle* ctx, const lxa_allocator_t* allocator);
 
 G_END_DECLS
 

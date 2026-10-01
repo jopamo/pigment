@@ -11,14 +11,6 @@
 #define RSVG_MAX_CSS_MEDIA_DEPTH 32
 
 typedef struct {
-    RsvgCssEngine parent;
-    /* Conservative retained-style charges across document style elements.
-       A replacement sheet is charged while the old user sheet is still live. */
-    size_t doc_retained, user_retained;
-    lxa_allocator_t allocator; /* fixed before the first native allocation */
-} RsvgCssEngineNative;
-
-typedef struct {
     RsvgCssEngine *engine;
     GHashTable *props;
     GHashTable *imports; /* active URI keys, not a resource cache */
@@ -140,10 +132,8 @@ emit_rule(ParseSession *session, lxa_css_tokens_t *tokens,
                 goto value_done;
             if (syntax != LXA_CSS_SYNTAX_SUPPORTED) continue;
             /* Estimate retained hash/strings overhead before publishing. */
-            RsvgCssEngineNative *native = (RsvgCssEngineNative *) session->engine;
             size_t charge, next_retained;
-            size_t current = session->document_sheet ? native->doc_retained
-                                                      : session->new_user_retained;
+            size_t current = session->document_sheet ? session->engine->doc_retained : session->new_user_retained;
             if (lxa_size_add(key.length, name.length, &charge) != LXA_OK
                 || lxa_size_add(charge, value.length, &charge) != LXA_OK
                 || lxa_size_add(charge, 512, &charge) != LXA_OK
@@ -151,7 +141,8 @@ emit_rule(ParseSession *session, lxa_css_tokens_t *tokens,
                 || lxa_budget_charge(&session->budget,
                     LXA_BUDGET_MEMORY, charge, NULL) != LXA_OK)
                 goto value_done;
-            if (session->document_sheet) native->doc_retained = next_retained;
+            if (session->document_sheet)
+                session->engine->doc_retained = next_retained;
             else session->new_user_retained = next_retained;
             char *property = g_strndup((const char *) name.data, name.length);
             rsvg_css_define_style(session->props, (const char *) key.data,
@@ -234,7 +225,7 @@ static gboolean
 parse_sheet(ParseSession *session, const char *source, size_t length,
             unsigned depth)
 {
-    lxa_allocator_t allocator = ((RsvgCssEngineNative *) session->engine)->allocator;
+    lxa_allocator_t allocator = session->engine->allocator;
     lxa_css_byte_stream_t *stream = NULL;
     lxa_css_tokens_t *tokens = NULL;
     lxa_css_blocks_t *blocks = NULL;
@@ -267,17 +258,18 @@ tokens_done:
     return ok;
 }
 
-static gboolean
-native_parse(RsvgCssEngine *engine, GHashTable *props, const char *data,
-             size_t length, gboolean emit_warnings)
-{
+gboolean rsvg_css_engine_parse_into_props(RsvgCssEngine* engine,
+                                          GHashTable* props,
+                                          const char* data,
+                                          size_t length,
+                                          gboolean emit_warnings) {
     ParseSession session = {0};
-    RsvgCssEngineNative *native = (RsvgCssEngineNative *) engine;
     lxa_limits_t limits = lxa_limits_default();
     gboolean ok;
     size_t carried;
     if (!length) {
-        if (props != engine->doc_css_props) native->user_retained = 0;
+        if (props != engine->doc_css_props)
+            engine->user_retained = 0;
         return TRUE;
     }
     if (length > RSVG_MAX_CSS_SIZE) {
@@ -288,11 +280,9 @@ native_parse(RsvgCssEngine *engine, GHashTable *props, const char *data,
     }
     limits.max_input_bytes = RSVG_MAX_CSS_AGGREGATE;
     limits.max_memory_bytes = 64u * 1024u * 1024u;
-    if (lxa_budget_init(&session.budget, &limits) != LXA_OK
-        || lxa_size_add(native->doc_retained, native->user_retained,
-                        &carried) != LXA_OK
-        || lxa_budget_charge(&session.budget, LXA_BUDGET_MEMORY,
-                             carried, NULL) != LXA_OK)
+    if (lxa_budget_init(&session.budget, &limits) != LXA_OK ||
+        lxa_size_add(engine->doc_retained, engine->user_retained, &carried) != LXA_OK ||
+        lxa_budget_charge(&session.budget, LXA_BUDGET_MEMORY, carried, NULL) != LXA_OK)
         return FALSE;
     session.engine = engine;
     session.document_sheet = props == engine->doc_css_props;
@@ -301,38 +291,8 @@ native_parse(RsvgCssEngine *engine, GHashTable *props, const char *data,
                                             NULL);
     ok = parse_sheet(&session, data, length, 0);
     if (ok && !session.document_sheet)
-        native->user_retained = session.new_user_retained;
+        engine->user_retained = session.new_user_retained;
     g_hash_table_destroy(session.imports);
     if (!ok && emit_warnings) g_warning("CSS stylesheet could not be parsed within its limits");
     return ok;
-}
-
-static void
-native_free(RsvgCssEngine *engine)
-{
-    rsvg_css_engine_finalize(engine);
-    g_free(engine);
-}
-
-static const RsvgCssEngineVtable native_vtable = {native_free, native_parse};
-
-RsvgCssEngine *
-rsvg_css_engine_native_new_with_allocator(RsvgHandle *ctx,
-                                          const lxa_allocator_t *allocator)
-{
-    RsvgCssEngineNative *engine;
-    if (allocator == NULL || allocator->allocate == NULL
-        || allocator->resize == NULL || allocator->release == NULL)
-        return NULL;
-    engine = g_new0(RsvgCssEngineNative, 1);
-    engine->allocator = *allocator;
-    rsvg_css_engine_init((RsvgCssEngine *) engine, &native_vtable, ctx);
-    return (RsvgCssEngine *) engine;
-}
-
-RsvgCssEngine *
-rsvg_css_engine_native_new(RsvgHandle *ctx)
-{
-    lxa_allocator_t allocator = lxa_allocator_default();
-    return rsvg_css_engine_native_new_with_allocator(ctx, &allocator);
 }
