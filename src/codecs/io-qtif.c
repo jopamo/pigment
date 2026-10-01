@@ -26,19 +26,15 @@
 #include <errno.h>
 #include <libintl.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <setjmp.h>
 #include <glib/gi18n-lib.h>
 #include "gdk-pixbuf.h"
 
 /***
  * Definitions
  */
-/* Read buffer size */
 #define READ_BUFFER_SIZE 8192
-
-/* Only allow atom of size up to 10MB. */
+/* Only allow atoms of at most 100 MB. */
 #define ATOM_SIZE_MAX 100000000
 
 /* Aborts after going to through this many atoms. */
@@ -51,7 +47,7 @@
  * Types
  */
 /* QTIF State */
-typedef enum { STATE_READY, STATE_DATA, STATE_OTHER } QTIFState;
+typedef enum { STATE_READY, STATE_DATA, STATE_OTHER, STATE_DONE } QTIFState;
 
 /* QTIF Atom Header */
 typedef struct {
@@ -72,14 +68,12 @@ typedef struct {
     GdkPixbufModuleSizeFunc size_func;
     GdkPixbufModulePreparedFunc prepared_func;
     GdkPixbufModuleUpdatedFunc updated_func;
-    gint cb_prepare_count;
     gint cb_update_count;
 } QTIFContext;
 
 /***
  * Local function prototypes
  */
-static GdkPixbuf* gdk_pixbuf__qtif_image_load(FILE* f, GError** error);
 static gpointer gdk_pixbuf__qtif_image_begin_load(GdkPixbufModuleSizeFunc size_func,
                                                   GdkPixbufModulePreparedFunc prepared_func,
                                                   GdkPixbufModuleUpdatedFunc updated_func,
@@ -102,111 +96,6 @@ static void gdk_pixbuf__qtif_cb_area_updated(gpointer loader,
 /***
  * Function definitions.
  */
-
-/* Load QTIF from a file handler. */
-static GdkPixbuf* gdk_pixbuf__qtif_image_load(FILE* f, GError** error) {
-    guint count;
-
-    if (f == NULL) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, _("Input file descriptor is NULL."));
-        return NULL;
-    }
-
-    for (count = QTIF_ATOM_COUNT_MAX; count != 0u; count--) {
-        QtHeader hdr;
-        size_t rd;
-
-        /* Read QtHeader. */
-        rd = fread(&hdr, 1, sizeof(QtHeader), f);
-        if (rd != sizeof(QtHeader)) {
-            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                _("Failed to read QTIF header"));
-            return NULL;
-        }
-
-        hdr.length = GUINT32_FROM_BE(hdr.length) - sizeof(QtHeader);
-        if (hdr.length > ATOM_SIZE_MAX) {
-            g_set_error(
-                error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                ngettext("QTIF atom size too large (%d byte)", "QTIF atom size too large (%d bytes)", hdr.length),
-                hdr.length);
-            return NULL;
-        }
-
-        switch (GUINT32_FROM_BE(hdr.tag)) {
-            case QTIF_TAG_IDATA: /* "idat" data atom. */
-            {
-                /* Load image using GdkPixbufLoader. */
-                guchar* buf;
-                GdkPixbufLoader* loader;
-                GdkPixbuf* pixbuf = NULL;
-                GError* tmp = NULL;
-
-                /* Allocate read buffer. */
-                buf = g_try_malloc(READ_BUFFER_SIZE);
-                if (buf == NULL) {
-                    g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                ngettext("Failed to allocate %d byte for file read buffer",
-                                         "Failed to allocate %d bytes for file read buffer", READ_BUFFER_SIZE),
-                                READ_BUFFER_SIZE);
-                    return NULL;
-                }
-
-                /* Create GdkPixbufLoader. */
-                loader = gdk_pixbuf_loader_new();
-                if (loader == NULL) {
-                    g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                ngettext("QTIF atom size too large (%d byte)", "QTIF atom size too large (%d bytes)",
-                                         hdr.length),
-                                hdr.length);
-                    goto clean_up;
-                }
-
-                /* Read atom data. */
-                while (hdr.length != 0u) {
-                    if (fread(buf, 1, rd, f) != rd) {
-                        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                    _("File error when reading QTIF atom: %s"), g_strerror(errno));
-                        break;
-                    }
-
-                    if (!gdk_pixbuf_loader_write(loader, buf, rd, &tmp)) {
-                        g_propagate_error(error, tmp);
-                        break;
-                    }
-                    hdr.length -= rd;
-                }
-
-            clean_up:
-                /* Release loader */
-                if (loader != NULL) {
-                    gdk_pixbuf_loader_close(loader, NULL);
-                    pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
-                    if (pixbuf != NULL) {
-                        g_object_ref(pixbuf);
-                    }
-                    g_object_unref(loader);
-                }
-                if (buf != NULL) {
-                    g_free(buf);
-                }
-                return pixbuf;
-            }
-
-            default:
-                /* Skip any other types of atom. */
-                if (!fseek(f, hdr.length, SEEK_CUR)) {
-                    g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                ngettext("Failed to skip the next %d byte with seek().",
-                                         "Failed to skip the next %d bytes with seek().", hdr.length),
-                                hdr.length);
-                    return NULL;
-                }
-                break;
-        }
-    }
-    return NULL;
-}
 
 /* Incremental load begin. */
 static gpointer gdk_pixbuf__qtif_image_begin_load(GdkPixbufModuleSizeFunc size_func,
@@ -250,9 +139,14 @@ static gboolean gdk_pixbuf__qtif_image_stop_load(gpointer data, GError** error) 
         GError* tmp = NULL;
 
         ret = gdk_pixbuf__qtif_image_free_loader(context, &tmp);
-        if (!ret) {
+        if (!ret && tmp != NULL) {
             g_propagate_error(error, tmp);
         }
+    }
+    if (ret && context->state != STATE_DONE) {
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                            _("Premature end-of-file encountered"));
+        ret = FALSE;
     }
     g_free(context);
 
@@ -261,15 +155,8 @@ static gboolean gdk_pixbuf__qtif_image_stop_load(gpointer data, GError** error) 
 
 /* Create a new GdkPixbufLoader and connect to its signals. */
 static gboolean gdk_pixbuf__qtif_image_create_loader(QTIFContext* context, GError** error) {
-    GError* tmp = NULL;
-
     if (context == NULL) {
         return FALSE;
-    }
-
-    /* Free existing loader. */
-    if (context->loader != NULL) {
-        gdk_pixbuf__qtif_image_free_loader(context, &tmp);
     }
 
     /* Create GdkPixbufLoader object. */
@@ -281,7 +168,6 @@ static gboolean gdk_pixbuf__qtif_image_create_loader(QTIFContext* context, GErro
     }
 
     /* Connect signals. */
-    context->cb_prepare_count = 0;
     context->cb_update_count = 0;
     g_signal_connect(context->loader, "size-prepared", G_CALLBACK(gdk_pixbuf__qtif_cb_size_prepared), context);
     g_signal_connect(context->loader, "area-prepared", G_CALLBACK(gdk_pixbuf__qtif_cb_area_prepared), context);
@@ -292,7 +178,6 @@ static gboolean gdk_pixbuf__qtif_image_create_loader(QTIFContext* context, GErro
 /* Free the GdkPixbufLoader and perform callback if haven't done so. */
 static gboolean gdk_pixbuf__qtif_image_free_loader(QTIFContext* context, GError** error) {
     GdkPixbuf* pixbuf;
-    GError* tmp = NULL;
     gboolean ret;
 
     if ((context == NULL) || (context->loader == NULL)) {
@@ -300,10 +185,7 @@ static gboolean gdk_pixbuf__qtif_image_free_loader(QTIFContext* context, GError*
     }
 
     /* Close GdkPixbufLoader. */
-    ret = gdk_pixbuf_loader_close(context->loader, &tmp);
-    if (!ret) {
-        g_propagate_error(error, tmp);
-    }
+    ret = gdk_pixbuf_loader_close(context->loader, error);
 
     /* Get GdkPixbuf from GdkPixbufLoader. */
     pixbuf = gdk_pixbuf_loader_get_pixbuf(context->loader);
@@ -312,15 +194,9 @@ static gboolean gdk_pixbuf__qtif_image_free_loader(QTIFContext* context, GError*
     }
 
     /* Free GdkPixbufLoader. */
-    g_object_ref(context->loader);
-    context->loader = NULL;
+    g_clear_object(&context->loader);
 
     if (pixbuf != NULL) {
-        /* Callback functions should be called for at least once. */
-        if (context->cb_prepare_count == 0) {
-            (context->prepared_func)(pixbuf, NULL, context->user_data);
-        }
-
         if (context->cb_update_count == 0) {
             gint width;
             gint height;
@@ -331,7 +207,7 @@ static gboolean gdk_pixbuf__qtif_image_free_loader(QTIFContext* context, GError*
         }
 
         /* Free GdkPixbuf (callback function should ref it). */
-        g_object_ref(pixbuf);
+        g_object_unref(pixbuf);
     }
 
     return ret;
@@ -345,6 +221,8 @@ static gboolean gdk_pixbuf__qtif_image_load_increment(gpointer data, const gucha
 
     while (ret && (size != 0u)) {
         switch (context->state) {
+            case STATE_DONE:
+                return TRUE;
             case STATE_READY:
                 /* Abort if we have seen too many atoms. */
                 if (context->atom_count == 0u) {
@@ -352,7 +230,6 @@ static gboolean gdk_pixbuf__qtif_image_load_increment(gpointer data, const gucha
                                         _("Failed to find an image data atom."));
                     return FALSE;
                 }
-                context->atom_count--;
 
                 /* Copy to header buffer in context, in case supplied data is not enough. */
                 while (context->run_length < sizeof(QtHeader) && size > 0u) {
@@ -364,20 +241,29 @@ static gboolean gdk_pixbuf__qtif_image_load_increment(gpointer data, const gucha
 
                 /* Parse buffer as QT header. */
                 if (context->run_length == sizeof(QtHeader)) {
-                    QtHeader* hdr = (QtHeader*)context->header_buffer;
-                    context->run_length = GUINT32_FROM_BE(hdr->length) - sizeof(QtHeader);
+                    QtHeader hdr;
+                    memcpy(&hdr, context->header_buffer, sizeof hdr);
+                    hdr.length = GUINT32_FROM_BE(hdr.length);
+                    hdr.tag = GUINT32_FROM_BE(hdr.tag);
+                    context->atom_count--;
+                    if (hdr.length < sizeof(QtHeader)) {
+                        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                            _("Failed to read QTIF header"));
+                        return FALSE;
+                    }
+                    context->run_length = hdr.length - sizeof(QtHeader);
 
                     /* Atom max size check. */
                     if (context->run_length > ATOM_SIZE_MAX) {
                         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                    ngettext("QTIF atom size too large (%d byte)",
-                                             "QTIF atom size too large (%d bytes)", hdr->length),
-                                    hdr->length);
+                                    ngettext("QTIF atom size too large (%u byte)",
+                                             "QTIF atom size too large (%u bytes)", context->run_length),
+                                    context->run_length);
                         return FALSE;
                     }
 
                     /* Set state according to atom type. */
-                    if (GUINT32_FROM_BE(hdr->tag) == QTIF_TAG_IDATA) {
+                    if (hdr.tag == QTIF_TAG_IDATA) {
                         GError* tmp = NULL;
 
                         context->state = STATE_DATA;
@@ -401,8 +287,10 @@ static gboolean gdk_pixbuf__qtif_image_load_increment(gpointer data, const gucha
                     if (context->state == STATE_DATA) {
                         tmp = NULL;
                         ret = gdk_pixbuf_loader_write(context->loader, buf, size, &tmp);
-                        if (!ret && (error != NULL) && (*error == NULL)) {
-                            g_propagate_error(error, tmp);
+                        if (!ret) {
+                            if (error != NULL && *error == NULL && tmp != NULL)
+                                g_propagate_error(error, g_steal_pointer(&tmp));
+                            g_clear_error(&tmp);
                         }
                     }
                     context->run_length -= size;
@@ -416,18 +304,24 @@ static gboolean gdk_pixbuf__qtif_image_load_increment(gpointer data, const gucha
                         /* Here we should have concluded a complete image atom. */
                         tmp = NULL;
                         ret = gdk_pixbuf_loader_write(context->loader, buf, context->run_length, &tmp);
-                        if (!ret && (error != NULL) && (*error == NULL)) {
-                            g_propagate_error(error, tmp);
+                        if (!ret) {
+                            if (error != NULL && *error == NULL && tmp != NULL)
+                                g_propagate_error(error, g_steal_pointer(&tmp));
+                            g_clear_error(&tmp);
                         }
 
                         /* Free GdkPixbufLoader and handle callback. */
                         tmp = NULL;
                         r = gdk_pixbuf__qtif_image_free_loader(context, &tmp);
                         if (!r) {
-                            if ((error != NULL) && (*error == NULL)) {
-                                g_propagate_error(error, tmp);
-                            }
+                            if (error != NULL && *error == NULL && tmp != NULL)
+                                g_propagate_error(error, g_steal_pointer(&tmp));
+                            g_clear_error(&tmp);
                             ret = FALSE;
+                        }
+                        if (ret) {
+                            context->state = STATE_DONE;
+                            return TRUE;
                         }
                     }
                     buf = &buf[context->run_length];
@@ -442,19 +336,65 @@ static gboolean gdk_pixbuf__qtif_image_load_increment(gpointer data, const gucha
     return ret;
 }
 
+static void file_size(gint* width, gint* height, gpointer data) {}
+
+static void file_prepared(GdkPixbuf* pixbuf, GdkPixbufAnimation* animation, gpointer data) {
+    GdkPixbuf** result = data;
+    *result = g_object_ref(pixbuf);
+}
+
+static void file_updated(GdkPixbuf* pixbuf, gint x, gint y, gint width, gint height, gpointer data) {}
+
+static GdkPixbuf* gdk_pixbuf__qtif_image_load(FILE* file, GError** error) {
+    GdkPixbuf* pixbuf = NULL;
+    QTIFContext* context;
+    guchar buffer[READ_BUFFER_SIZE];
+    gboolean success = TRUE;
+
+    if (file == NULL) {
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, _("Input file descriptor is NULL."));
+        return NULL;
+    }
+    context = gdk_pixbuf__qtif_image_begin_load(file_size, file_prepared, file_updated, &pixbuf, error);
+    if (context == NULL)
+        return NULL;
+
+    while (context->state != STATE_DONE) {
+        guint count = context->state == STATE_READY ? sizeof(QtHeader) - context->run_length
+                                                    : MAX(1, MIN(context->run_length, sizeof buffer));
+        if (fread(buffer, 1, count, file) != count) {
+            if (ferror(file))
+                g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                            _("File error when reading QTIF atom: %s"), g_strerror(errno));
+            else
+                g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                    _("Premature end-of-file encountered"));
+            success = FALSE;
+            break;
+        }
+        if (!gdk_pixbuf__qtif_image_load_increment(context, buffer, count, error)) {
+            success = FALSE;
+            break;
+        }
+    }
+    if (!gdk_pixbuf__qtif_image_stop_load(context, success ? error : NULL))
+        success = FALSE;
+    if (!success)
+        g_clear_object(&pixbuf);
+    return pixbuf;
+}
+
 /* Event handlers */
 static void gdk_pixbuf__qtif_cb_size_prepared(gpointer loader, gint width, gint height, gpointer user_data) {
     QTIFContext* context = (QTIFContext*)user_data;
     (void)loader;
     (context->size_func)(&width, &height, context->user_data);
-    context->cb_prepare_count++;
 }
 
 static void gdk_pixbuf__qtif_cb_area_prepared(GdkPixbufLoader* loader, gpointer user_data) {
     QTIFContext* context = (QTIFContext*)user_data;
     GdkPixbuf* pixbuf = gdk_pixbuf_loader_get_pixbuf(context->loader);
     (context->prepared_func)(pixbuf, NULL, context->user_data);
-    context->cb_update_count++;
 }
 
 static void gdk_pixbuf__qtif_cb_area_updated(gpointer loader,
@@ -465,6 +405,7 @@ static void gdk_pixbuf__qtif_cb_area_updated(gpointer loader,
                                              gpointer user_data) {
     QTIFContext* context = (QTIFContext*)user_data;
     GdkPixbuf* pixbuf = gdk_pixbuf_loader_get_pixbuf(context->loader);
+    context->cb_update_count++;
     (context->updated_func)(pixbuf, x, y, width, height, context->user_data);
 }
 
