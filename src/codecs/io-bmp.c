@@ -1279,9 +1279,9 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
                                                        gchar** values,
                                                        GError** error) {
     guint width, height, channel, size, stride, src_stride, x, y;
-    guint bf_size;
+    guint bf_size, buffer_size;
     guchar BFH_BIH[54], *pixels, *buf, *src, *dst, *dst_line;
-    gboolean ret;
+    gboolean ret = TRUE;
 
     width = gdk_pixbuf_get_width(pixbuf);
     height = gdk_pixbuf_get_height(pixbuf);
@@ -1328,7 +1328,9 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
     if (!save_func((gchar*)BFH_BIH, 14 + 40, error, user_data))
         return FALSE;
 
-    dst_line = buf = g_try_malloc0(size);
+    /* Batch whole rows in at most 64 KiB, unless one row is larger. */
+    buffer_size = MIN(height, MAX(1, 65536 / stride)) * stride;
+    dst_line = buf = g_try_malloc0(buffer_size);
     if (!buf) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
                             _("Couldn’t allocate memory for saving BMP file"));
@@ -1336,17 +1338,23 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
     }
 
     /* saving as a bottom-up bmp */
-    pixels += (height - 1) * src_stride;
-    for (y = 0; y < height; ++y, pixels -= src_stride, dst_line += stride) {
+    for (y = 0; y < height; ++y) {
         dst = dst_line;
-        src = pixels;
+        src = pixels + (gsize)(height - y - 1) * src_stride;
         for (x = 0; x < width; ++x, dst += 3, src += channel) {
             dst[0] = src[2];
             dst[1] = src[1];
             dst[2] = src[0];
         }
+        dst_line += stride;
+        if (dst_line == buf + buffer_size || y == height - 1) {
+            if (!save_func((gchar*)buf, dst_line - buf, error, user_data)) {
+                ret = FALSE;
+                break;
+            }
+            dst_line = buf;
+        }
     }
-    ret = save_func((gchar*)buf, size, error, user_data);
     g_free(buf);
 
     return ret;
