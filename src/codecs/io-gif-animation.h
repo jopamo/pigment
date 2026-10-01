@@ -47,13 +47,6 @@ typedef struct _GdkPixbufFrame GdkPixbufFrame;
 
 #define GDK_TYPE_PIXBUF_GIF_ANIM (gdk_pixbuf_gif_anim_get_type())
 #define GDK_PIXBUF_GIF_ANIM(object) (G_TYPE_CHECK_INSTANCE_CAST((object), GDK_TYPE_PIXBUF_GIF_ANIM, GdkPixbufGifAnim))
-#define GDK_IS_PIXBUF_GIF_ANIM(object) (G_TYPE_CHECK_INSTANCE_TYPE((object), GDK_TYPE_PIXBUF_GIF_ANIM))
-
-#define GDK_PIXBUF_GIF_ANIM_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST((klass), GDK_TYPE_PIXBUF_GIF_ANIM, GdkPixbufGifAnimClass))
-#define GDK_IS_PIXBUF_GIF_ANIM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GDK_TYPE_PIXBUF_GIF_ANIM))
-#define GDK_PIXBUF_GIF_ANIM_GET_CLASS(obj) \
-    (G_TYPE_INSTANCE_GET_CLASS((obj), GDK_TYPE_PIXBUF_GIF_ANIM, GdkPixbufGifAnimClass))
 
 /* Private part of the GdkPixbufGifAnim structure */
 struct _GdkPixbufGifAnim {
@@ -91,13 +84,6 @@ typedef struct _GdkPixbufGifAnimIterClass GdkPixbufGifAnimIterClass;
 #define GDK_TYPE_PIXBUF_GIF_ANIM_ITER (gdk_pixbuf_gif_anim_iter_get_type())
 #define GDK_PIXBUF_GIF_ANIM_ITER(object) \
     (G_TYPE_CHECK_INSTANCE_CAST((object), GDK_TYPE_PIXBUF_GIF_ANIM_ITER, GdkPixbufGifAnimIter))
-#define GDK_IS_PIXBUF_GIF_ANIM_ITER(object) (G_TYPE_CHECK_INSTANCE_TYPE((object), GDK_TYPE_PIXBUF_GIF_ANIM_ITER))
-
-#define GDK_PIXBUF_GIF_ANIM_ITER_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST((klass), GDK_TYPE_PIXBUF_GIF_ANIM_ITER, GdkPixbufGifAnimIterClass))
-#define GDK_IS_PIXBUF_GIF_ANIM_ITER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GDK_TYPE_PIXBUF_GIF_ANIM_ITER))
-#define GDK_PIXBUF_GIF_ANIM_ITER_GET_CLASS(obj) \
-    (G_TYPE_INSTANCE_GET_CLASS((obj), GDK_TYPE_PIXBUF_GIF_ANIM_ITER, GdkPixbufGifAnimIterClass))
 
 G_GNUC_BEGIN_IGNORE_DEPRECATIONS
 struct _GdkPixbufGifAnimIter {

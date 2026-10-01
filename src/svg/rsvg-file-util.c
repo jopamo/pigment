@@ -43,8 +43,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define SVG_BUFFER_SIZE (1024 * 8)
-
 /* private */
 GdkPixbuf* rsvg_pixbuf_from_data_with_size_data(const guchar* buff,
                                                 size_t len,

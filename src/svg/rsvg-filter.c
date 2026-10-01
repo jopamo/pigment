@@ -3304,8 +3304,6 @@ RsvgNode* rsvg_new_filter_primitive_displacement_map(void) {
 #define feTurbulence_BSize 0x100
 #define feTurbulence_BM 0xff
 #define feTurbulence_PerlinN 0x1000
-#define feTurbulence_NP 12 /* 2^PerlinN */
-#define feTurbulence_NM 0xfff
 
 typedef struct _RsvgFilterPrimitiveTurbulence RsvgFilterPrimitiveTurbulence;
 struct _RsvgFilterPrimitiveTurbulence {

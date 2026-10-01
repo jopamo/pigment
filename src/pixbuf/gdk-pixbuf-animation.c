@@ -59,13 +59,6 @@ typedef struct _GdkPixbufNonAnimClass GdkPixbufNonAnimClass;
 
 #define GDK_TYPE_PIXBUF_NON_ANIM (gdk_pixbuf_non_anim_get_type())
 #define GDK_PIXBUF_NON_ANIM(object) (G_TYPE_CHECK_INSTANCE_CAST((object), GDK_TYPE_PIXBUF_NON_ANIM, GdkPixbufNonAnim))
-#define GDK_IS_PIXBUF_NON_ANIM(object) (G_TYPE_CHECK_INSTANCE_TYPE((object), GDK_TYPE_PIXBUF_NON_ANIM))
-
-#define GDK_PIXBUF_NON_ANIM_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST((klass), GDK_TYPE_PIXBUF_NON_ANIM, GdkPixbufNonAnimClass))
-#define GDK_IS_PIXBUF_NON_ANIM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GDK_TYPE_PIXBUF_NON_ANIM))
-#define GDK_PIXBUF_NON_ANIM_GET_CLASS(obj) \
-    (G_TYPE_INSTANCE_GET_CLASS((obj), GDK_TYPE_PIXBUF_NON_ANIM, GdkPixbufNonAnimClass))
 
 /* Private part of the GdkPixbufNonAnim structure */
 struct _GdkPixbufNonAnim {
@@ -84,13 +77,6 @@ typedef struct _GdkPixbufNonAnimIterClass GdkPixbufNonAnimIterClass;
 #define GDK_TYPE_PIXBUF_NON_ANIM_ITER (gdk_pixbuf_non_anim_iter_get_type())
 #define GDK_PIXBUF_NON_ANIM_ITER(object) \
     (G_TYPE_CHECK_INSTANCE_CAST((object), GDK_TYPE_PIXBUF_NON_ANIM_ITER, GdkPixbufNonAnimIter))
-#define GDK_IS_PIXBUF_NON_ANIM_ITER(object) (G_TYPE_CHECK_INSTANCE_TYPE((object), GDK_TYPE_PIXBUF_NON_ANIM_ITER))
-
-#define GDK_PIXBUF_NON_ANIM_ITER_CLASS(klass) \
-    (G_TYPE_CHECK_CLASS_CAST((klass), GDK_TYPE_PIXBUF_NON_ANIM_ITER, GdkPixbufNonAnimIterClass))
-#define GDK_IS_PIXBUF_NON_ANIM_ITER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GDK_TYPE_PIXBUF_NON_ANIM_ITER))
-#define GDK_PIXBUF_NON_ANIM_ITER_GET_CLASS(obj) \
-    (G_TYPE_INSTANCE_GET_CLASS((obj), GDK_TYPE_PIXBUF_NON_ANIM_ITER, GdkPixbufNonAnimIterClass))
 
 struct _GdkPixbufNonAnimIter {
     GdkPixbufAnimationIter parent_instance;

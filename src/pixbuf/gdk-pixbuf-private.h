@@ -40,10 +40,6 @@
 
 typedef struct _GdkPixbufClass GdkPixbufClass;
 
-#define GDK_PIXBUF_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST((klass), GDK_TYPE_PIXBUF, GdkPixbufClass))
-#define GDK_IS_PIXBUF_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), GDK_TYPE_PIXBUF))
-#define GDK_PIXBUF_GET_CLASS(obj) (G_TYPE_INSTANCE_GET_CLASS((obj), GDK_TYPE_PIXBUF, GdkPixbufClass))
-
 /* Default fill color */
 #define DEFAULT_FILL_COLOR 0x979899ff
 
