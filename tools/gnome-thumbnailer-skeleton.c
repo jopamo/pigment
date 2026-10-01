@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
     char* input_filename;
     GdkPixbuf* pixbuf;
     GError* error = NULL;
-    GOptionContext* context;
+    g_autoptr(GOptionContext) context = NULL;
     GFile* input;
     const char* output;
 
@@ -243,6 +243,11 @@ int main(int argc, char** argv) {
     if (g_option_context_parse(context, &argc, &argv, &error) == FALSE) {
         g_warning("Couldn't parse command-line options: %s", error->message);
         g_error_free(error);
+        return 1;
+    }
+
+    if (output_size <= 0) {
+        g_printerr("Thumbnail size must be greater than zero\n");
         return 1;
     }
 
