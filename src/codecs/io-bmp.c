@@ -1097,11 +1097,13 @@ static gboolean DoCompressed(struct bmp_progressive_state* context, GError** err
                 }
                 break;
             case DELTA_X:
-                context->compr.x += c;
+                /* Keep the cursor inside the image so repeated deltas cannot
+                   overflow it into a negative offset. */
+                context->compr.x = MIN((guint)context->compr.x + c, (guint)context->Header.width);
                 context->compr.phase = DELTA_Y;
                 break;
             case DELTA_Y:
-                context->compr.y += c;
+                context->compr.y = MIN((guint)context->compr.y + c, (guint)context->Header.height);
                 context->compr.p =
                     gdk_pixbuf_get_pixels(context->pixbuf) +
                     (gdk_pixbuf_get_rowstride(context->pixbuf) * (context->Header.height - context->compr.y - 1)) +
