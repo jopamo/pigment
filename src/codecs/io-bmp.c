@@ -221,6 +221,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
                              unsigned char* BIH,
                              struct bmp_progressive_state* State,
                              GError** error) {
+    guint32 header_size;
     guint32 clrUsed;
     guint bytesPerPixel;
 
@@ -233,9 +234,20 @@ static gboolean DecodeHeader(unsigned char* BFH,
         return FALSE;
     }
 
-    /* FIXME this is totally unrobust against bogus image data. */
-    if (State->BufferSize < lsb_32(&BIH[0]) + 14) {
-        State->BufferSize = lsb_32(&BIH[0]) + 14;
+    header_size = (guint32)lsb_32(&BIH[0]);
+
+    /* The supported info headers are at most 124 bytes long. Bound the
+       growth so an unvalidated header size cannot request a huge
+       allocation before it is rejected below. */
+    if (header_size > 124) {
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                            _("BMP image has unsupported header size"));
+        State->read_state = READ_STATE_ERROR;
+        return FALSE;
+    }
+
+    if (State->BufferSize < header_size + 14) {
+        State->BufferSize = header_size + 14;
         if (!grow_buffer(State, error))
             return FALSE;
         return TRUE;
@@ -245,7 +257,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
     DumpBIH(BIH);
 #endif
 
-    State->Header.size = lsb_32(&BIH[0]);
+    State->Header.size = header_size;
     if (State->Header.size == 124) {
         /* BMP v5 */
         State->Header.width = lsb_32(&BIH[4]);
@@ -369,7 +381,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
         }
     }
     else if (State->Type == 4)
-        State->LineWidth = (State->Header.width + 1) / 2;
+        State->LineWidth = ((guint)State->Header.width + 1) / 2;
     else if (State->Type == 1) {
         State->LineWidth = State->Header.width / 8;
         if ((State->Header.width & 7) != 0)
@@ -452,6 +464,8 @@ static gboolean DecodeHeader(unsigned char* BFH,
     State->BufferDone = 0;
     if (State->Type <= 8) {
         gint samples;
+        guint32 data_offset;
+        guint32 palette_end;
 
         State->read_state = READ_STATE_PALETTE;
 
@@ -459,22 +473,21 @@ static gboolean DecodeHeader(unsigned char* BFH,
         samples = (State->Header.size == 12 ? 3 : 4);
         State->BufferSize = State->Header.n_colors * samples;
 
-        /* Skip over everything between the palette and the data.
-           This protects us against a malicious BFH[10] value.
-                */
-        State->BufferPadding = (lsb_32(&BFH[10]) - 14 - State->Header.size) - State->BufferSize;
+        /* Skip over everything between the palette and the data without
+           buffering it; BFH[10] is not validated. */
+        data_offset = (guint32)lsb_32(&BFH[10]);
+        palette_end = 14 + State->Header.size + State->BufferSize;
+        State->BufferPadding = data_offset > palette_end ? data_offset - palette_end : 0;
     }
     else if (State->Compressed == BI_RGB) {
-        if (State->BufferSize < lsb_32(&BFH[10])) {
-            /* skip over padding between headers and image data */
-            State->read_state = READ_STATE_HEADERS;
-            State->BufferDone = State->BufferSize;
-            State->BufferSize = lsb_32(&BFH[10]);
-        }
-        else {
-            State->read_state = READ_STATE_DATA;
-            State->BufferSize = State->LineWidth;
-        }
+        guint32 data_offset = (guint32)lsb_32(&BFH[10]);
+        guint32 header_end = 14 + State->Header.size;
+
+        /* Skip over padding between the header and the image data without
+           buffering it; BFH[10] is not validated. */
+        State->read_state = READ_STATE_DATA;
+        State->BufferSize = State->LineWidth;
+        State->BufferPadding = data_offset > header_end ? data_offset - header_end : 0;
     }
     else if (State->Compressed == BI_BITFIELDS) {
         if (State->Header.size == 52 || State->Header.size == 56 || State->Header.size == 108 ||
@@ -700,7 +713,8 @@ static gboolean gdk_pixbuf__bmp_image_stop_load(gpointer data, GError** error) {
     if (context->pixbuf)
         g_object_unref(context->pixbuf);
 
-    if (context->read_state == READ_STATE_HEADERS) {
+    if (context->read_state == READ_STATE_HEADERS ||
+        (context->read_state != READ_STATE_ERROR && context->BufferPadding != 0)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
                             _("Premature end-of-file encountered"));
         retval = FALSE;
@@ -1165,7 +1179,6 @@ static gboolean gdk_pixbuf__bmp_image_load_increment(gpointer data, const guchar
     struct bmp_progressive_state* context = (struct bmp_progressive_state*)data;
 
     gint BytesToCopy;
-    gint BytesToRemove;
 
     if (context->read_state == READ_STATE_DONE)
         return TRUE;
@@ -1173,6 +1186,19 @@ static gboolean gdk_pixbuf__bmp_image_load_increment(gpointer data, const guchar
         return FALSE;
 
     while (size > 0) {
+        /* Discard the gap between the palette or header and the pixel data
+           before any of it is buffered. */
+        if (context->read_state == READ_STATE_DATA && context->BufferPadding != 0) {
+            guint BytesToRemove = MIN(context->BufferPadding, size);
+
+            size -= BytesToRemove;
+            buf += BytesToRemove;
+            context->BufferPadding -= BytesToRemove;
+
+            if (context->BufferPadding != 0)
+                break;
+        }
+
         if (context->BufferDone < context->BufferSize) { /* We still
                                     have headerbytes to do */
             BytesToCopy = context->BufferSize - context->BufferDone;
@@ -1186,19 +1212,6 @@ static gboolean gdk_pixbuf__bmp_image_load_increment(gpointer data, const guchar
             context->BufferDone += BytesToCopy;
 
             if (context->BufferDone != context->BufferSize)
-                break;
-        }
-
-        /* context->buff is full.  Now we discard all "padding" */
-        if (context->BufferPadding != 0) {
-            BytesToRemove = context->BufferPadding - size;
-            if (BytesToRemove > size) {
-                BytesToRemove = size;
-            }
-            size -= BytesToRemove;
-            context->BufferPadding -= BytesToRemove;
-
-            if (context->BufferPadding != 0)
                 break;
         }
 
