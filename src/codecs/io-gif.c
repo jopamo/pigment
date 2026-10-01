@@ -329,18 +329,29 @@ static void gif_set_get_lzw(GifContext* context) {
     context->state = GIF_GET_LZW;
 }
 
+static gboolean gif_check_size(GifContext* context, guint width, guint height) {
+    int rowstride;
+    guint64 len;
+
+    if (width == 0 || height == 0) {
+        g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                            _("Resulting GIF image has zero size"));
+        return FALSE;
+    }
+
+    rowstride = gdk_pixbuf_calculate_rowstride(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+    if (rowstride < 0 || !g_uint64_checked_mul(&len, rowstride, height) || len >= G_MAXINT) {
+        g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                            _("Not enough memory to load GIF file"));
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static int gif_get_lzw(GifContext* context) {
     if (context->frame == NULL) {
-        int rowstride;
-        guint64 len;
-
-        rowstride =
-            gdk_pixbuf_calculate_rowstride(GDK_COLORSPACE_RGB, TRUE, 8, context->frame_len, context->frame_height);
-        if (rowstride < 0 || !g_uint64_checked_mul(&len, rowstride, context->frame_height) || len >= G_MAXINT) {
-            g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Not enough memory to load GIF file"));
+        if (!gif_check_size(context, context->frame_len, context->frame_height))
             return -2;
-        }
 
         context->frame = g_new0(GdkPixbufFrame, 1);
 
@@ -529,6 +540,9 @@ static gint gif_init(GifContext* context) {
                             _("Resulting GIF image has zero size"));
         return -2;
     }
+
+    if (!gif_check_size(context, context->width, context->height))
+        return -2;
 
     if (context->has_global_cmap) {
         gif_set_get_colormap(context);
