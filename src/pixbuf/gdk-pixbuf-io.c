@@ -2082,7 +2082,7 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
                                                gchar** keys,
                                                gchar** values,
                                                GError** error) {
-    int fd;
+    int fd = -1;
     FILE* f = NULL;
     gboolean retval = FALSE;
     gchar* buf = NULL;
@@ -2106,14 +2106,25 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
                             _("Failed to open temporary file"));
         goto end;
     }
+    fd = -1;
 
-    retval = (image_module->save)(f, pixbuf, keys, values, error);
-    if (!retval)
+    if (!(image_module->save)(f, pixbuf, keys, values, error))
         goto end;
 
-    rewind(f);
+    if (fseek(f, 0, SEEK_SET) != 0) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to rewind temporary file"));
+        goto end;
+    }
     for (;;) {
         n = fread(buf, 1, TMP_FILE_BUF_SIZE, f);
+        if (ferror(f)) {
+            gint save_errno = errno;
+            g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                                _("Failed to read from temporary file"));
+            goto end;
+        }
         if (n > 0) {
             if (!save_func(buf, n, error, user_data))
                 goto end;
@@ -2121,18 +2132,14 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
         if (n != TMP_FILE_BUF_SIZE)
             break;
     }
-    if (ferror(f)) {
-        gint save_errno = errno;
-        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
-                            _("Failed to read from temporary file"));
-        goto end;
-    }
     retval = TRUE;
 
 end:
     /* cleanup and return retval */
     if (f)
         fclose(f);
+    else if (fd != -1)
+        g_close(fd, NULL);
     if (filename) {
         g_unlink(filename);
         g_free(filename);
