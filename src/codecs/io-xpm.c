@@ -740,8 +740,18 @@ static gboolean gdk_pixbuf__xpm_image_stop_load(gpointer data, GError** error) {
 
     g_return_val_if_fail(data != NULL, FALSE);
 
-    fflush(context->file);
-    rewind(context->file);
+    if (fflush(context->file) != 0) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to write to temporary file when loading XPM image"));
+        goto out;
+    }
+    if (fseek(context->file, 0, SEEK_SET) != 0) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to rewind temporary file"));
+        goto out;
+    }
     if (context->all_okay) {
         pixbuf = gdk_pixbuf__xpm_image_load(context->file, error);
 
@@ -755,7 +765,13 @@ static gboolean gdk_pixbuf__xpm_image_stop_load(gpointer data, GError** error) {
         }
     }
 
-    fclose(context->file);
+out:
+    if (fclose(context->file) != 0 && retval) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to close temporary file"));
+        retval = FALSE;
+    }
     g_unlink(context->tempname);
     g_free(context->tempname);
     g_free((XPMContext*)context);

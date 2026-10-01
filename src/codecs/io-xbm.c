@@ -507,8 +507,20 @@ static gboolean gdk_pixbuf__xbm_image_stop_load(gpointer data, GError** error) {
 
     g_return_val_if_fail(data != NULL, TRUE);
 
-    fflush(context->file);
-    rewind(context->file);
+    if (fflush(context->file) != 0) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to write to temporary file when loading XBM image"));
+        retval = FALSE;
+        goto out;
+    }
+    if (fseek(context->file, 0, SEEK_SET) != 0) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to rewind temporary file"));
+        retval = FALSE;
+        goto out;
+    }
     if (context->all_okay) {
         GdkPixbuf* pixbuf;
         pixbuf = gdk_pixbuf__xbm_image_load_real(context->file, context, error);
@@ -518,7 +530,13 @@ static gboolean gdk_pixbuf__xbm_image_stop_load(gpointer data, GError** error) {
             g_object_unref(pixbuf);
     }
 
-    fclose(context->file);
+out:
+    if (fclose(context->file) != 0 && retval) {
+        gint save_errno = errno;
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
+                            _("Failed to close temporary file"));
+        retval = FALSE;
+    }
     g_unlink(context->tempname);
     g_free(context->tempname);
     g_free((XBMData*)context);
