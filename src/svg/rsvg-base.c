@@ -179,14 +179,8 @@ double rsvg_internal_dpi_x = RSVG_DEFAULT_DPI_X;
 G_GNUC_INTERNAL
 double rsvg_internal_dpi_y = RSVG_DEFAULT_DPI_Y;
 
-typedef struct _RsvgSaxHandlerDefs {
-    RsvgSaxHandler super;
-    RsvgHandle* ctx;
-} RsvgSaxHandlerDefs;
-
 typedef struct _RsvgSaxHandlerStyle {
     RsvgSaxHandler super;
-    RsvgSaxHandlerDefs* parent;
     RsvgHandle* ctx;
     GString* style;
     gboolean is_text_css;
@@ -205,13 +199,28 @@ typedef RsvgSaxHandlerExtra RsvgSaxHandlerTitle;
 typedef RsvgSaxHandlerExtra RsvgSaxHandlerDesc;
 typedef RsvgSaxHandlerExtra RsvgSaxHandlerMetadata;
 
+static void rsvg_sax_handler_pop(RsvgHandle* ctx, gboolean finish) {
+    RsvgSaxHandler* handler = ctx->priv->handler;
+    ctx->priv->handler = handler->parent;
+    if (finish && handler->finish)
+        handler->finish(handler);
+    handler->free(handler);
+}
+
+void rsvg_handle_clear_sax_handlers(RsvgHandle* handle) {
+    while (handle->priv->handler)
+        rsvg_sax_handler_pop(handle, FALSE);
+    handle->priv->handler_nest = 0;
+}
+
+static void rsvg_style_handler_finish(RsvgSaxHandler* self) {
+    RsvgSaxHandlerStyle* z = (RsvgSaxHandlerStyle*)self;
+    if (z->is_text_css)
+        rsvg_parse_cssbuffer(z->ctx, z->style->str, z->style->len);
+}
+
 static void rsvg_style_handler_free(RsvgSaxHandler* self) {
     RsvgSaxHandlerStyle* z = (RsvgSaxHandlerStyle*)self;
-    RsvgHandle* ctx = z->ctx;
-
-    if (z->is_text_css)
-        rsvg_parse_cssbuffer(ctx, z->style->str, z->style->len);
-
     g_string_free(z->style, TRUE);
     g_free(z);
 }
@@ -230,13 +239,10 @@ static void rsvg_style_handler_start(RsvgSaxHandler* self, const char* name, Rsv
 static void rsvg_style_handler_end(RsvgSaxHandler* self, const char* name) {
     RsvgSaxHandlerStyle* z = (RsvgSaxHandlerStyle*)self;
     RsvgHandle* ctx = z->ctx;
-    RsvgSaxHandler* prev = &z->parent->super;
 
     if (!strcmp(name, "style")) {
-        if (ctx->priv->handler != NULL) {
-            ctx->priv->handler->free(ctx->priv->handler);
-            ctx->priv->handler = prev;
-        }
+        if (ctx->priv->handler != NULL)
+            rsvg_sax_handler_pop(ctx, TRUE);
     }
 }
 
@@ -246,6 +252,8 @@ static void rsvg_start_style(RsvgHandle* ctx, RsvgPropertyBag* atts) {
 
     type = rsvg_property_bag_lookup(atts, "type");
 
+    handler->super.parent = ctx->priv->handler;
+    handler->super.finish = rsvg_style_handler_finish;
     handler->super.free = rsvg_style_handler_free;
     handler->super.characters = rsvg_style_handler_characters;
     handler->super.start_element = rsvg_style_handler_start;
@@ -268,7 +276,6 @@ static void rsvg_start_style(RsvgHandle* ctx, RsvgPropertyBag* atts) {
      */
     handler->is_text_css = (type == NULL) || (g_ascii_strcasecmp(type, "text/css") == 0);
 
-    handler->parent = (RsvgSaxHandlerDefs*)ctx->priv->handler;
     ctx->priv->handler = &handler->super;
 }
 
@@ -422,15 +429,20 @@ static void rsvg_standard_element_start(RsvgHandle* ctx, const char* name, RsvgP
 
 /* extra (title, desc, metadata) */
 
-static void rsvg_extra_handler_free(RsvgSaxHandler* self) {
+static void rsvg_extra_handler_finish(RsvgSaxHandler* self) {
     RsvgSaxHandlerExtra* z = (RsvgSaxHandlerExtra*)self;
 
     if (z->stringptr) {
         if (*z->stringptr)
             g_string_free(*z->stringptr, TRUE);
         *z->stringptr = z->string;
+        z->string = NULL;
     }
-    else if (z->string) {
+}
+
+static void rsvg_extra_handler_free(RsvgSaxHandler* self) {
+    RsvgSaxHandlerExtra* z = (RsvgSaxHandlerExtra*)self;
+    if (z->string) {
         g_string_free(z->string, TRUE);
     }
 
@@ -471,10 +483,8 @@ static void rsvg_extra_handler_end(RsvgSaxHandler* self, const char* name) {
     RsvgHandle* ctx = z->ctx;
 
     if (!strcmp(name, z->name)) {
-        if (ctx->priv->handler != NULL) {
-            ctx->priv->handler->free(ctx->priv->handler);
-            ctx->priv->handler = NULL;
-        }
+        if (ctx->priv->handler != NULL)
+            rsvg_sax_handler_pop(ctx, TRUE);
     }
 }
 
@@ -490,6 +500,8 @@ static RsvgSaxHandlerExtra* rsvg_start_extra(RsvgHandle* ctx, const char* name, 
      */
     do_care = treebase != NULL && treebase == currentnode;
 
+    handler->super.parent = ctx->priv->handler;
+    handler->super.finish = rsvg_extra_handler_finish;
     handler->super.free = rsvg_extra_handler_free;
     handler->super.characters = rsvg_extra_handler_characters;
     handler->super.start_element = rsvg_extra_handler_start;
@@ -568,7 +580,6 @@ static void rsvg_start_metadata(RsvgHandle* ctx) {
 typedef struct _RsvgSaxHandlerXinclude {
     RsvgSaxHandler super;
 
-    RsvgSaxHandler* prev_handler;
     RsvgHandle* ctx;
     gboolean success;
     gboolean in_fallback;
@@ -621,13 +632,8 @@ static void rsvg_xinclude_handler_end(RsvgSaxHandler* self, const char* name) {
     const char* local_name = get_localname(name);
 
     if (rsvg_is_xinclude_element(ctx, name, "include")) {
-        if (ctx->priv->handler != NULL) {
-            RsvgSaxHandler* previous_handler;
-
-            previous_handler = z->prev_handler;
-            ctx->priv->handler->free(ctx->priv->handler);
-            ctx->priv->handler = previous_handler;
-        }
+        if (ctx->priv->handler != NULL)
+            rsvg_sax_handler_pop(ctx, TRUE);
     }
     else if (z->in_fallback) {
         if (rsvg_is_xinclude_element(ctx, name, "fallback"))
@@ -677,6 +683,7 @@ static gboolean rsvg_load_xinclude_xml(RsvgHandle* ctx, const char* url) {
     GError* error = NULL;
     xmlParserCtxtPtr parser, old_parser;
     RsvgSaxHandler* old_handler;
+    int old_handler_nest;
     gboolean success = FALSE;
     GFile *old_base_gfile, *new_base_gfile;
     GSList* old_xml_ns_stack;
@@ -702,6 +709,7 @@ static gboolean rsvg_load_xinclude_xml(RsvgHandle* ctx, const char* url) {
 
     old_parser = ctx->priv->ctxt;
     old_handler = ctx->priv->handler;
+    old_handler_nest = ctx->priv->handler_nest;
     old_base_gfile = ctx->priv->base_gfile;
     old_xml_ns_stack = ctx->priv->xml_ns_stack;
     ctx->priv->xml_ns_stack = NULL;
@@ -709,6 +717,7 @@ static gboolean rsvg_load_xinclude_xml(RsvgHandle* ctx, const char* url) {
         g_object_ref(old_base_gfile);
 
     ctx->priv->handler = NULL;
+    ctx->priv->handler_nest = 0;
     ctx->priv->xinclude_depth++;
     if (ctx->priv->base_gfile)
         g_object_unref(ctx->priv->base_gfile);
@@ -723,8 +732,10 @@ static gboolean rsvg_load_xinclude_xml(RsvgHandle* ctx, const char* url) {
         parser = rsvg_free_xml_parser_and_doc(parser);
     }
 
+    rsvg_handle_clear_sax_handlers(ctx);
     ctx->priv->ctxt = old_parser;
     ctx->priv->handler = old_handler;
+    ctx->priv->handler_nest = old_handler_nest;
     ctx->priv->xinclude_depth--;
     rsvg_clear_xmlns_stack(ctx);
     ctx->priv->xml_ns_stack = old_xml_ns_stack;
@@ -835,11 +846,11 @@ static void rsvg_start_xinclude(RsvgHandle* ctx, RsvgPropertyBag* atts) {
     /* needed to handle xi:fallback */
     handler = g_new0(RsvgSaxHandlerXinclude, 1);
 
+    handler->super.parent = ctx->priv->handler;
     handler->super.free = rsvg_xinclude_handler_free;
     handler->super.characters = rsvg_xinclude_handler_characters;
     handler->super.start_element = rsvg_xinclude_handler_start;
     handler->super.end_element = rsvg_xinclude_handler_end;
-    handler->prev_handler = ctx->priv->handler;
     handler->ctx = ctx;
     handler->success = success;
 
@@ -925,8 +936,7 @@ static void rsvg_end_element(void* data, const xmlChar* name) {
         gboolean closed_root_svg = FALSE;
 
         if (ctx->priv->handler != NULL) {
-            ctx->priv->handler->free(ctx->priv->handler);
-            ctx->priv->handler = NULL;
+            rsvg_sax_handler_pop(ctx, TRUE);
         }
 
         if (ctx->priv->currentnode != NULL) {

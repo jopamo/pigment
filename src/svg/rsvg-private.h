@@ -76,6 +76,8 @@ typedef struct _RsvgNodeChars RsvgNodeChars;
 #endif /*  M_PI  */
 
 struct RsvgSaxHandler {
+    RsvgSaxHandler* parent;
+    void (*finish)(RsvgSaxHandler* self);
     void (*free)(RsvgSaxHandler* self);
     void (*start_element)(RsvgSaxHandler* self, const char* name, RsvgPropertyBag* atts);
     void (*end_element)(RsvgSaxHandler* self, const char* name);
@@ -374,6 +376,8 @@ G_GNUC_INTERNAL
 void _rsvg_pop_view_box(RsvgDrawingCtx* ctx);
 G_GNUC_INTERNAL
 void rsvg_SAX_handler_struct_init(void);
+G_GNUC_INTERNAL
+void rsvg_handle_clear_sax_handlers(RsvgHandle* handle);
 G_GNUC_INTERNAL
 char* rsvg_get_url_string(const char* str);
 G_GNUC_INTERNAL

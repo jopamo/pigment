@@ -102,11 +102,12 @@ static void rsvg_handle_dispose(GObject* instance) {
 
     self->priv->is_disposed = TRUE;
 
+    self->priv->ctxt = rsvg_free_xml_parser_and_doc(self->priv->ctxt);
+    rsvg_handle_clear_sax_handlers(self);
+
     rsvg_defs_free(self->priv->defs);
     g_hash_table_destroy(self->priv->entities);
     rsvg_css_engine_free(self->priv->css_engine);
-
-    self->priv->ctxt = rsvg_free_xml_parser_and_doc(self->priv->ctxt);
 
     if (self->priv->user_data_destroy)
         (*self->priv->user_data_destroy)(self->priv->user_data);
