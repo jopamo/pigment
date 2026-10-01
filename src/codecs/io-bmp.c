@@ -158,10 +158,14 @@ struct bmp_progressive_state {
     struct headerpair Header; /* Decoded (BE->CPU) header */
 
     /* Bit masks, shift amounts, and significant bits for BI_BITFIELDS coding */
-    int r_mask, r_shift, r_bits;
-    int g_mask, g_shift, g_bits;
-    int b_mask, b_shift, b_bits;
-    int a_mask, a_shift, a_bits;
+    guint32 r_mask;
+    int r_shift, r_bits;
+    guint32 g_mask;
+    int g_shift, g_bits;
+    guint32 b_mask;
+    int b_shift, b_bits;
+    guint32 a_mask;
+    int a_shift, a_bits;
 
     GdkPixbuf* pixbuf; /* Our "target" */
 };
@@ -544,7 +548,7 @@ static gboolean DecodeColormap(guchar* buff, struct bmp_progressive_state* State
 }
 
 /* Finds the lowest set bit and the number of set bits */
-static void find_bits(int n, int* lowest, int* n_set) {
+static void find_bits(guint32 n, int* lowest, int* n_set) {
     unsigned int i;
 
     *lowest = 0;
@@ -560,13 +564,13 @@ static void find_bits(int n, int* lowest, int* n_set) {
 /* Decodes the bitmasks for BI_BITFIELDS coding */
 static gboolean decode_bitmasks(guchar* buf, struct bmp_progressive_state* State, GError** error) {
     State->a_mask = State->a_shift = State->a_bits = 0;
-    State->r_mask = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+    State->r_mask = (guint32)lsb_32(buf);
     buf += 4;
 
-    State->g_mask = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+    State->g_mask = (guint32)lsb_32(buf);
     buf += 4;
 
-    State->b_mask = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+    State->b_mask = (guint32)lsb_32(buf);
 
     find_bits(State->r_mask, &State->r_shift, &State->r_bits);
     find_bits(State->g_mask, &State->g_shift, &State->g_bits);
@@ -575,7 +579,7 @@ static gboolean decode_bitmasks(guchar* buf, struct bmp_progressive_state* State
     /* extended v3, v4 and v5 have an alpha mask */
     if (State->Header.size == 56 || State->Header.size == 108 || State->Header.size == 124) {
         buf += 4;
-        State->a_mask = buf[0] | (buf[1] << 8) | (buf[2] << 16) | (buf[3] << 24);
+        State->a_mask = (guint32)lsb_32(buf);
         find_bits(State->a_mask, &State->a_shift, &State->a_bits);
     }
 
@@ -712,6 +716,19 @@ static gboolean gdk_pixbuf__bmp_image_stop_load(gpointer data, GError** error) {
 The OneLineXX functions are called when 1 line worth of data is present.
 OneLine24 is the 24 bpp-version.
 */
+static guchar expand_bitfield(guint32 value, int bits) {
+    switch (bits) {
+        case 1:
+            return value * 255;
+        case 2:
+            return value * 85;
+        case 3:
+            return (value << 5) | (value << 2) | (value >> 1);
+        default:
+            return (value << (8 - bits)) | (value >> (2 * bits - 8));
+    }
+}
+
 static void OneLine32(struct bmp_progressive_state* context) {
     int i;
     guchar* pixels;
@@ -726,40 +743,53 @@ static void OneLine32(struct bmp_progressive_state* context) {
     src = context->buff;
 
     if (context->Compressed == BI_BITFIELDS) {
-        int r_lshift, r_rshift;
-        int g_lshift, g_rshift;
-        int b_lshift, b_rshift;
-        int a_lshift, a_rshift;
+        int r_bits = context->r_bits;
+        int g_bits = context->g_bits;
+        int b_bits = context->b_bits;
+        int a_bits = context->a_bits;
+        int r_lshift = 8 - r_bits, r_rshift = 2 * r_bits - 8;
+        int g_lshift = 8 - g_bits, g_rshift = 2 * g_bits - 8;
+        int b_lshift = 8 - b_bits, b_rshift = 2 * b_bits - 8;
+        int a_lshift = 8 - a_bits, a_rshift = 2 * a_bits - 8;
+        gboolean narrow_fields = r_bits < 4 || g_bits < 4 || b_bits < 4 || (a_bits && a_bits < 4);
 
-        r_lshift = 8 - context->r_bits;
-        g_lshift = 8 - context->g_bits;
-        b_lshift = 8 - context->b_bits;
-        a_lshift = 8 - context->a_bits;
+        if (narrow_fields) {
+            for (i = 0; i < context->Header.width; i++) {
+                unsigned int v, r, g, b, a;
 
-        r_rshift = context->r_bits - r_lshift;
-        g_rshift = context->g_bits - g_lshift;
-        b_rshift = context->b_bits - b_lshift;
-        a_rshift = context->a_bits - a_lshift;
+                v = (guint32)lsb_32(src);
 
-        for (i = 0; i < context->Header.width; i++) {
-            unsigned int v, r, g, b, a;
+                r = (v & context->r_mask) >> context->r_shift;
+                g = (v & context->g_mask) >> context->g_shift;
+                b = (v & context->b_mask) >> context->b_shift;
+                a = (v & context->a_mask) >> context->a_shift;
 
-            v = src[0] | (src[1] << 8) | (src[2] << 16) | (src[3] << 24);
+                *pixels++ = expand_bitfield(r, r_bits);
+                *pixels++ = expand_bitfield(g, g_bits);
+                *pixels++ = expand_bitfield(b, b_bits);
+                *pixels++ = a_bits ? expand_bitfield(a, a_bits) : 0xff;
 
-            r = (v & context->r_mask) >> context->r_shift;
-            g = (v & context->g_mask) >> context->g_shift;
-            b = (v & context->b_mask) >> context->b_shift;
-            a = (v & context->a_mask) >> context->a_shift;
+                src += 4;
+            }
+        }
+        else {
+            for (i = 0; i < context->Header.width; i++) {
+                unsigned int v, r, g, b, a;
 
-            *pixels++ = (r << r_lshift) | (r >> r_rshift);
-            *pixels++ = (g << g_lshift) | (g >> g_rshift);
-            *pixels++ = (b << b_lshift) | (b >> b_rshift);
-            if (context->a_bits)
-                *pixels++ = (a << a_lshift) | (a >> a_rshift);
-            else
-                *pixels++ = 0xff;
+                v = (guint32)lsb_32(src);
 
-            src += 4;
+                r = (v & context->r_mask) >> context->r_shift;
+                g = (v & context->g_mask) >> context->g_shift;
+                b = (v & context->b_mask) >> context->b_shift;
+                a = (v & context->a_mask) >> context->a_shift;
+
+                *pixels++ = (r << r_lshift) | (r >> r_rshift);
+                *pixels++ = (g << g_lshift) | (g >> g_rshift);
+                *pixels++ = (b << b_lshift) | (b >> b_rshift);
+                *pixels++ = a_bits ? ((a << a_lshift) | (a >> a_rshift)) : 0xff;
+
+                src += 4;
+            }
         }
     }
     else
@@ -805,32 +835,47 @@ static void OneLine16(struct bmp_progressive_state* context) {
     src = context->buff;
 
     if (context->Compressed == BI_BITFIELDS) {
-        int r_lshift, r_rshift;
-        int g_lshift, g_rshift;
-        int b_lshift, b_rshift;
+        int r_bits = context->r_bits;
+        int g_bits = context->g_bits;
+        int b_bits = context->b_bits;
+        int r_lshift = 8 - r_bits, r_rshift = 2 * r_bits - 8;
+        int g_lshift = 8 - g_bits, g_rshift = 2 * g_bits - 8;
+        int b_lshift = 8 - b_bits, b_rshift = 2 * b_bits - 8;
+        gboolean narrow_fields = r_bits < 4 || g_bits < 4 || b_bits < 4;
 
-        r_lshift = 8 - context->r_bits;
-        g_lshift = 8 - context->g_bits;
-        b_lshift = 8 - context->b_bits;
+        if (narrow_fields) {
+            for (i = 0; i < context->Header.width; i++) {
+                guint32 v, r, g, b;
 
-        r_rshift = context->r_bits - r_lshift;
-        g_rshift = context->g_bits - g_lshift;
-        b_rshift = context->b_bits - b_lshift;
+                v = (int)src[0] | ((int)src[1] << 8);
 
-        for (i = 0; i < context->Header.width; i++) {
-            int v, r, g, b;
+                r = (v & context->r_mask) >> context->r_shift;
+                g = (v & context->g_mask) >> context->g_shift;
+                b = (v & context->b_mask) >> context->b_shift;
 
-            v = (int)src[0] | ((int)src[1] << 8);
+                *pixels++ = expand_bitfield(r, r_bits);
+                *pixels++ = expand_bitfield(g, g_bits);
+                *pixels++ = expand_bitfield(b, b_bits);
 
-            r = (v & context->r_mask) >> context->r_shift;
-            g = (v & context->g_mask) >> context->g_shift;
-            b = (v & context->b_mask) >> context->b_shift;
+                src += 2;
+            }
+        }
+        else {
+            for (i = 0; i < context->Header.width; i++) {
+                guint32 v, r, g, b;
 
-            *pixels++ = (r << r_lshift) | (r >> r_rshift);
-            *pixels++ = (g << g_lshift) | (g >> g_rshift);
-            *pixels++ = (b << b_lshift) | (b >> b_rshift);
+                v = (int)src[0] | ((int)src[1] << 8);
 
-            src += 2;
+                r = (v & context->r_mask) >> context->r_shift;
+                g = (v & context->g_mask) >> context->g_shift;
+                b = (v & context->b_mask) >> context->b_shift;
+
+                *pixels++ = (r << r_lshift) | (r >> r_rshift);
+                *pixels++ = (g << g_lshift) | (g >> g_rshift);
+                *pixels++ = (b << b_lshift) | (b >> b_rshift);
+
+                src += 2;
+            }
         }
     }
     else
