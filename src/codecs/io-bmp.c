@@ -180,7 +180,7 @@ static gboolean gdk_pixbuf__bmp_image_load_increment(gpointer data, const guchar
  * alignment constraints many platforms.
  */
 static int lsb_32(guchar* src) {
-    return src[0] | (src[1] << 8) | (src[2] << 16) | (src[3] << 24);
+    return (guint32)src[0] | ((guint32)src[1] << 8) | ((guint32)src[2] << 16) | ((guint32)src[3] << 24);
 }
 
 /* Same as above, but for 16-bit little-endian integers. */
@@ -217,7 +217,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
                              unsigned char* BIH,
                              struct bmp_progressive_state* State,
                              GError** error) {
-    gint clrUsed;
+    guint32 clrUsed;
     guint bytesPerPixel;
 
     /* First check for the two first bytes content. A sane
@@ -306,11 +306,11 @@ static gboolean DecodeHeader(unsigned char* BFH,
     }
 
     if (State->Header.size == 12)
-        clrUsed = 1 << State->Header.depth;
+        clrUsed = 0;
     else
-        clrUsed = (int)(BIH[35] << 24) + (BIH[34] << 16) + (BIH[33] << 8) + (BIH[32]);
+        clrUsed = (guint32)lsb_32(&BIH[32]);
 
-    if (clrUsed > (1 << State->Header.depth)) {
+    if (clrUsed > (G_GUINT64_CONSTANT(1) << State->Header.depth)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
                             _("BMP image has oversize palette"));
         State->read_state = READ_STATE_ERROR;
@@ -319,8 +319,10 @@ static gboolean DecodeHeader(unsigned char* BFH,
 
     if (clrUsed != 0)
         State->Header.n_colors = clrUsed;
-    else
-        State->Header.n_colors = (1 << State->Header.depth);
+    else {
+        /* A 32-bit image has no implicit palette to allocate. */
+        State->Header.n_colors = State->Header.depth < 32 ? (1u << State->Header.depth) : 0;
+    }
 
     State->Type = State->Header.depth; /* This may be less trivial someday */
 
