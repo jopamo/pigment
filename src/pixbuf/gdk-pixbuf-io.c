@@ -1758,8 +1758,8 @@ GdkPixbuf* gdk_pixbuf_new_from_stream_finish(GAsyncResult* async_result, GError*
 
     task = G_TASK(async_result);
 
-    g_warn_if_fail(g_task_get_source_tag(task) == gdk_pixbuf_new_from_stream_async ||
-                   g_task_get_source_tag(task) == gdk_pixbuf_new_from_stream_at_scale_async);
+    g_warn_if_fail(g_task_get_source_tag(task) == &gdk_pixbuf_new_from_stream_async_tag ||
+                   g_task_get_source_tag(task) == &gdk_pixbuf_new_from_stream_at_scale_async_tag);
 
     return g_task_propagate_pointer(task, error);
 }
@@ -1935,7 +1935,7 @@ GdkPixbufFormat* gdk_pixbuf_get_file_info_finish(GAsyncResult* async_result,
     task = G_TASK(async_result);
 
     g_return_val_if_fail(!error || (error && !*error), NULL);
-    g_warn_if_fail(g_task_get_source_tag(task) == gdk_pixbuf_get_file_info_async);
+    g_warn_if_fail(g_task_get_source_tag(task) == &gdk_pixbuf_get_file_info_async_tag);
 
     data = g_task_get_task_data(task);
 
@@ -2911,8 +2911,7 @@ gboolean gdk_pixbuf_save_to_stream_finish(GAsyncResult* async_result, GError** e
     task = G_TASK(async_result);
 
     g_return_val_if_fail(!error || (error && !*error), FALSE);
-    g_warn_if_fail(g_task_get_source_tag(task) == gdk_pixbuf_save_to_stream_async ||
-                   g_task_get_source_tag(task) == gdk_pixbuf_save_to_streamv_async);
+    g_warn_if_fail(g_task_get_source_tag(task) == &gdk_pixbuf_save_to_streamv_async_tag);
 
     return g_task_propagate_boolean(task, error);
 }
