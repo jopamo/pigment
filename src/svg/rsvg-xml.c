@@ -135,7 +135,7 @@ void rsvg_xml_configure_parser(xmlParserCtxtPtr parser, RsvgHandle* handle) {
 #endif
     }
 
-#ifdef XML_PARSE_NO_XXE
+#ifdef HAVE_XML_PARSE_NO_XXE
     options |= XML_PARSE_NO_XXE;
 #endif
 

@@ -7,6 +7,7 @@
 #mesondefine HAVE_STRTOK_R
 #mesondefine HAVE_UNISTD_H
 #mesondefine HAVE_RSVG_ROOTED_FILE_IO
+#mesondefine HAVE_XML_PARSE_NO_XXE
 
 #define PACKAGE "@PACKAGE@"
 #define PACKAGE_NAME "@PACKAGE_NAME@"
