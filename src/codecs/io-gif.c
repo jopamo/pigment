@@ -558,6 +558,11 @@ static gint gif_get_frame_info(GifContext* context) {
     /* Okay, we got all the info we need.  Lets record it */
     context->frame_len = LM_to_uint(buf[4], buf[5]);
     context->frame_height = LM_to_uint(buf[6], buf[7]);
+    if (context->frame_len == 0 || context->frame_height == 0) {
+        g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                            _("GIF image frame has zero size"));
+        return -2;
+    }
     context->x_offset = LM_to_uint(buf[0], buf[1]);
     context->y_offset = LM_to_uint(buf[2], buf[3]);
 
@@ -861,7 +866,7 @@ static GdkPixbufAnimation* gdk_pixbuf__gif_image_load_animation(FILE* file, GErr
     context->error = error;
     context->file = file;
 
-    if (gif_main_loop(context) == -1 || context->animation->frames == NULL) {
+    if (gif_main_loop(context) < 0 || context->animation->frames == NULL) {
         if (context->error && *(context->error) == NULL)
             g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
                                 _("GIF file was missing some data (perhaps it was truncated somehow?)"));
