@@ -75,6 +75,12 @@ cairo_surface_t* rsvg_cairo_surface_new_from_href(RsvgHandle* handle, const char
     }
 
     surface = rsvg_cairo_surface_from_pixbuf(pixbuf);
+    if (surface == NULL) {
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
+                    _("Could not create a Cairo surface for image dimensions %d x %d"), gdk_pixbuf_get_width(pixbuf),
+                    gdk_pixbuf_get_height(pixbuf));
+        goto out;
+    }
 
     if (mime_type == NULL) {
         /* Try to get the information from the loader */
