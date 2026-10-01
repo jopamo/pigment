@@ -36,7 +36,6 @@
 
 static int output_size = 256;
 static gboolean g_fatal_warnings = FALSE;
-static char** filenames = NULL;
 
 #if !GDK_PIXBUF_CHECK_VERSION(2, 36, 5)
 /**
@@ -221,19 +220,19 @@ static char* get_target_path(GFile* input, GError** error) {
     return g_file_get_path(input);
 }
 
-static const GOptionEntry entries[] = {
-    {"size", 's', 0, G_OPTION_ARG_INT, &output_size, "Size of the thumbnail in pixels", NULL},
-    {"g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL},
-    {G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_FILENAME_ARRAY, &filenames, NULL, "[INPUT FILE] [OUTPUT FILE]"},
-    {NULL, 0, 0, 0, NULL, NULL, NULL}};
-
 int main(int argc, char** argv) {
     char* input_filename;
-    GdkPixbuf* pixbuf;
-    GError* error = NULL;
+    g_autoptr(GdkPixbuf) pixbuf = NULL;
+    g_autoptr(GError) error = NULL;
+    g_auto(GStrv) filenames = NULL;
     g_autoptr(GOptionContext) context = NULL;
     GFile* input;
     const char* output;
+    const GOptionEntry entries[] = {
+        {"size", 's', 0, G_OPTION_ARG_INT, &output_size, "Size of the thumbnail in pixels", NULL},
+        {"g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL},
+        {G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_FILENAME_ARRAY, &filenames, NULL, "[INPUT FILE] [OUTPUT FILE]"},
+        {NULL, 0, 0, 0, NULL, NULL, NULL}};
 
 #ifdef THUMBNAILER_RETURNS_PIXBUF
     /* Nothing */
@@ -254,7 +253,6 @@ int main(int argc, char** argv) {
 
     if (g_option_context_parse(context, &argc, &argv, &error) == FALSE) {
         g_warning("Couldn't parse command-line options: %s", error->message);
-        g_error_free(error);
         return 1;
     }
 
@@ -283,7 +281,6 @@ int main(int argc, char** argv) {
 
     if (input_filename == NULL) {
         g_warning("Could not get file path for %s: %s", filenames[0], error ? error->message : "No local file path");
-        g_clear_error(&error);
         return 1;
     }
 
@@ -336,18 +333,13 @@ int main(int argc, char** argv) {
     if (!pixbuf) {
         g_warning("Could not thumbnail '%s': %s", filenames[0],
                   error ? error->message : "Thumbnailer failed without returning an error");
-        g_clear_error(&error);
-        g_strfreev(filenames);
         return 1;
     }
 
     if (gdk_pixbuf_save(pixbuf, output, "png", &error, NULL) == FALSE) {
         g_warning("Couldn't save the thumbnail '%s' for file '%s': %s", output, filenames[0], error->message);
-        g_error_free(error);
         return 1;
     }
-
-    g_object_unref(pixbuf);
 
     return 0;
 }
