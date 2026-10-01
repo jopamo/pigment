@@ -179,9 +179,6 @@ struct _RsvgState {
 };
 
 G_GNUC_INTERNAL
-RsvgState* rsvg_state_new(void);
-
-G_GNUC_INTERNAL
 void rsvg_state_init(RsvgState* state);
 G_GNUC_INTERNAL
 void rsvg_state_reinit(RsvgState* state);
