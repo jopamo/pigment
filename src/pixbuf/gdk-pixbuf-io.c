@@ -758,9 +758,8 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
             return FALSE;
         }
 
-        image_module->module = module;
-
         if (g_module_symbol(module, "fill_vtable", &sym)) {
+            image_module->module = module;
             fill_vtable = (GdkPixbufModuleFillVtableFunc)sym;
             (*fill_vtable)(image_module);
             return TRUE;
@@ -772,6 +771,7 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
                           "gdk-pixbuf version?"),
                         path_utf8);
             g_free(path_utf8);
+            g_module_close(module);
             return FALSE;
         }
     }
