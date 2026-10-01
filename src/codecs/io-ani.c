@@ -168,7 +168,7 @@ static void prepared_callback(GdkPixbufLoader* loader, gpointer data) {
     context->pos++;
 }
 
-static void updated_callback(GdkPixbufLoader* loader, gint x, gint y, gint width, gint height, gpointer data) {
+static void updated_callback(gpointer loader, gint x, gint y, gint width, gint height, gpointer data) {
     AniLoaderContext* context = (AniLoaderContext*)data;
 
     GdkPixbuf* pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);

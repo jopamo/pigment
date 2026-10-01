@@ -92,7 +92,7 @@ static gboolean gdk_pixbuf__qtif_image_free_loader(QTIFContext* context, GError*
 
 static void gdk_pixbuf__qtif_cb_size_prepared(gpointer loader, gint width, gint height, gpointer user_data);
 static void gdk_pixbuf__qtif_cb_area_prepared(GdkPixbufLoader* loader, gpointer user_data);
-static void gdk_pixbuf__qtif_cb_area_updated(GdkPixbufLoader* loader,
+static void gdk_pixbuf__qtif_cb_area_updated(gpointer loader,
                                              gint x,
                                              gint y,
                                              gint width,
@@ -457,7 +457,7 @@ static void gdk_pixbuf__qtif_cb_area_prepared(GdkPixbufLoader* loader, gpointer 
     context->cb_update_count++;
 }
 
-static void gdk_pixbuf__qtif_cb_area_updated(GdkPixbufLoader* loader,
+static void gdk_pixbuf__qtif_cb_area_updated(gpointer loader,
                                              gint x,
                                              gint y,
                                              gint width,
