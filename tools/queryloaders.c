@@ -194,11 +194,12 @@ static void write_loader_info(GString* contents, const char* path, GdkPixbufForm
     g_string_append_c(contents, '\n');
 }
 
-static void query_module(GString* contents, const char* dir, const char* file) {
+static gboolean query_module(GString* contents, const char* dir, const char* file) {
     char* path;
     GModule* module;
     void (*fill_info)(GdkPixbufFormat* info);
     void (*fill_vtable)(GdkPixbufModule* module);
+    gboolean result = FALSE;
 
     if (g_path_is_absolute(file))
         path = g_strdup(file);
@@ -232,8 +233,10 @@ static void query_module(GString* contents, const char* dir, const char* file) {
         (*fill_info)(info);
         (*fill_vtable)(vtable);
 
-        if (loader_sanity_check(path, info, vtable))
+        if (loader_sanity_check(path, info, vtable)) {
             write_loader_info(contents, path, info);
+            result = TRUE;
+        }
 
         g_free(info);
         g_free(vtable);
@@ -247,6 +250,7 @@ static void query_module(GString* contents, const char* dir, const char* file) {
     if (module)
         g_module_close(module);
     g_free(path);
+    return result;
 }
 
 #if defined(G_OS_WIN32) && defined(GDK_PIXBUF_RELOCATABLE)
@@ -281,6 +285,7 @@ int main(int argc, char** argv) {
     GString* contents;
     gchar* cache_file = NULL;
     gint first_file = 1;
+    gint status = 0;
     GFile* pixbuf_libdir_file;
     gchar* pixbuf_libdir;
 
@@ -382,6 +387,7 @@ int main(int argc, char** argv) {
         char* moduledir;
         GDir* dir;
         GList *l, *modules;
+        GError* error = NULL;
 
         moduledir = g_strdup(g_getenv("GDK_PIXBUF_MODULEDIR"));
 #ifdef G_OS_WIN32
@@ -401,7 +407,7 @@ int main(int argc, char** argv) {
         g_string_append_printf(contents, "# LoaderDir = %s\n#\n", moduledir);
 
         modules = NULL;
-        dir = g_dir_open(moduledir, 0, NULL);
+        dir = g_dir_open(moduledir, 0, &error);
         if (dir) {
             const char* dent;
 
@@ -413,9 +419,16 @@ int main(int argc, char** argv) {
             }
             g_dir_close(dir);
         }
+        else {
+            g_fprintf(stderr, "%s\n", error->message);
+            g_error_free(error);
+            status = 1;
+        }
         modules = g_list_sort(modules, (GCompareFunc)strcmp);
-        for (l = modules; l != NULL; l = l->next)
-            query_module(contents, moduledir, l->data);
+        for (l = modules; l != NULL; l = l->next) {
+            if (!query_module(contents, moduledir, l->data))
+                status = 1;
+        }
         g_list_free_full(modules, g_free);
         g_free(moduledir);
 #else
@@ -430,17 +443,20 @@ int main(int argc, char** argv) {
 #ifdef G_OS_WIN32
             infilename = g_locale_to_utf8(infilename, -1, NULL, NULL, NULL);
 #endif
-            query_module(contents, cwd, infilename);
+            if (!query_module(contents, cwd, infilename))
+                status = 1;
         }
         g_free(cwd);
     }
 
     if (cache_file) {
-        GError* err;
-
-        err = NULL;
-        if (!g_file_set_contents(cache_file, contents->str, -1, &err)) {
-            g_fprintf(stderr, "%s\n", err->message);
+        if (status == 0) {
+            GError* err = NULL;
+            if (!g_file_set_contents(cache_file, contents->str, -1, &err)) {
+                g_fprintf(stderr, "%s\n", err->message);
+                g_error_free(err);
+                status = 1;
+            }
         }
     }
     else
@@ -449,6 +465,7 @@ int main(int argc, char** argv) {
     g_string_free(contents, TRUE);
 
     g_free(pixbuf_libdir);
+    g_free(cache_file);
 
-    return 0;
+    return status;
 }
