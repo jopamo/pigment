@@ -73,8 +73,8 @@ typedef guchar* (*PixopsLineFunc)(int* weights,
                                   guchar** src,
                                   int src_channels,
                                   gboolean src_has_alpha,
-                                  int x_init,
-                                  int x_step,
+                                  gint64 x_init,
+                                  gint64 x_step,
                                   int src_width,
                                   int check_size,
                                   guint32 color1,
@@ -655,13 +655,13 @@ static guchar* composite_line(int* weights,
                               guchar** src,
                               int src_channels,
                               gboolean src_has_alpha,
-                              int x_init,
-                              int x_step,
+                              gint64 x_init,
+                              gint64 x_step,
                               int src_width,
                               int check_size,
                               guint32 color1,
                               guint32 color2) {
-    int x = x_init;
+    gint64 x = x_init;
     int i, j;
 
     while (dest < dest_end) {
@@ -669,7 +669,7 @@ static guchar* composite_line(int* weights,
         unsigned int r = 0, g = 0, b = 0, a = 0;
         int* pixel_weights;
 
-        pixel_weights = weights + ((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_x * n_y;
+        pixel_weights = weights + (int)((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_x * n_y;
 
         for (i = 0; i < n_y; i++) {
             guchar* q = src[i] + x_scaled * src_channels;
@@ -734,13 +734,13 @@ static guchar* composite_line_22_4a4(int* weights,
                                      guchar** src,
                                      int src_channels,
                                      gboolean src_has_alpha,
-                                     int x_init,
-                                     int x_step,
+                                     gint64 x_init,
+                                     gint64 x_step,
                                      int src_width,
                                      int check_size,
                                      guint32 color1,
                                      guint32 color2) {
-    int x = x_init;
+    gint64 x = x_init;
     guchar* src0 = src[0];
     guchar* src1 = src[1];
 
@@ -850,13 +850,13 @@ static guchar* composite_line_color(int* weights,
                                     guchar** src,
                                     int src_channels,
                                     gboolean src_has_alpha,
-                                    int x_init,
-                                    int x_step,
+                                    gint64 x_init,
+                                    gint64 x_step,
                                     int src_width,
                                     int check_size,
                                     guint32 color1,
                                     guint32 color2) {
-    int x = x_init;
+    gint64 x = x_init;
     int i, j;
     int check_shift = get_check_shift(check_size);
     int dest_r1, dest_g1, dest_b1;
@@ -877,7 +877,7 @@ static guchar* composite_line_color(int* weights,
         unsigned int r = 0, g = 0, b = 0, a = 0;
         int* pixel_weights;
 
-        pixel_weights = weights + ((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_x * n_y;
+        pixel_weights = weights + (int)((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_x * n_y;
 
         for (i = 0; i < n_y; i++) {
             guchar* q = src[i] + x_scaled * src_channels;
@@ -979,13 +979,13 @@ static guchar* scale_line(int* weights,
                           guchar** src,
                           int src_channels,
                           gboolean src_has_alpha,
-                          int x_init,
-                          int x_step,
+                          gint64 x_init,
+                          gint64 x_step,
                           int src_width,
                           int check_size,
                           guint32 color1,
                           guint32 color2) {
-    int x = x_init;
+    gint64 x = x_init;
     int i, j;
     const int n_xy = n_x * n_y;
 
@@ -993,7 +993,7 @@ static guchar* scale_line(int* weights,
         int x_scaled = x >> SCALE_SHIFT;
         int* pixel_weights;
 
-        pixel_weights = weights + ((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_xy;
+        pixel_weights = weights + (int)((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * n_xy;
 
         if (src_has_alpha) {
             unsigned int r = 0, g = 0, b = 0, a = 0;
@@ -1079,13 +1079,13 @@ static guchar* scale_line_22_33(int* weights,
                                 guchar** src,
                                 int src_channels,
                                 gboolean src_has_alpha,
-                                int x_init,
-                                int x_step,
+                                gint64 x_init,
+                                gint64 x_step,
                                 int src_width,
                                 int check_size,
                                 guint32 color1,
                                 guint32 color2) {
-    int x = x_init;
+    gint64 x = x_init;
     guchar* src0 = src[0];
     guchar* src1 = src[1];
 
@@ -1099,7 +1099,7 @@ static guchar* scale_line_22_33(int* weights,
         q0 = src0 + x_scaled * 3;
         q1 = src1 + x_scaled * 3;
 
-        pixel_weights = weights + ((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * 4;
+        pixel_weights = weights + (int)((x >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * 4;
 
         w1 = pixel_weights[0];
         w2 = pixel_weights[1];
