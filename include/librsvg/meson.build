@@ -3,8 +3,6 @@ enum_headers = files('rsvg.h')
 public_headers = enum_headers + files('rsvg-cairo.h', 'rsvg-deprecated.h')
 svg_features_template = files('librsvg-features.h.in')[0]
 
-glib_mkenums = find_program('glib-mkenums')
-
 version_parts = rsvg_version.split('.')
 micro_version = 0
 if version_parts.length() > 2

@@ -17,9 +17,7 @@ foreach bin: gdkpixbuf_bin
                    include_directories: [ root_inc, gdk_pixbuf_inc, pixops_inc ],
                    c_args: common_cflags + gdk_pixbuf_cflags,
                    install: true)
-  meson.override_find_program(bin_name, bin)
-
-  # Used in tests
+  # Expose tools to cache and thumbnailer generation.
   set_variable(bin_name.underscorify(), bin)
 endforeach
 
@@ -35,10 +33,8 @@ if not meson.is_cross_build()
                                 ],
                                 depends: dynamic_loaders_dep,
                                 build_by_default: true)
-  loaders_dep = declare_dependency(sources: [ loaders_cache ])
 else
   loaders_cache = []
-  loaders_dep = declare_dependency()
 endif
 
 if not meson.is_cross_build()
@@ -50,7 +46,6 @@ if not meson.is_cross_build()
              ],
              dependencies: gdk_pixbuf_deps + [ gdkpixbuf_dep ],
              install: true)
-  meson.override_find_program('gdk-pixbuf-thumbnailer', bin)
 
   gdk_pixbuf_print_mime_types = executable('gdk-pixbuf-print-mime-types',
                                            print_mime_types_source,

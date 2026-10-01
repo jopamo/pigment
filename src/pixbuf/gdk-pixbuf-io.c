@@ -624,10 +624,6 @@ static void gdk_pixbuf_io_init_builtin(void) {
     load_one_builtin_module(jpeg);
     load_one_builtin_module(tiff);
 #endif
-#ifdef INCLUDE_gdip_png
-    /* Except the gdip-png loader which normally isn't built at all even */
-    load_one_builtin_module(png);
-#endif
 
 #undef load_one_builtin_module
 }
@@ -664,7 +660,6 @@ module(gdip_emf);
 module(gdip_bmp);
 module(gdip_gif);
 module(gdip_jpeg);
-module(gdip_png);
 module(gdip_tiff);
 
 #undef module
@@ -693,9 +688,6 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
     try_module(gif, gdip_gif);
     try_module(jpeg, gdip_jpeg);
     try_module(tiff, gdip_tiff);
-#endif
-#ifdef INCLUDE_gdip_png
-    try_module(png, gdip_png);
 #endif
 #ifdef INCLUDE_png
     try_module(png, png);

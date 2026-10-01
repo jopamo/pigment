@@ -257,7 +257,7 @@ foreach name, loader: loaders
                         install: true,
                         install_dir: gdk_pixbuf_loaderdir)
 
-    # We need the path to build loaders.cache for tests
+    # Query this build's selected modules for cache and thumbnailer generation.
     dynamic_loaders += mod.full_path()
     dynamic_loaders_dep += mod
   endif
