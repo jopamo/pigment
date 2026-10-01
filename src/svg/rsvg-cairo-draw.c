@@ -1130,6 +1130,8 @@ GdkPixbuf* rsvg_cairo_surface_to_pixbuf(cairo_surface_t* surface) {
 
     content = cairo_surface_get_content(surface) | CAIRO_CONTENT_COLOR;
     dest = gdk_pixbuf_new(GDK_COLORSPACE_RGB, !!(content & CAIRO_CONTENT_ALPHA), 8, width, height);
+    if (dest == NULL)
+        return NULL;
 
     if (gdk_pixbuf_get_has_alpha(dest))
         convert_alpha(gdk_pixbuf_get_pixels(dest), gdk_pixbuf_get_rowstride(dest),
