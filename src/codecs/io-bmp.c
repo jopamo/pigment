@@ -1328,7 +1328,7 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
     if (!save_func((gchar*)BFH_BIH, 14 + 40, error, user_data))
         return FALSE;
 
-    dst_line = buf = g_try_malloc(size);
+    dst_line = buf = g_try_malloc0(size);
     if (!buf) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
                             _("Couldn’t allocate memory for saving BMP file"));
