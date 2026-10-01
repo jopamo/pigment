@@ -2381,6 +2381,10 @@ gboolean rsvg_handle_read_stream_sync(RsvgHandle* handle,
 out:
 
     priv->ctxt = rsvg_free_xml_parser_and_doc(priv->ctxt);
+    if (res && err != NULL) {
+        g_propagate_error(error, g_steal_pointer(&err));
+        res = FALSE;
+    }
 
     priv->error = NULL;
     g_clear_object(&priv->cancellable);
