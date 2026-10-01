@@ -47,6 +47,10 @@ Known bugs:
 #include <glib/gi18n-lib.h>
 #include "gdk-pixbuf-io.h"
 
+static guint32 read_le32(const guchar* src) {
+    return (guint32)src[0] | ((guint32)src[1] << 8) | ((guint32)src[2] << 16) | ((guint32)src[3] << 24);
+}
+
 /*
 
 These structures are actually dummies. These are according to
@@ -85,17 +89,17 @@ debugging purposes.
 
 */
 static void DumpBIH(unsigned char* BIH) {
-    printf("biSize      = %i \n", (int)(BIH[3] << 24) + (BIH[2] << 16) + (BIH[1] << 8) + (BIH[0]));
-    printf("biWidth     = %i \n", (int)(BIH[7] << 24) + (BIH[6] << 16) + (BIH[5] << 8) + (BIH[4]));
-    printf("biHeight    = %i \n", (int)(BIH[11] << 24) + (BIH[10] << 16) + (BIH[9] << 8) + (BIH[8]));
+    printf("biSize      = %i \n", (gint32)read_le32(&BIH[0]));
+    printf("biWidth     = %i \n", (gint32)read_le32(&BIH[4]));
+    printf("biHeight    = %i \n", (gint32)read_le32(&BIH[8]));
     printf("biPlanes    = %i \n", (int)(BIH[13] << 8) + (BIH[12]));
     printf("biBitCount  = %i \n", (int)(BIH[15] << 8) + (BIH[14]));
-    printf("biCompress  = %i \n", (int)(BIH[19] << 24) + (BIH[18] << 16) + (BIH[17] << 8) + (BIH[16]));
-    printf("biSizeImage = %i \n", (int)(BIH[23] << 24) + (BIH[22] << 16) + (BIH[21] << 8) + (BIH[20]));
-    printf("biXPels     = %i \n", (int)(BIH[27] << 24) + (BIH[26] << 16) + (BIH[25] << 8) + (BIH[24]));
-    printf("biYPels     = %i \n", (int)(BIH[31] << 24) + (BIH[30] << 16) + (BIH[29] << 8) + (BIH[28]));
-    printf("biClrUsed   = %i \n", (int)(BIH[35] << 24) + (BIH[34] << 16) + (BIH[33] << 8) + (BIH[32]));
-    printf("biClrImprtnt= %i \n", (int)(BIH[39] << 24) + (BIH[38] << 16) + (BIH[37] << 8) + (BIH[36]));
+    printf("biCompress  = %i \n", (gint32)read_le32(&BIH[16]));
+    printf("biSizeImage = %i \n", (gint32)read_le32(&BIH[20]));
+    printf("biXPels     = %i \n", (gint32)read_le32(&BIH[24]));
+    printf("biYPels     = %i \n", (gint32)read_le32(&BIH[28]));
+    printf("biClrUsed   = %i \n", (gint32)read_le32(&BIH[32]));
+    printf("biClrImprtnt= %i \n", (gint32)read_le32(&BIH[36]));
 }
 #endif
 
@@ -195,6 +199,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
     guchar* Ptr;
     gint I;
     guint16 imgtype; /* 1 = icon, 2 = cursor */
+    guint32 n_colors;
     GList* l;
     gboolean got_broken_header = FALSE;
 
@@ -257,8 +262,8 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         depth = Ptr[2];
         x_hot = (Ptr[5] << 8) + Ptr[4];
         y_hot = (Ptr[7] << 8) + Ptr[6];
-        data_size = ((guint)(Ptr[11]) << 24) + (Ptr[10] << 16) + (Ptr[9] << 8) + (Ptr[8]);
-        data_offset = ((guint)(Ptr[15]) << 24) + (Ptr[14] << 16) + (Ptr[13] << 8) + (Ptr[12]);
+        data_size = read_le32(&Ptr[8]);
+        data_offset = read_le32(&Ptr[12]);
         DEBUG(g_print("Image %d: %d x %d\n\tDepth: %d\n", I, width, height, depth);
               if (imgtype == 2) g_print("\tHotspot: %d x %d\n", x_hot, y_hot);
               else g_print("\tColor planes: %d\n\tBits per pixel: %d\n", x_hot, y_hot);
@@ -350,11 +355,11 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
 #endif
     /* Add the palette to the headersize */
 
-    State->Header.width = (int)(BIH[7] << 24) + (BIH[6] << 16) + (BIH[5] << 8) + (BIH[4]);
+    State->Header.width = (gint32)read_le32(&BIH[4]);
     if (State->Header.width == 0)
         State->Header.width = 256;
 
-    State->Header.height = (int)((BIH[11] << 24) + (BIH[10] << 16) + (BIH[9] << 8) + (BIH[8])) / 2;
+    State->Header.height = (gint32)read_le32(&BIH[8]) / 2;
     /* /2 because the BIH height includes the transparency mask */
     if (State->Header.height == 0)
         State->Header.height = 256;
@@ -364,15 +369,13 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         State->Header.height = -State->Header.height;
         State->Header.Negative = 1;
     }
-    if (State->Header.width < 0) {
-        State->Header.width = -State->Header.width;
-    }
-
-    if (State->Header.width != entry->width || State->Header.height != entry->height) {
+    if ((State->Header.width != entry->width && State->Header.width != -entry->width) ||
+        State->Header.height != entry->height) {
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
                     "image size");
         return;
     }
+    State->Header.width = entry->width;
 
     State->Header.depth = (BIH[15] << 8) + (BIH[14]);
     State->Type = State->Header.depth;
@@ -380,22 +383,20 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
     /* Determine the  palette size. If the header indicates 0, it
        is actually the maximum for the bpp. You have to love the
        guys who made the spec. */
-    I = (int)(BIH[35] << 24) + (BIH[34] << 16) + (BIH[33] << 8) + (BIH[32]);
-    I = I * 4;
-    if ((I == 0) && (State->Type == 1))
-        I = 2 * 4;
-    if ((I == 0) && (State->Type == 4))
-        I = 16 * 4;
-    if ((I == 0) && (State->Type == 8))
-        I = 256 * 4;
+    n_colors = read_le32(&BIH[32]);
+    if ((n_colors == 0) && (State->Type == 1))
+        n_colors = 2;
+    if ((n_colors == 0) && (State->Type == 4))
+        n_colors = 16;
+    if ((n_colors == 0) && (State->Type == 8))
+        n_colors = 256;
 
-    State->HeaderSize += I;
-
-    if (State->HeaderSize < 0) {
+    if (n_colors > (G_MAXINT - State->HeaderSize) / 4) {
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
                     "palette size");
         return;
     }
+    State->HeaderSize += n_colors * 4;
 
     if (State->HeaderSize > State->BytesInHeaderBuf) {
         guchar* tmp = g_try_realloc(State->HeaderBuf, State->HeaderSize);
