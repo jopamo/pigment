@@ -166,9 +166,9 @@ static void parse_args(gint* argc_p, gchar*** argv_p) {
             gchar* equal = argv[i] + 6;
 
             if (*equal == '=')
-                image_name = g_strdup(equal + 1);
+                image_name = equal + 1;
             else if (i + 1 < argc) {
-                image_name = g_strdup(argv[i + 1]);
+                image_name = argv[i + 1];
                 argv[i] = NULL;
                 i += 1;
             }
