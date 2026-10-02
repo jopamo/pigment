@@ -439,7 +439,7 @@ GdkPixbufAnimation* gdk_pixbuf_animation_new_from_stream_finish(GAsyncResult* as
 
     g_return_val_if_fail(G_IS_TASK(async_result), NULL);
     g_return_val_if_fail(!error || (error && !*error), NULL);
-    g_warn_if_fail(g_task_get_source_tag(task) == gdk_pixbuf_animation_new_from_stream_async);
+    g_warn_if_fail(g_task_get_source_tag(task) == &gdk_pixbuf_animation_new_from_stream_async_tag);
 
     return g_task_propagate_pointer(task, error);
 }
