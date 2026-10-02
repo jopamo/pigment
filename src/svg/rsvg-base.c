@@ -2049,12 +2049,15 @@ void rsvg_handle_set_size_callback(RsvgHandle* handle,
                                    GDestroyNotify user_data_destroy) {
     g_return_if_fail(handle != NULL);
 
-    if (handle->priv->user_data_destroy)
-        (*handle->priv->user_data_destroy)(handle->priv->user_data);
+    GDestroyNotify old_destroy = handle->priv->user_data_destroy;
+    gpointer old_data = handle->priv->user_data;
 
     handle->priv->size_func = size_func;
     handle->priv->user_data = user_data;
     handle->priv->user_data_destroy = user_data_destroy;
+
+    if (old_destroy)
+        old_destroy(old_data);
 }
 
 #define GZ_MAGIC_0 ((guchar)0x1f)
