@@ -37,14 +37,20 @@ static void parse_args(gint* argc_p, gchar*** argv_p);
 static void print_blurb(FILE* bout, gboolean print_help);
 
 int main(int argc, char* argv[]) {
-    GdkPixbuf* pixbuf;
+    GdkPixbuf* pixbuf = NULL;
     GError* error = NULL;
+#ifdef G_OS_WIN32
+    g_autofree gchar* infilename = NULL;
+    g_autofree gchar* outfilename = NULL;
+#else
     gchar* infilename;
     gchar* outfilename;
-    gpointer free_me;
+#endif
+    gpointer free_me = NULL;
     GdkPixdata pixdata;
-    guint8* data;
+    guint8* data = NULL;
     guint data_len;
+    gint status = 1;
 
     /* parse args and do fast exits */
     parse_args(&argc, &argv);
@@ -69,8 +75,7 @@ int main(int argc, char* argv[]) {
     pixbuf = gdk_pixbuf_new_from_file(infilename, &error);
     if (error != NULL) {
         g_printerr("failed to load \"%s\": %s\n", argv[1], error->message);
-        g_error_free(error);
-        return 1;
+        goto out;
     }
 
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
@@ -79,20 +84,22 @@ int main(int argc, char* argv[]) {
     G_GNUC_END_IGNORE_DEPRECATIONS
     if (data == NULL) {
         g_printerr("failed to serialize \"%s\"", argv[1]);
-        return 1;
+        goto out;
     }
 
     if (!g_file_set_contents(outfilename, (char*)data, data_len, &error)) {
         g_printerr("failed to load \"%s\": %s\n", argv[1], error->message);
-        g_error_free(error);
-        return 1;
+        goto out;
     }
 
+    status = 0;
+
+out:
     g_free(data);
     g_free(free_me);
-    g_object_unref(pixbuf);
-
-    return 0;
+    g_clear_object(&pixbuf);
+    g_clear_error(&error);
+    return status;
 }
 
 static void parse_args(gint* argc_p, gchar*** argv_p) {
