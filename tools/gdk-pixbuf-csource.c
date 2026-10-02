@@ -121,6 +121,11 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (fflush(stdout) != 0 || ferror(stdout)) {
+        g_fprintf(stderr, "Error writing C source to standard output\n");
+        return 1;
+    }
+
     return 0;
 }
 
