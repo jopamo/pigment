@@ -537,14 +537,11 @@ cairo_surface_t* rsvg_filter_render(RsvgFilter* self,
  * Stores it as the last result
  **/
 static void rsvg_filter_store_output(GString* name, RsvgFilterPrimitiveOutput result, RsvgFilterContext* ctx) {
-    RsvgFilterPrimitiveOutput* store;
-
     cairo_surface_destroy(ctx->lastresult.surface);
 
-    store = g_new(RsvgFilterPrimitiveOutput, 1);
-    *store = result;
-
     if (name->str[0] != '\0') {
+        RsvgFilterPrimitiveOutput* store = g_new(RsvgFilterPrimitiveOutput, 1);
+        *store = result;
         cairo_surface_reference(result.surface); /* increments the references for the table */
         g_hash_table_insert(ctx->results, g_strdup(name->str), store);
     }
