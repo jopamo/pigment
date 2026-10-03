@@ -1631,6 +1631,21 @@ static RsvgLengthUnit rsvg_length_unit_from_factor(char factor) {
     }
 }
 
+/**
+ * rsvg_handle_get_intrinsic_dimensions:
+ * @handle: A #RsvgHandle
+ * @out_has_width: (out) (optional): whether the width length is available
+ * @out_width: (out caller-allocates) (optional): the intrinsic width length
+ * @out_has_height: (out) (optional): whether the height length is available
+ * @out_height: (out caller-allocates) (optional): the intrinsic height length
+ * @out_has_viewbox: (out) (optional): whether a viewBox is present
+ * @out_viewbox: (out caller-allocates) (optional): the viewBox rectangle
+ *
+ * Reports the root SVG's lengths and optional viewBox without converting
+ * lengths to pixels. Unspecified width and height default to 100%.
+ * Read each length or rectangle only when its corresponding flag is true.
+ * Use rsvg_handle_get_intrinsic_size_in_pixels() for resolved pixel sizes.
+ */
 void rsvg_handle_get_intrinsic_dimensions(RsvgHandle* handle,
                                           gboolean* out_has_width,
                                           RsvgLength* out_width,
