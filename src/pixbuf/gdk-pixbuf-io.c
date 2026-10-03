@@ -1918,8 +1918,8 @@ void gdk_pixbuf_get_file_info_async(const gchar* filename,
  * Finishes an asynchronous pixbuf parsing operation started with
  * gdk_pixbuf_get_file_info_async().
  *
- * Returns: (transfer none) (nullable): A `GdkPixbufFormat` describing the
- *   image format of the file
+ * Returns: (transfer full) (nullable): A `GdkPixbufFormat` describing the
+ *   image format of the file. Free it with gdk_pixbuf_format_free() when done.
  *
  * Since: 2.32
  **/
