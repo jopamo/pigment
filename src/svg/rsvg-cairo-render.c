@@ -444,6 +444,20 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
     return retval;
 }
 
+/**
+ * rsvg_handle_get_geometry_for_layer:
+ * @handle: a fully loaded #RsvgHandle
+ * @id: (nullable): an element identifier, or %NULL for the whole document
+ * @viewport: (nullable): the target viewport, or %NULL for document dimensions
+ * @out_ink_rect: (out caller-allocates) (optional): location for the ink bounds
+ * @out_logical_rect: (out caller-allocates) (optional): location for the logical bounds
+ * @error: (nullable): return location for a #GError
+ *
+ * Queries the geometry of a document or layer. Only read output rectangles
+ * when the query succeeds.
+ *
+ * Returns: %TRUE if the query succeeded, or %FALSE otherwise
+ */
 gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
                                             const char* id,
                                             const RsvgRectangle* viewport,
@@ -492,17 +506,12 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     }
 
     if (id && *id) {
-        RsvgNode* p = drawsub->parent;
-        GSList* stack_head = NULL;
-        while (p) {
-            stack_head = g_slist_prepend(stack_head, p);
-            p = p->parent;
-        }
-        draw->drawsub_stack = stack_head;
+        for (RsvgNode* p = drawsub; p; p = p->parent)
+            draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, p);
     }
 
     rsvg_state_push(draw);
-    rsvg_node_draw(drawsub, draw, 0);
+    rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
 
     render = RSVG_CAIRO_RENDER(draw->render);
 
@@ -529,6 +538,19 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     return retval;
 }
 
+/**
+ * rsvg_handle_get_geometry_for_element:
+ * @handle: a fully loaded #RsvgHandle
+ * @id: an element identifier
+ * @out_ink_rect: (out caller-allocates) (optional): location for the ink bounds
+ * @out_logical_rect: (out caller-allocates) (optional): location for the logical bounds
+ * @error: (nullable): return location for a #GError
+ *
+ * Queries the geometry of an element. Only read output rectangles when the
+ * query succeeds.
+ *
+ * Returns: %TRUE if the query succeeded, or %FALSE otherwise
+ */
 gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
                                               const char* id,
                                               RsvgRectangle* out_ink_rect,
@@ -570,16 +592,11 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
 
     cairo_transform(cr, &inv_parent);
 
-    RsvgNode* p = drawsub->parent;
-    GSList* stack = NULL;
-    while (p) {
-        stack = g_slist_prepend(stack, p);
-        p = p->parent;
-    }
-    draw->drawsub_stack = stack;
+    for (RsvgNode* p = drawsub; p; p = p->parent)
+        draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, p);
 
     rsvg_state_push(draw);
-    rsvg_node_draw(drawsub, draw, 0);
+    rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
 
     render = RSVG_CAIRO_RENDER(draw->render);
 
