@@ -2016,6 +2016,10 @@ void rsvg_handle_set_dpi_x_y(RsvgHandle* handle, double dpi_x, double dpi_y) {
  * of the generated pixbuf.  If the image has no associated size, then the size
  * arguments are set to -1.
  *
+ * During or after handle disposal, no sizing function is retained. If
+ * @user_data_destroy is provided, it is called immediately for @user_data,
+ * even when @size_func is %NULL.
+ *
  * Deprecated: Set up a cairo matrix and use rsvg_handle_render_cairo() instead.
  * You can call rsvg_handle_get_dimensions() to figure out the size of your SVG,
  * and then scale it to the desired size via Cairo.  For example, the following
@@ -2048,6 +2052,12 @@ void rsvg_handle_set_size_callback(RsvgHandle* handle,
                                    gpointer user_data,
                                    GDestroyNotify user_data_destroy) {
     g_return_if_fail(handle != NULL);
+
+    if (handle->priv->is_disposed) {
+        if (user_data_destroy)
+            user_data_destroy(user_data);
+        return;
+    }
 
     GDestroyNotify old_destroy = handle->priv->user_data_destroy;
     gpointer old_data = handle->priv->user_data;
