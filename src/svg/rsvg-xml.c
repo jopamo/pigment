@@ -152,11 +152,11 @@ static int context_read(void* data, char* buffer, int len) {
     RsvgXmlInputStreamContext* context = data;
     gssize n_read;
 
-    if (*(context->error))
+    if (*(context->error) || g_cancellable_set_error_if_cancelled(context->cancellable, context->error))
         return -1;
 
     n_read = g_input_stream_read(context->stream, buffer, (gsize)len, context->cancellable, context->error);
-    if (n_read < 0)
+    if (n_read < 0 || g_cancellable_set_error_if_cancelled(context->cancellable, context->error))
         return -1;
 
     return (int)n_read;
