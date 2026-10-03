@@ -2364,6 +2364,11 @@ gboolean rsvg_handle_read_stream_sync(RsvgHandle* handle,
 
     g_return_val_if_fail(priv->state == RSVG_HANDLE_STATE_START, FALSE);
 
+    if (g_cancellable_set_error_if_cancelled(cancellable, error)) {
+        priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
+        return FALSE;
+    }
+
     /* detect zipped streams */
     buffered_stream = g_buffered_input_stream_new(stream);
     num_read = g_buffered_input_stream_fill(G_BUFFERED_INPUT_STREAM(buffered_stream), 2, cancellable, error);
