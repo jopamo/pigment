@@ -541,7 +541,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
 /**
  * rsvg_handle_get_geometry_for_element:
  * @handle: a fully loaded #RsvgHandle
- * @id: an element identifier
+ * @id: (nullable): an element identifier, or %NULL for the whole document
  * @out_ink_rect: (out caller-allocates) (optional): location for the ink bounds
  * @out_logical_rect: (out caller-allocates) (optional): location for the logical bounds
  * @error: (nullable): return location for a #GError
@@ -566,6 +566,8 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
 
     if (id && *id)
         drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+    else if (!id)
+        drawsub = (RsvgNode*)handle->priv->treebase;
 
     if (!drawsub) {
         if (error)
