@@ -1623,7 +1623,7 @@ static gboolean make_weights(PixopsFilter* filter, PixopsInterpType interp_type,
 
 /* Check whether prescaling is necessary to avoid the bug */
 static gboolean need_to_prescale(double scale_x, double scale_y, PixopsInterpType interp_type) {
-    int n_x, n_y; /* See make_weights() */
+    double n_x, n_y; /* See make_weights() */
 
     /* The testsuite sets this to compare the results with and without it. */
     if (g_getenv("GDK_PIXBUF_DISABLE_TWO_STEP_SCALER"))
@@ -1648,7 +1648,7 @@ static gboolean need_to_prescale(double scale_x, double scale_y, PixopsInterpTyp
     }
 
     /* Limit the number of filters created by make_filter_table(). */
-    return (n_x * n_y > MAX_FILTERS);
+    return n_x > MAX_FILTERS / n_y;
 }
 
 /* Prescale the source image.
