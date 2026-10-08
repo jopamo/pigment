@@ -1999,7 +1999,7 @@ bail:
 /**
  * rsvg_handle_has_sub:
  * @handle: a #RsvgHandle
- * @id: an element's id within the SVG
+ * @id: (nullable): an element's id within the SVG, or %NULL to return %FALSE
  *
  * Checks whether the element @id exists in the SVG document.
  *
