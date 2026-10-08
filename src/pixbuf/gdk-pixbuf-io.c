@@ -2441,9 +2441,9 @@ gboolean gdk_pixbuf_save_to_callback(GdkPixbuf* pixbuf,
 /**
  * gdk_pixbuf_save_to_callbackv:
  * @pixbuf: a `GdkPixbuf`.
- * @save_func: (scope call): a function that is called to save each block of data that
+ * @save_func: (scope call) (closure user_data): a function that is called to save each block of data that
  *   the save routine generates.
- * @user_data: (closure): user data to pass to the save function.
+ * @user_data: user data to pass to the save function.
  * @type: name of file format.
  * @option_keys: (array zero-terminated=1) (element-type utf8) (nullable): name of options to set
  * @option_values: (array zero-terminated=1) (element-type utf8) (nullable): values for named options
