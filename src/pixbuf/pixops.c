@@ -1204,6 +1204,9 @@ static int* make_filter_table(PixopsFilter* filter) {
     int n_y = filter->y.n;
     int* weights;
 
+    if (n_x <= 0 || n_y <= 0)
+        return NULL;
+
     /* check n_x doesn't overflow */
     if (G_MAXINT / (SUBSAMPLE * SUBSAMPLE) < n_x)
         return NULL;
