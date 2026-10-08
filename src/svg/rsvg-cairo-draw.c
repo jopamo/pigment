@@ -195,8 +195,6 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     double scaled_width, scaled_height;
     int pw, ph;
 
-    (void)opacity;
-
     rsvg_pattern = &local_pattern;
     rsvg_pattern_fix_fallback(ctx, rsvg_pattern);
     cr_render = render->cr;
@@ -304,6 +302,12 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     _rsvg_node_draw_children((RsvgNode*)rsvg_pattern, ctx, 2);
     /* Return to the original coordinate system */
     rsvg_state_pop(ctx);
+
+    if (opacity != 255) {
+        cairo_set_operator(cr_pattern, CAIRO_OPERATOR_DEST_IN);
+        cairo_set_source_rgba(cr_pattern, 0, 0, 0, opacity / 255.0);
+        cairo_paint(cr_pattern);
+    }
 
     /* Set the render to draw where it used to */
     render->cr = cr_render;
