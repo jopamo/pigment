@@ -2598,14 +2598,11 @@ void rsvg_term(void) {}
 /**
  * rsvg_cleanup:
  *
- * This function should not be called from normal programs.
- * See xmlCleanupParser() for more information.
+ * This function does nothing.
  *
  * Since: 2.36
  **/
-void rsvg_cleanup(void) {
-    xmlCleanupParser();
-}
+void rsvg_cleanup(void) {}
 
 void rsvg_node_set_atts(RsvgNode* node, RsvgHandle* ctx, RsvgPropertyBag* atts) {
     node->set_atts(node, ctx, atts);
