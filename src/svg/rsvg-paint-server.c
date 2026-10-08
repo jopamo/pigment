@@ -137,7 +137,28 @@ void rsvg_paint_server_unref(RsvgPaintServer* ps) {
     }
 }
 
-void rsvg_gradient_stop_update_opacity(RsvgGradientStop* stop) {
+void rsvg_gradient_stop_update_style(RsvgGradientStop* stop) {
+    guint32 current_color = 0xff000000;
+    for (RsvgNode* node = &stop->super; node; node = node->parent) {
+        if (node->state->has_current_color) {
+            current_color = node->state->current_color;
+            break;
+        }
+    }
+    stop->rgb = 0;
+    for (RsvgNode* node = &stop->super; node; node = node->parent) {
+        StyleValueData* color = g_hash_table_lookup(node->state->styles, "stop-color");
+        if (color && g_str_equal(color->value, "inherit"))
+            continue;
+        if (color && g_str_equal(color->value, "currentColor")) {
+            stop->rgb = current_color;
+            break;
+        }
+        if (node->state->has_stop_color) {
+            stop->rgb = node->state->stop_color;
+            break;
+        }
+    }
     stop->opacity = 1.;
     for (RsvgNode* node = &stop->super; node; node = node->parent) {
         if (node->state->has_stop_opacity) {
@@ -152,10 +173,8 @@ void rsvg_gradient_stop_update_opacity(RsvgGradientStop* stop) {
 
 static void rsvg_stop_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyBag* atts) {
     double offset = 0;
-    gboolean is_current_color = FALSE;
     const char* value;
     RsvgGradientStop* stop;
-    RsvgState state;
 
     stop = (RsvgGradientStop*)self;
 
@@ -171,23 +190,9 @@ static void rsvg_stop_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyBag*
                 offset = 1.;
             stop->offset = offset;
         }
-        if ((value = rsvg_property_bag_lookup(atts, "style")))
-            rsvg_parse_style(ctx, self->state, value);
-
-        if ((value = rsvg_property_bag_lookup(atts, "stop-color")))
-            if (!strcmp(value, "currentColor"))
-                is_current_color = TRUE;
-
-        rsvg_parse_style_pairs(ctx, self->state, atts);
     }
-    self->parent = ctx->priv->currentnode;
-    rsvg_state_init(&state);
-    rsvg_state_reconstruct(&state, self);
-    if (is_current_color)
-        state.stop_color = state.current_color;
-    stop->rgb = state.stop_color;
-    rsvg_gradient_stop_update_opacity(stop);
-    rsvg_state_finalize(&state);
+    rsvg_parse_style_attrs(ctx, self->state, self->name, self->klass, self->id, atts);
+    rsvg_gradient_stop_update_style(stop);
 }
 
 RsvgNode* rsvg_new_stop(void) {

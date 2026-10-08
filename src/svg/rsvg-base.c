@@ -1294,7 +1294,7 @@ static void rsvg_apply_styles_to_node(RsvgHandle* ctx, RsvgNode* node) {
 
     rsvg_css_engine_apply_styles(ctx->priv->css_engine, node, node->state, node->name, node->klass, node->id, NULL);
     if (RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_STOP)
-        rsvg_gradient_stop_update_opacity((RsvgGradientStop*)node);
+        rsvg_gradient_stop_update_style((RsvgGradientStop*)node);
 }
 
 static void rsvg_apply_styles_recursive(RsvgHandle* ctx, RsvgNode* node) {

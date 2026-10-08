@@ -52,7 +52,7 @@ struct _RsvgGradientStop {
 };
 
 G_GNUC_INTERNAL
-void rsvg_gradient_stop_update_opacity(RsvgGradientStop* stop);
+void rsvg_gradient_stop_update_style(RsvgGradientStop* stop);
 
 struct _RsvgLinearGradient {
     RsvgNode super;
