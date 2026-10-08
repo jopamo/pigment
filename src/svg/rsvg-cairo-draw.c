@@ -663,8 +663,6 @@ void rsvg_cairo_render_surface(RsvgDrawingCtx* ctx,
     cairo_paint(render->cr);
 
     rsvg_bbox_insert(&render->bounds.ink, &bbox);
-    if (render->measure_logical)
-        rsvg_bbox_insert(&render->bounds.logical, &bbox);
 }
 
 static void rsvg_cairo_generate_mask(cairo_t* cr, RsvgMask* self, RsvgDrawingCtx* ctx, RsvgBbox* bbox) {

@@ -2680,11 +2680,30 @@ void rsvg_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
     rsvg_render_markers(ctx, path);
 }
 
-void rsvg_render_surface(RsvgDrawingCtx* ctx, cairo_surface_t* surface, double x, double y, double w, double h) {
+void rsvg_render_surface(RsvgDrawingCtx* ctx,
+                         cairo_surface_t* surface,
+                         double x,
+                         double y,
+                         double w,
+                         double h,
+                         const cairo_rectangle_t* viewport) {
     /* surface must be a cairo image surface */
     g_return_if_fail(cairo_surface_get_type(surface) == CAIRO_SURFACE_TYPE_IMAGE);
 
     ctx->render->render_surface(ctx, surface, x, y, w, h);
+
+    /* Record pre-fit geometry without changing the renderer callback's type. */
+    if (ctx->render->type == RSVG_RENDER_TYPE_CAIRO) {
+        RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
+        if (render->measure_logical && cairo_image_surface_get_width(surface) > 0 &&
+            cairo_image_surface_get_height(surface) > 0) {
+            RsvgBbox logical;
+            rsvg_bbox_init(&logical, &rsvg_current_state(ctx)->affine);
+            logical.rect = *viewport;
+            logical.virgin = 0;
+            rsvg_bbox_insert(&render->bounds.logical, &logical);
+        }
+    }
 }
 
 void rsvg_add_clipping_rect(RsvgDrawingCtx* ctx, double x, double y, double w, double h) {

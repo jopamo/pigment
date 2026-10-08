@@ -175,6 +175,9 @@ static void rsvg_node_image_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int domina
     y = _rsvg_css_normalize_length(&z->y, ctx, 'v');
     w = _rsvg_css_normalize_length(&z->w, ctx, 'h');
     h = _rsvg_css_normalize_length(&z->h, ctx, 'v');
+    if (w <= 0 || h <= 0)
+        return;
+    const cairo_rectangle_t viewport = {x, y, w, h};
 
     rsvg_state_reinherit_top(ctx, z->super.state, dominate);
 
@@ -187,7 +190,7 @@ static void rsvg_node_image_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int domina
     rsvg_preserve_aspect_ratio(aspect_ratio, (double)cairo_image_surface_get_width(surface),
                                (double)cairo_image_surface_get_height(surface), &w, &h, &x, &y);
 
-    rsvg_render_surface(ctx, surface, x, y, w, h);
+    rsvg_render_surface(ctx, surface, x, y, w, h, &viewport);
 
     rsvg_pop_discrete_layer(ctx);
 }

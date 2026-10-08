@@ -337,7 +337,13 @@ void rsvg_release_node(RsvgDrawingCtx* ctx, RsvgNode* node);
 G_GNUC_INTERNAL
 void rsvg_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path);
 G_GNUC_INTERNAL
-void rsvg_render_surface(RsvgDrawingCtx* ctx, cairo_surface_t* surface, double x, double y, double w, double h);
+void rsvg_render_surface(RsvgDrawingCtx* ctx,
+                         cairo_surface_t* surface,
+                         double x,
+                         double y,
+                         double w,
+                         double h,
+                         const cairo_rectangle_t* viewport);
 G_GNUC_INTERNAL
 void rsvg_render_free(RsvgRender* render);
 G_GNUC_INTERNAL
