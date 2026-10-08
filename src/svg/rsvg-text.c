@@ -114,6 +114,11 @@ static GString* _rsvg_text_chomp(RsvgState* state, GString* in, gboolean* lastwa
             }
         }
     }
+    else {
+        for (i = 0; i < out->len; i++)
+            if (out->str[i] == '\n' || out->str[i] == '\t')
+                out->str[i] = ' ';
+    }
 
     return out;
 }
