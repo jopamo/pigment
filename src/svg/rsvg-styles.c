@@ -852,18 +852,21 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
             }
         }
         else {
-            gchar** dashes = g_strsplit(value, ",", -1);
+            guint count;
+            gchar** dashes = rsvg_css_parse_list(value, &count);
             if (dashes != NULL) {
                 gint n_dashes, i;
                 gboolean is_even = FALSE;
-                gboolean has_negative = FALSE;
+                gboolean has_invalid = FALSE;
                 gdouble total = 0;
                 gdouble* new_dash;
                 gint out_n_dash;
 
-                /* count the #dashes */
-                for (n_dashes = 0; dashes[n_dashes] != NULL; n_dashes++)
-                    ;
+                if (count > G_MAXINT / 2 || (gsize)count > G_MAXSIZE / (2 * sizeof(double))) {
+                    g_strfreev(dashes);
+                    return;
+                }
+                n_dashes = count;
 
                 is_even = (n_dashes % 2 == 0);
                 out_n_dash = (is_even ? n_dashes : n_dashes * 2);
@@ -871,10 +874,11 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
 
                 /* the even and base case */
                 for (i = 0; i < n_dashes; i++) {
-                    gdouble dash_value = g_ascii_strtod(dashes[i], NULL);
+                    char* end;
+                    gdouble dash_value = g_ascii_strtod(dashes[i], &end);
 
-                    if (dash_value < 0) {
-                        has_negative = TRUE;
+                    if (end == dashes[i] || !isfinite(dash_value) || dash_value < 0) {
+                        has_invalid = TRUE;
                         break;
                     }
 
@@ -882,7 +886,7 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
                     total += dash_value;
                 }
 
-                if (has_negative) {
+                if (has_invalid || !isfinite(total)) {
                     g_free(new_dash);
                 }
                 /* If the dashes add up to 0, then it should

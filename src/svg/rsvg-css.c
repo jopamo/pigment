@@ -641,14 +641,14 @@ gchar** rsvg_css_parse_list(const char* in_str, guint* out_list_len) {
     gchar** string_array = NULL;
 
     str = g_strdup(in_str);
-    tok = strtok_r(str, ", \t", &ptr);
+    tok = strtok_r(str, ", \t\r\n\f", &ptr);
     if (tok != NULL) {
         if (strcmp(tok, " ") != 0) {
             string_list = g_slist_prepend(string_list, g_strdup(tok));
             n++;
         }
 
-        while ((tok = strtok_r(NULL, ", \t", &ptr)) != NULL) {
+        while ((tok = strtok_r(NULL, ", \t\r\n\f", &ptr)) != NULL) {
             if (strcmp(tok, " ") != 0) {
                 string_list = g_slist_prepend(string_list, g_strdup(tok));
                 n++;
