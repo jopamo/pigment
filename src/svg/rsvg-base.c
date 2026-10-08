@@ -1780,7 +1780,7 @@ gboolean rsvg_handle_get_dimensions_sub(RsvgHandle* handle, RsvgDimensionData* d
         cairo_save(cr);
 
         rsvg_node_draw(handle->priv->treebase, draw, 0);
-        bbox = RSVG_CAIRO_RENDER(draw->render)->bbox;
+        bbox = RSVG_CAIRO_RENDER(draw->render)->bounds.ink;
 
         if (rsvg_drawing_ctx_limits_exceeded(draw)) {
             retval = FALSE;
@@ -1887,7 +1887,7 @@ gboolean rsvg_handle_get_position_sub(RsvgHandle* handle, RsvgPositionData* posi
     cairo_save(cr);
 
     rsvg_node_draw(handle->priv->treebase, draw, 0);
-    bbox = RSVG_CAIRO_RENDER(draw->render)->bbox;
+    bbox = RSVG_CAIRO_RENDER(draw->render)->bounds.ink;
 
     if (rsvg_drawing_ctx_limits_exceeded(draw)) {
         retval = FALSE;

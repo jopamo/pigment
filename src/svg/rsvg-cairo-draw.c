@@ -448,12 +448,14 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         bbox.rect.height = ink.height / (double)PANGO_SCALE;
     }
     bbox.virgin = 0;
+    if (render->measure_logical)
+        rsvg_bbox_insert(&render->bounds.logical, &bbox);
 
     rotation = pango_gravity_to_rotation(gravity);
     if (state->fill) {
         cairo_save(render->cr);
         cairo_move_to(render->cr, x, y);
-        rsvg_bbox_insert(&render->bbox, &bbox);
+        rsvg_bbox_insert(&render->bounds.ink, &bbox);
         _set_source_rsvg_paint_server(ctx, state->current_color, state->fill, state->fill_opacity, bbox,
                                       rsvg_current_state(ctx)->current_color);
         if (rotation != 0.)
@@ -467,7 +469,7 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
     if (state->stroke) {
         cairo_save(render->cr);
         cairo_move_to(render->cr, x, y);
-        rsvg_bbox_insert(&render->bbox, &bbox);
+        rsvg_bbox_insert(&render->bounds.ink, &bbox);
 
         _set_source_rsvg_paint_server(ctx, state->current_color, state->stroke, state->stroke_opacity, bbox,
                                       rsvg_current_state(ctx)->current_color);
@@ -533,10 +535,12 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
         fb.rect.height -= fb.rect.y;
         fb.virgin = 0;
         rsvg_bbox_insert(&bbox, &fb);
+        if (render->measure_logical)
+            rsvg_bbox_insert(&render->bounds.logical, &fb);
     }
 
     /* Bounding box for stroke */
-    if (state->stroke != NULL) {
+    if (state->stroke != NULL && cairo_get_line_width(cr) > 0) {
         RsvgBbox sb;
         rsvg_bbox_init(&sb, &state->affine);
         cairo_stroke_extents(cr, &sb.rect.x, &sb.rect.y, &sb.rect.width, &sb.rect.height);
@@ -548,7 +552,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
 
     cairo_set_tolerance(cr, backup_tolerance);
 
-    rsvg_bbox_insert(&render->bbox, &bbox);
+    rsvg_bbox_insert(&render->bounds.ink, &bbox);
 
     if (state->fill != NULL) {
         int opacity;
@@ -639,7 +643,9 @@ void rsvg_cairo_render_surface(RsvgDrawingCtx* ctx,
 
     cairo_paint(render->cr);
 
-    rsvg_bbox_insert(&render->bbox, &bbox);
+    rsvg_bbox_insert(&render->bounds.ink, &bbox);
+    if (render->measure_logical)
+        rsvg_bbox_insert(&render->bounds.logical, &bbox);
 }
 
 static void rsvg_cairo_generate_mask(cairo_t* cr, RsvgMask* self, RsvgDrawingCtx* ctx, RsvgBbox* bbox) {
@@ -653,6 +659,7 @@ static void rsvg_cairo_generate_mask(cairo_t* cr, RsvgMask* self, RsvgDrawingCtx
     cairo_matrix_t affinesave;
     double sx, sy, sw, sh;
     gboolean nest = cr != render->initial_cr;
+    RsvgCairoBounds saved_bounds = render->bounds;
 
     surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, width, height);
     if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
@@ -696,6 +703,7 @@ static void rsvg_cairo_generate_mask(cairo_t* cr, RsvgMask* self, RsvgDrawingCtx
     rsvg_state_push(ctx);
     _rsvg_node_draw_children(&self->super, ctx, 0);
     rsvg_state_pop(ctx);
+    render->bounds = saved_bounds;
 
     if (self->contentunits == objectBoundingBox) {
         _rsvg_pop_view_box(ctx);
@@ -744,7 +752,7 @@ static void rsvg_cairo_push_render_stack(RsvgDrawingCtx* ctx) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     cairo_surface_t* surface;
     cairo_t* child_cr;
-    RsvgBbox* bbox;
+    RsvgCairoBounds* bbox;
     RsvgState* state = rsvg_current_state(ctx);
     gboolean lateclip = FALSE;
 
@@ -799,10 +807,11 @@ static void rsvg_cairo_push_render_stack(RsvgDrawingCtx* ctx) {
     render->cr_stack = g_list_prepend(render->cr_stack, render->cr);
     render->cr = child_cr;
 
-    bbox = g_new(RsvgBbox, 1);
-    *bbox = render->bbox;
+    bbox = g_new(RsvgCairoBounds, 1);
+    *bbox = render->bounds;
     render->bb_stack = g_list_prepend(render->bb_stack, bbox);
-    rsvg_bbox_init(&render->bbox, &state->affine);
+    rsvg_bbox_init(&render->bounds.ink, &state->affine);
+    rsvg_bbox_init(&render->bounds.logical, &state->affine);
 }
 
 void rsvg_cairo_push_discrete_layer(RsvgDrawingCtx* ctx) {
@@ -846,7 +855,7 @@ static void rsvg_cairo_pop_render_stack(RsvgDrawingCtx* ctx) {
 
         if (filter && RSVG_NODE_TYPE(filter) == RSVG_NODE_TYPE_FILTER) {
             needs_destroy = TRUE;
-            surface = rsvg_filter_render((RsvgFilter*)filter, output, ctx, &render->bbox, "2103");
+            surface = rsvg_filter_render((RsvgFilter*)filter, output, ctx, &render->bounds.ink, "2103");
             /* Don't destroy the output surface, it's owned by child_cr */
         }
 
@@ -861,7 +870,7 @@ static void rsvg_cairo_pop_render_stack(RsvgDrawingCtx* ctx) {
     cairo_set_source_surface(render->cr, surface, nest ? 0 : render->offset_x, nest ? 0 : render->offset_y);
 
     if (lateclip) {
-        rsvg_cairo_clip(ctx, lateclip, &render->bbox);
+        rsvg_cairo_clip(ctx, lateclip, &render->bounds.ink);
         rsvg_release_node(ctx, (RsvgNode*)lateclip);
     }
 
@@ -872,7 +881,7 @@ static void rsvg_cairo_pop_render_stack(RsvgDrawingCtx* ctx) {
 
         mask = rsvg_acquire_node(ctx, state->mask);
         if (mask && RSVG_NODE_TYPE(mask) == RSVG_NODE_TYPE_MASK)
-            rsvg_cairo_generate_mask(render->cr, (RsvgMask*)mask, ctx, &render->bbox);
+            rsvg_cairo_generate_mask(render->cr, (RsvgMask*)mask, ctx, &render->bounds.ink);
         rsvg_release_node(ctx, mask);
     }
     else if (state->opacity != 0xFF)
@@ -882,9 +891,10 @@ static void rsvg_cairo_pop_render_stack(RsvgDrawingCtx* ctx) {
 
     cairo_destroy(child_cr);
 
-    rsvg_bbox_insert((RsvgBbox*)render->bb_stack->data, &render->bbox);
-
-    render->bbox = *((RsvgBbox*)render->bb_stack->data);
+    RsvgCairoBounds* bbox = render->bb_stack->data;
+    rsvg_bbox_insert(&bbox->ink, &render->bounds.ink);
+    rsvg_bbox_insert(&bbox->logical, &render->bounds.logical);
+    render->bounds = *bbox;
 
     g_free(render->bb_stack->data);
     render->bb_stack = g_list_delete_link(render->bb_stack, render->bb_stack);

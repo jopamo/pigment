@@ -101,7 +101,8 @@ RsvgCairoRender* rsvg_cairo_render_new(cairo_t* cr, double width, double height)
     cairo_render->font_map_for_testing = NULL;
 
     cairo_matrix_init_identity(&matrix);
-    rsvg_bbox_init(&cairo_render->bbox, &matrix);
+    rsvg_bbox_init(&cairo_render->bounds.ink, &matrix);
+    rsvg_bbox_init(&cairo_render->bounds.logical, &matrix);
 
     return cairo_render;
 }
@@ -200,7 +201,8 @@ RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx(cairo_t* cr, RsvgHandle* handle) {
     state->affine.x0 -= render->offset_x;
     state->affine.y0 -= render->offset_y;
 
-    rsvg_bbox_init(&((RsvgCairoRender*)draw->render)->bbox, &state->affine);
+    rsvg_bbox_init(&render->bounds.ink, &state->affine);
+    rsvg_bbox_init(&render->bounds.logical, &state->affine);
 
     return draw;
 }
@@ -422,7 +424,8 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
 static gboolean rsvg_cairo_draw_element(RsvgHandle* handle,
                                         cairo_t* cr,
                                         RsvgNode* node,
-                                        RsvgBbox* bbox,
+                                        RsvgCairoBounds* bbox,
+                                        gboolean measure_logical,
                                         GError** error) {
     if (!rsvg_cairo_check_context(cr, error))
         return FALSE;
@@ -432,6 +435,7 @@ static gboolean rsvg_cairo_draw_element(RsvgHandle* handle,
         g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG has invalid intrinsic size");
         return FALSE;
     }
+    RSVG_CAIRO_RENDER(draw->render)->measure_logical = measure_logical;
 
     rsvg_state_reconstruct(rsvg_current_state(draw), node->parent);
     rsvg_state_push(draw);
@@ -446,17 +450,21 @@ static gboolean rsvg_cairo_draw_element(RsvgHandle* handle,
         retval = rsvg_cairo_check_context(cr, error);
     }
     if (retval && bbox)
-        *bbox = RSVG_CAIRO_RENDER(draw->render)->bbox;
+        *bbox = RSVG_CAIRO_RENDER(draw->render)->bounds;
 
     rsvg_state_pop(draw);
     rsvg_drawing_ctx_free(draw);
     return retval;
 }
 
-static gboolean rsvg_cairo_measure_element(RsvgHandle* handle, RsvgNode* node, RsvgBbox* bbox, GError** error) {
+static gboolean rsvg_cairo_measure_element(RsvgHandle* handle,
+                                           RsvgNode* node,
+                                           RsvgCairoBounds* bbox,
+                                           gboolean measure_logical,
+                                           GError** error) {
     cairo_surface_t* surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
     cairo_t* cr = cairo_create(surface);
-    gboolean retval = rsvg_cairo_draw_element(handle, cr, node, bbox, error);
+    gboolean retval = rsvg_cairo_draw_element(handle, cr, node, bbox, measure_logical, error);
     cairo_destroy(cr);
     cairo_surface_destroy(surface);
     return retval;
@@ -481,7 +489,7 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
                                     const RsvgRectangle* element_viewport,
                                     GError** error) {
     RsvgNode* drawsub = NULL;
-    RsvgBbox bbox;
+    RsvgCairoBounds bbox;
     double factor = 1.0;
 
     g_return_val_if_fail(handle != NULL, FALSE);
@@ -510,14 +518,14 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
             g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Element viewport is not finite");
             return FALSE;
         }
-        if (!rsvg_cairo_measure_element(handle, drawsub, &bbox, error))
+        if (!rsvg_cairo_measure_element(handle, drawsub, &bbox, FALSE, error))
             return FALSE;
-        if (bbox.virgin || bbox.rect.width <= 0 || bbox.rect.height <= 0)
+        if (bbox.ink.virgin || bbox.ink.rect.width <= 0 || bbox.ink.rect.height <= 0)
             return TRUE;
 
-        factor = MIN(element_viewport->width / bbox.rect.width, element_viewport->height / bbox.rect.height);
-        if (!isfinite(factor) || !isfinite(bbox.rect.x) || !isfinite(bbox.rect.y) || !isfinite(bbox.rect.width) ||
-            !isfinite(bbox.rect.height)) {
+        factor = MIN(element_viewport->width / bbox.ink.rect.width, element_viewport->height / bbox.ink.rect.height);
+        if (!isfinite(factor) || !isfinite(bbox.ink.rect.x) || !isfinite(bbox.ink.rect.y) ||
+            !isfinite(bbox.ink.rect.width) || !isfinite(bbox.ink.rect.height)) {
             g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Element geometry or scale is not finite");
             return FALSE;
         }
@@ -527,9 +535,9 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
     if (element_viewport) {
         cairo_translate(cr, element_viewport->x, element_viewport->y);
         cairo_scale(cr, factor, factor);
-        cairo_translate(cr, -bbox.rect.x, -bbox.rect.y);
+        cairo_translate(cr, -bbox.ink.rect.x, -bbox.ink.rect.y);
     }
-    gboolean retval = rsvg_cairo_draw_element(handle, cr, drawsub, NULL, error);
+    gboolean retval = rsvg_cairo_draw_element(handle, cr, drawsub, NULL, FALSE, error);
     cairo_restore(cr);
     return retval;
 }
@@ -594,6 +602,8 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
         cairo_surface_destroy(surf);
         return FALSE;
     }
+    render = RSVG_CAIRO_RENDER(draw->render);
+    render->measure_logical = out_logical_rect != NULL;
 
     if (id && *id) {
         for (RsvgNode* p = drawsub; p; p = p->parent)
@@ -603,19 +613,17 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     rsvg_state_push(draw);
     rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
 
-    render = RSVG_CAIRO_RENDER(draw->render);
-
     if (out_ink_rect) {
-        out_ink_rect->x = render->bbox.rect.x;
-        out_ink_rect->y = render->bbox.rect.y;
-        out_ink_rect->width = render->bbox.rect.width;
-        out_ink_rect->height = render->bbox.rect.height;
+        out_ink_rect->x = render->bounds.ink.rect.x;
+        out_ink_rect->y = render->bounds.ink.rect.y;
+        out_ink_rect->width = render->bounds.ink.rect.width;
+        out_ink_rect->height = render->bounds.ink.rect.height;
     }
     if (out_logical_rect) {
-        out_logical_rect->x = render->bbox.rect.x;
-        out_logical_rect->y = render->bbox.rect.y;
-        out_logical_rect->width = render->bbox.rect.width;
-        out_logical_rect->height = render->bbox.rect.height;
+        out_logical_rect->x = render->bounds.logical.rect.x;
+        out_logical_rect->y = render->bounds.logical.rect.y;
+        out_logical_rect->width = render->bounds.logical.rect.width;
+        out_logical_rect->height = render->bounds.logical.rect.height;
     }
 
     retval = !rsvg_drawing_ctx_limits_exceeded(draw);
@@ -647,7 +655,7 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
                                               RsvgRectangle* out_logical_rect,
                                               GError** error) {
     RsvgNode* drawsub = NULL;
-    RsvgBbox bbox;
+    RsvgCairoBounds bbox;
 
     if (id && *id)
         drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
@@ -660,20 +668,20 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
         return FALSE;
     }
 
-    if (!rsvg_cairo_measure_element(handle, drawsub, &bbox, error))
+    if (!rsvg_cairo_measure_element(handle, drawsub, &bbox, out_logical_rect != NULL, error))
         return FALSE;
 
     if (out_ink_rect) {
         out_ink_rect->x = 0;
         out_ink_rect->y = 0;
-        out_ink_rect->width = bbox.rect.width;
-        out_ink_rect->height = bbox.rect.height;
+        out_ink_rect->width = bbox.ink.rect.width;
+        out_ink_rect->height = bbox.ink.rect.height;
     }
     if (out_logical_rect) {
-        out_logical_rect->x = 0;
-        out_logical_rect->y = 0;
-        out_logical_rect->width = bbox.rect.width;
-        out_logical_rect->height = bbox.rect.height;
+        out_logical_rect->x = bbox.logical.rect.x - bbox.ink.rect.x;
+        out_logical_rect->y = bbox.logical.rect.y - bbox.ink.rect.y;
+        out_logical_rect->width = bbox.logical.rect.width;
+        out_logical_rect->height = bbox.logical.rect.height;
     }
 
     return TRUE;

@@ -35,6 +35,11 @@
 
 G_BEGIN_DECLS typedef struct _RsvgCairoRender RsvgCairoRender;
 
+typedef struct {
+    RsvgBbox ink;
+    RsvgBbox logical;
+} RsvgCairoBounds;
+
 struct _RsvgCairoRender {
     RsvgRender super;
     cairo_t* cr;
@@ -47,7 +52,8 @@ struct _RsvgCairoRender {
 
     GList* cr_stack;
 
-    RsvgBbox bbox;
+    RsvgCairoBounds bounds;
+    gboolean measure_logical;
     GList* bb_stack;
     GList* surfaces_stack;
 
