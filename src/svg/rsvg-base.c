@@ -2266,6 +2266,7 @@ gboolean rsvg_handle_write(RsvgHandle* handle, const guchar* buf, gsize count, G
                                 priv->state == RSVG_HANDLE_STATE_READING_COMPRESSED ||
                                 priv->state == RSVG_HANDLE_STATE_READING,
                             FALSE, error);
+    rsvg_return_val_if_fail(buf != NULL || count == 0, FALSE, error);
 
     while (count > 0) {
         switch (priv->state) {
