@@ -243,7 +243,7 @@ double _rsvg_css_normalize_font_size(RsvgState* state, RsvgDrawingCtx* ctx) {
             break;
     }
 
-    return 12.;
+    return _rsvg_css_hand_normalize_length(&state->font_size, ctx->dpi_y, 12., 12.);
 }
 
 double _rsvg_css_normalize_length(const RsvgLength* in, RsvgDrawingCtx* ctx, char dir) {
