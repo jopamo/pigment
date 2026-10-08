@@ -37,6 +37,8 @@ PangoContext* rsvg_cairo_create_pango_context(RsvgDrawingCtx* ctx);
 G_GNUC_INTERNAL
 void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, double x, double y);
 G_GNUC_INTERNAL
+cairo_path_t* rsvg_cairo_layout_path(PangoLayout* layout, double x, double y);
+G_GNUC_INTERNAL
 void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path);
 G_GNUC_INTERNAL
 void rsvg_cairo_render_surface(RsvgDrawingCtx* ctx, cairo_surface_t* surface, double x, double y, double w, double h);

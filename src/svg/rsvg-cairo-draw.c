@@ -415,11 +415,7 @@ PangoContext* rsvg_cairo_create_pango_context(RsvgDrawingCtx* ctx) {
     return context;
 }
 
-void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, double x, double y) {
-    RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
-    RsvgState* state = rsvg_current_state(ctx);
-    PangoRectangle ink;
-    RsvgBbox bbox;
+cairo_path_t* rsvg_cairo_layout_path(PangoLayout* layout, double x, double y) {
     PangoGravity gravity = pango_context_get_gravity(pango_layout_get_context(layout));
     double rotation = pango_gravity_to_rotation(gravity);
     /* Keep glyph outlines in user space before applying the drawing transform. */
@@ -433,7 +429,17 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
     cairo_path_t* path = cairo_copy_path(scratch);
     cairo_destroy(scratch);
     cairo_surface_destroy(surface);
+    return path;
+}
 
+void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, double x, double y) {
+    RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
+    RsvgState* state = rsvg_current_state(ctx);
+    PangoRectangle ink;
+    RsvgBbox bbox;
+    PangoGravity gravity = pango_context_get_gravity(pango_layout_get_context(layout));
+    double rotation = pango_gravity_to_rotation(gravity);
+    cairo_path_t* path = rsvg_cairo_layout_path(layout, x, y);
     pango_layout_get_extents(layout, &ink, NULL);
 
     if (ink.width == 0 || ink.height == 0) {

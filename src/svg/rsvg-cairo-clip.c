@@ -63,23 +63,13 @@ static void rsvg_cairo_clip_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout
     RsvgCairoClipRender* render = RSVG_CAIRO_CLIP_RENDER(ctx->render);
     RsvgCairoRender* cairo_render = &render->super;
     cairo_matrix_t affine;
-    PangoGravity gravity = pango_context_get_gravity(pango_layout_get_context(layout));
-    double rotation;
+    cairo_path_t* path = rsvg_cairo_layout_path(layout, x, y);
 
     affine = ctx->state->affine;
     rsvg_cairo_clip_apply_affine(render, &affine);
 
-    rotation = pango_gravity_to_rotation(gravity);
-
-    cairo_save(cairo_render->cr);
-    cairo_move_to(cairo_render->cr, x, y);
-    if (rotation != 0.)
-        cairo_rotate(cairo_render->cr, -rotation);
-
-    pango_cairo_update_layout(cairo_render->cr, layout);
-    pango_cairo_layout_path(cairo_render->cr, layout);
-
-    cairo_restore(cairo_render->cr);
+    cairo_append_path(cairo_render->cr, path);
+    cairo_path_destroy(path);
 }
 
 static void rsvg_cairo_clip_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
