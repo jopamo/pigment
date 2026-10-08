@@ -2010,6 +2010,9 @@ bail:
 gboolean rsvg_handle_has_sub(RsvgHandle* handle, const char* id) {
     g_return_val_if_fail(handle, FALSE);
 
+    if (!rsvg_handle_check_loaded(handle, NULL))
+        return FALSE;
+
     if (G_UNLIKELY(!id || !id[0]))
         return FALSE;
 
