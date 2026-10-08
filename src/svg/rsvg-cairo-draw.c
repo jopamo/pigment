@@ -80,6 +80,11 @@ static void _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
     linear = &statlinear;
     rsvg_linear_gradient_fix_fallback(ctx, linear);
 
+    if (linear->obj_bbox && (bbox.rect.width == 0 || bbox.rect.height == 0)) {
+        cairo_set_source_rgba(cr, 0, 0, 0, 0);
+        return;
+    }
+
     if (linear->has_current_color)
         current_color_rgb = linear->current_color;
 
@@ -121,6 +126,11 @@ static void _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
     statradial = *radial;
     radial = &statradial;
     rsvg_radial_gradient_fix_fallback(ctx, radial);
+
+    if (radial->obj_bbox && (bbox.rect.width == 0 || bbox.rect.height == 0)) {
+        cairo_set_source_rgba(cr, 0, 0, 0, 0);
+        return;
+    }
 
     if (radial->has_current_color)
         current_color_rgb = radial->current_color;
@@ -224,8 +234,10 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     scaled_width = patternw * bbwscale;
     scaled_height = patternh * bbhscale;
 
-    if (fabs(scaled_width) < DBL_EPSILON || fabs(scaled_height) < DBL_EPSILON)
+    if (fabs(scaled_width) < DBL_EPSILON || fabs(scaled_height) < DBL_EPSILON) {
+        cairo_set_source_rgba(cr_render, 0, 0, 0, 0);
         return;
+    }
 
     scwscale = pw / scaled_width;
     schscale = ph / scaled_height;
@@ -532,7 +544,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     RsvgState* state = rsvg_current_state(ctx);
     cairo_t* cr;
-    RsvgBbox bbox, ink_bbox;
+    RsvgBbox bbox, paint_bbox, ink_bbox;
     double backup_tolerance;
 
     rsvg_cairo_push_discrete_layer(ctx);
@@ -572,6 +584,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
         if (render->measure_logical)
             rsvg_bbox_insert(&render->bounds.logical, &fb);
     }
+    paint_bbox = bbox;
 
     /* Query fill extents even without paint for symbolic bounding frames. */
     if (render->measure_ink) {
@@ -604,7 +617,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
 
         opacity = state->fill_opacity;
 
-        _set_source_rsvg_paint_server(ctx, state->current_color, state->fill, opacity, bbox,
+        _set_source_rsvg_paint_server(ctx, state->current_color, state->fill, opacity, paint_bbox,
                                       rsvg_current_state(ctx)->current_color);
 
         if (state->stroke != NULL)
@@ -617,7 +630,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
         int opacity;
         opacity = state->stroke_opacity;
 
-        _set_source_rsvg_paint_server(ctx, state->current_color, state->stroke, opacity, bbox,
+        _set_source_rsvg_paint_server(ctx, state->current_color, state->stroke, opacity, paint_bbox,
                                       rsvg_current_state(ctx)->current_color);
 
         cairo_stroke(cr);
