@@ -355,21 +355,22 @@ static void _set_rsvg_affine(RsvgCairoRender* render, cairo_matrix_t* affine) {
     cairo_set_matrix(cr, &matrix);
 }
 
-static cairo_font_options_t* get_font_options_for_testing(void) {
+static cairo_font_options_t* get_font_options(gboolean testing) {
     cairo_font_options_t* options;
 
     options = cairo_font_options_create();
-    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_GRAY);
-    cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_FULL);
-    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_ON);
+    if (testing)
+        cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_GRAY);
+    cairo_font_options_set_hint_style(options, CAIRO_HINT_STYLE_NONE);
+    cairo_font_options_set_hint_metrics(options, CAIRO_HINT_METRICS_OFF);
 
     return options;
 }
 
-static void set_font_options_for_testing(PangoContext* context) {
+static void set_font_options(PangoContext* context, gboolean testing) {
     cairo_font_options_t* font_options;
 
-    font_options = get_font_options_for_testing();
+    font_options = get_font_options(testing);
     pango_cairo_context_set_font_options(context, font_options);
     cairo_font_options_destroy(font_options);
 }
@@ -405,13 +406,11 @@ PangoContext* rsvg_cairo_create_pango_context(RsvgDrawingCtx* ctx) {
     }
 
     context = pango_font_map_create_context(fontmap);
-    pango_cairo_update_context(render->cr, context);
+    pango_context_set_round_glyph_positions(context, FALSE);
 
     pango_cairo_context_set_resolution(context, ctx->dpi_y);
 
-    if (ctx->is_testing) {
-        set_font_options_for_testing(context);
-    }
+    set_font_options(context, ctx->is_testing);
 
     return context;
 }
@@ -422,11 +421,23 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
     PangoRectangle ink;
     RsvgBbox bbox;
     PangoGravity gravity = pango_context_get_gravity(pango_layout_get_context(layout));
-    double rotation;
+    double rotation = pango_gravity_to_rotation(gravity);
+    /* Keep glyph outlines in user space before applying the drawing transform. */
+    cairo_surface_t* surface = cairo_recording_surface_create(CAIRO_CONTENT_COLOR_ALPHA, NULL);
+    cairo_t* scratch = cairo_create(surface);
+    cairo_move_to(scratch, x, y);
+    if (rotation != 0.)
+        cairo_rotate(scratch, -rotation);
+    pango_cairo_update_layout(scratch, layout);
+    pango_cairo_layout_path(scratch, layout);
+    cairo_path_t* path = cairo_copy_path(scratch);
+    cairo_destroy(scratch);
+    cairo_surface_destroy(surface);
 
     pango_layout_get_extents(layout, &ink, NULL);
 
     if (ink.width == 0 || ink.height == 0) {
+        cairo_path_destroy(path);
         return;
     }
 
@@ -451,18 +462,23 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
     if (render->measure_logical)
         rsvg_bbox_insert(&render->bounds.logical, &bbox);
 
-    rotation = pango_gravity_to_rotation(gravity);
     if (state->fill) {
         cairo_save(render->cr);
         cairo_move_to(render->cr, x, y);
         rsvg_bbox_insert(&render->bounds.ink, &bbox);
         _set_source_rsvg_paint_server(ctx, state->current_color, state->fill, state->fill_opacity, bbox,
                                       rsvg_current_state(ctx)->current_color);
-        if (rotation != 0.)
-            cairo_rotate(render->cr, -rotation);
-
-        pango_cairo_update_layout(render->cr, layout);
-        pango_cairo_show_layout(render->cr, layout);
+        if (cairo_surface_get_type(cairo_get_target(render->cr)) == CAIRO_SURFACE_TYPE_PDF) {
+            if (rotation != 0.)
+                cairo_rotate(render->cr, -rotation);
+            pango_cairo_update_layout(render->cr, layout);
+            pango_cairo_show_layout(render->cr, layout);
+        }
+        else {
+            cairo_new_path(render->cr);
+            cairo_append_path(render->cr, path);
+            cairo_fill(render->cr);
+        }
         cairo_restore(render->cr);
     }
 
@@ -474,11 +490,8 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         _set_source_rsvg_paint_server(ctx, state->current_color, state->stroke, state->stroke_opacity, bbox,
                                       rsvg_current_state(ctx)->current_color);
 
-        if (rotation != 0.)
-            cairo_rotate(render->cr, -rotation);
-
-        pango_cairo_update_layout(render->cr, layout);
-        pango_cairo_layout_path(render->cr, layout);
+        cairo_new_path(render->cr);
+        cairo_append_path(render->cr, path);
 
         cairo_set_line_width(render->cr, _rsvg_css_normalize_length(&state->stroke_width, ctx, 'h'));
         cairo_set_miter_limit(render->cr, state->miter_limit);
@@ -489,8 +502,6 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         if (render->measure_ink && cairo_get_line_width(render->cr) > 0) {
             RsvgBbox stroke_bbox;
             cairo_matrix_t affine = state->affine;
-            if (rotation != 0.)
-                cairo_matrix_rotate(&affine, -rotation);
             rsvg_bbox_init(&stroke_bbox, &affine);
             cairo_stroke_extents(render->cr, &stroke_bbox.rect.x, &stroke_bbox.rect.y, &stroke_bbox.rect.width,
                                  &stroke_bbox.rect.height);
@@ -502,6 +513,7 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         cairo_stroke(render->cr);
         cairo_restore(render->cr);
     }
+    cairo_path_destroy(path);
 }
 
 void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
