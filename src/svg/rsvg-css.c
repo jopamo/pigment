@@ -356,7 +356,7 @@ double _rsvg_css_accumulate_baseline_shift(RsvgState* state, RsvgDrawingCtx* ctx
             StyleValueData* data = g_hash_table_lookup(state->styles, "baseline-shift");
             if (data && rsvg_css_parse_baseline_shift(data->value, &length) && length.factor != 'b') {
                 if (length.factor == 'i')
-                    shift = length.length * hypot(ctx->dpi_x, ctx->dpi_y) / sqrt(2.);
+                    shift = length.length * rsvg_viewport_percentage(ctx->dpi_x, ctx->dpi_y);
                 else if (length.factor == '\0')
                     shift = length.length;
                 else {

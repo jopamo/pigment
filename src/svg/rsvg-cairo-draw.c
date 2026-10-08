@@ -500,7 +500,7 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         cairo_new_path(render->cr);
         cairo_append_path(render->cr, path);
 
-        cairo_set_line_width(render->cr, _rsvg_css_normalize_length(&state->stroke_width, ctx, 'h'));
+        cairo_set_line_width(render->cr, _rsvg_css_normalize_length(&state->stroke_width, ctx, 'o'));
         cairo_set_miter_limit(render->cr, state->miter_limit);
         cairo_set_line_cap(render->cr, (cairo_line_cap_t)state->cap);
         cairo_set_line_join(render->cr, (cairo_line_join_t)state->join);
@@ -538,7 +538,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
 
     _set_rsvg_affine(render, &state->affine);
 
-    cairo_set_line_width(cr, _rsvg_css_normalize_length(&state->stroke_width, ctx, 'h'));
+    cairo_set_line_width(cr, _rsvg_css_normalize_length(&state->stroke_width, ctx, 'o'));
     cairo_set_miter_limit(cr, state->miter_limit);
     cairo_set_line_cap(cr, (cairo_line_cap_t)state->cap);
     cairo_set_line_join(cr, (cairo_line_join_t)state->join);

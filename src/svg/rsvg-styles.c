@@ -83,11 +83,11 @@ void rsvg_style_value_data_free(StyleValueData* value) {
 }
 
 gdouble rsvg_viewport_percentage(gdouble width, gdouble height) {
-    return sqrt(width * height);
+    return hypot(width, height) / sqrt(2.);
 }
 
 gdouble rsvg_dpi_percentage(RsvgHandle* ctx) {
-    return sqrt(ctx->priv->dpi_x * ctx->priv->dpi_y);
+    return rsvg_viewport_percentage(ctx->priv->dpi_x, ctx->priv->dpi_y);
 }
 
 void rsvg_state_init(RsvgState* state) {
