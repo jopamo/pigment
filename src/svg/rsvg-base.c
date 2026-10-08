@@ -1403,7 +1403,7 @@ void rsvg_handle_set_base_gfile(RsvgHandle* handle, GFile* base_file) {
  * The returned string belongs to @handle. Copy it before changing the base URI,
  * disposing the handle or releasing its final reference.
  *
- * Returns: the base uri, possibly null
+ * Returns: (transfer none) (nullable): the base URI, or %NULL if unset or disposed
  * Since: 2.8
  */
 const char* rsvg_handle_get_base_uri(RsvgHandle* handle) {
