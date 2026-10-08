@@ -303,8 +303,18 @@ static void rsvg_state_inherit_run(RsvgState* dst,
         dst->font_decor = src->font_decor;
     if (function(dst->has_text_dir, src->has_text_dir))
         dst->text_dir = src->text_dir;
-    if (function(dst->has_text_gravity, src->has_text_gravity))
+    if (function(dst->has_text_gravity, src->has_text_gravity)) {
         dst->text_gravity = src->text_gravity;
+        StyleValueData* mode = g_hash_table_lookup(src->styles, "writing-mode");
+        if (mode) {
+            StyleValueData* copy = rsvg_style_value_data_new(mode->value, mode->important);
+            copy->origin = mode->origin;
+            copy->source_order = mode->source_order;
+            g_hash_table_replace(dst->styles, g_strdup("writing-mode"), copy);
+        }
+        else
+            g_hash_table_remove(dst->styles, "writing-mode");
+    }
     if (function(dst->has_unicode_bidi, src->has_unicode_bidi))
         dst->unicode_bidi = src->unicode_bidi;
     if (function(dst->has_text_anchor, src->has_text_anchor))
@@ -750,26 +760,18 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
             state->unicode_bidi = UNICODE_BIDI_NORMAL;
     }
     else if (g_str_equal(name, "writing-mode")) {
-        /* TODO: these aren't quite right... */
-
-        state->has_text_dir = TRUE;
         state->has_text_gravity = TRUE;
         if (g_str_equal(value, "inherit")) {
-            state->text_dir = PANGO_DIRECTION_LTR;
-            state->has_text_dir = FALSE;
             state->text_gravity = PANGO_GRAVITY_SOUTH;
             state->has_text_gravity = FALSE;
         }
         else if (g_str_equal(value, "lr-tb") || g_str_equal(value, "lr")) {
-            state->text_dir = PANGO_DIRECTION_LTR;
             state->text_gravity = PANGO_GRAVITY_SOUTH;
         }
         else if (g_str_equal(value, "rl-tb") || g_str_equal(value, "rl")) {
-            state->text_dir = PANGO_DIRECTION_RTL;
             state->text_gravity = PANGO_GRAVITY_SOUTH;
         }
         else if (g_str_equal(value, "tb-rl") || g_str_equal(value, "tb")) {
-            state->text_dir = PANGO_DIRECTION_LTR;
             state->text_gravity = PANGO_GRAVITY_EAST;
         }
     }

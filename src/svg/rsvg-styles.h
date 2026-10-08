@@ -123,7 +123,7 @@ struct _RsvgState {
     gboolean has_font_stretch;
     TextDecoration font_decor;
     gboolean has_font_decor;
-    PangoDirection text_dir;
+    PangoDirection text_dir; /* CSS chunk direction, independent of writing-mode. */
     gboolean has_text_dir;
     PangoGravity text_gravity;
     gboolean has_text_gravity;
