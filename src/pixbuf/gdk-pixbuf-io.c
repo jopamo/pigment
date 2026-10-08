@@ -2633,28 +2633,15 @@ typedef struct {
 
 static gboolean save_to_stream(const gchar* buffer, gsize count, GError** error, gpointer data) {
     SaveToStreamData* sdata = (SaveToStreamData*)data;
-    gsize remaining;
-    gssize written;
     GError* my_error = NULL;
 
-    remaining = count;
-    written = 0;
-    while (remaining > 0) {
-        buffer += written;
-        remaining -= written;
-        written = g_output_stream_write(sdata->stream, buffer, remaining, sdata->cancellable, &my_error);
-        if (written < 0) {
-            if (!my_error) {
-                g_set_error_literal(error, G_IO_ERROR, 0, _("Error writing to image stream"));
-            }
-            else {
-                g_propagate_error(error, my_error);
-            }
-            return FALSE;
-        }
-    }
-
-    return TRUE;
+    if (count == 0 || g_output_stream_write_all(sdata->stream, buffer, count, NULL, sdata->cancellable, &my_error))
+        return TRUE;
+    if (my_error)
+        g_propagate_error(error, my_error);
+    else
+        g_set_error_literal(error, G_IO_ERROR, 0, _("Error writing to image stream"));
+    return FALSE;
 }
 
 /**
