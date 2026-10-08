@@ -26,32 +26,27 @@ static GHashTable* rsvg_css_rules_new(void) {
     return g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_hash_table_destroy);
 }
 
-static gboolean rsvg_css_apply_styles_from_props(GHashTable* css_props,
-                                                 RsvgHandle* ctx,
-                                                 const char* target,
-                                                 RsvgState* state,
-                                                 RsvgStyleOrigin origin) {
+static void rsvg_css_apply_styles_from_props(GHashTable* css_props,
+                                             RsvgHandle* ctx,
+                                             const char* target,
+                                             RsvgState* state,
+                                             RsvgStyleOrigin origin) {
     GHashTable* styles;
     StylesData data;
 
     styles = g_hash_table_lookup(css_props, target);
     if (styles == NULL)
-        return FALSE;
+        return;
 
     data.ctx = ctx;
     data.state = state;
     data.origin = origin;
     g_hash_table_foreach(styles, (GHFunc)apply_style, &data);
-
-    return TRUE;
 }
 
-static gboolean rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, const char* target, RsvgState* state) {
-    gboolean found =
-        rsvg_css_apply_styles_from_props(engine->doc_css_props, engine->ctx, target, state, RSVG_STYLE_ORIGIN_AUTHOR);
-    return rsvg_css_apply_styles_from_props(engine->user_css_props, engine->ctx, target, state,
-                                            RSVG_STYLE_ORIGIN_USER) ||
-           found;
+static void rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, const char* target, RsvgState* state) {
+    rsvg_css_apply_styles_from_props(engine->doc_css_props, engine->ctx, target, state, RSVG_STYLE_ORIGIN_AUTHOR);
+    rsvg_css_apply_styles_from_props(engine->user_css_props, engine->ctx, target, state, RSVG_STYLE_ORIGIN_USER);
 }
 
 RsvgCssEngine* rsvg_css_engine_new_with_allocator(RsvgHandle* ctx, const lxa_allocator_t* allocator) {
@@ -140,7 +135,6 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
     int i = 0;
     int j = 0;
     char* target = NULL;
-    gboolean found = FALSE;
     GString* klazz_list = NULL;
 
     if (engine == NULL)
@@ -159,7 +153,6 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
     if (klass != NULL) {
         i = strlen(klass);
         while (j < i) {
-            found = FALSE;
             klazz_list = g_string_new(".");
 
             while (j < i && g_ascii_isspace(klass[j]))
@@ -168,29 +161,24 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
             while (j < i && !g_ascii_isspace(klass[j]))
                 g_string_append_c(klazz_list, klass[j++]);
 
-            /* tag.class#id */
-            if (tag != NULL && klazz_list->len != 1 && id != NULL) {
-                target = g_strdup_printf("%s%s#%s", tag, klazz_list->str, id);
-                found = found || rsvg_css_engine_lookup_apply_css_style(engine, target, state);
-                g_free(target);
+            if (klazz_list->len != 1) {
+                rsvg_css_engine_lookup_apply_css_style(engine, klazz_list->str, state);
+                if (tag != NULL) {
+                    target = g_strdup_printf("%s%s", tag, klazz_list->str);
+                    rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                    g_free(target);
+                }
+                if (id != NULL) {
+                    target = g_strdup_printf("%s#%s", klazz_list->str, id);
+                    rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                    g_free(target);
+                }
+                if (tag != NULL && id != NULL) {
+                    target = g_strdup_printf("%s%s#%s", tag, klazz_list->str, id);
+                    rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                    g_free(target);
+                }
             }
-
-            /* class#id */
-            if (klazz_list->len != 1 && id != NULL) {
-                target = g_strdup_printf("%s#%s", klazz_list->str, id);
-                found = found || rsvg_css_engine_lookup_apply_css_style(engine, target, state);
-                g_free(target);
-            }
-
-            /* tag.class */
-            if (tag != NULL && klazz_list->len != 1) {
-                target = g_strdup_printf("%s%s", tag, klazz_list->str);
-                found = found || rsvg_css_engine_lookup_apply_css_style(engine, target, state);
-                g_free(target);
-            }
-
-            if (!found)
-                found = found || rsvg_css_engine_lookup_apply_css_style(engine, klazz_list->str, state);
 
             g_string_free(klazz_list, TRUE);
         }
