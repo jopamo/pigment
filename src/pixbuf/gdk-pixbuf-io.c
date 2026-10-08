@@ -38,11 +38,6 @@
 
 #include <glib/gstdio.h>
 
-#ifdef G_OS_WIN32
-#define STRICT
-#include <windows.h>
-#undef STRICT
-#endif
 #ifdef OS_DARWIN
 #include <mach-o/dyld.h>
 #endif
@@ -187,32 +182,14 @@ static GSList* get_file_formats(void) {
     return formats;
 }
 
-#ifdef GDK_PIXBUF_RELOCATABLE  // implies that gdk-pixbuf is built as a dll on windows
+#ifdef GDK_PIXBUF_RELOCATABLE
 
-#ifdef G_OS_WIN32
-
-/* DllMain function needed to tuck away the gdk-pixbuf DLL handle */
-
-static HMODULE gdk_pixbuf_dll;
-
-BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved) {
-    switch (fdwReason) {
-        case DLL_PROCESS_ATTACH:
-            gdk_pixbuf_dll = (HMODULE)hinstDLL;
-            break;
-    }
-
-    return TRUE;
-}
-#endif
 
 gchar* gdk_pixbuf_get_toplevel(void) {
     static gchar* toplevel = NULL;
 
     if (toplevel == NULL) {
-#if defined(G_OS_WIN32)
-        toplevel = g_win32_get_package_installation_directory_of_module(gdk_pixbuf_dll);
-#elif defined(OS_DARWIN)
+#if   defined(OS_DARWIN)
         char pathbuf[PATH_MAX + 1];
         uint32_t bufsize = sizeof(pathbuf);
         gchar* bin_dir;
@@ -1071,25 +1048,6 @@ GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error) {
     return pixbuf;
 }
 
-#ifdef G_OS_WIN32
-
-/**
- * gdk_pixbuf_new_from_file_utf8: (constructor)
- * @filename: (type filename): Name of file to load, in the GLib file name encoding
- * @error: Return location for an error
- *
- * Same as gdk_pixbuf_new_from_file()
- *
- * Returns: (nullable): A newly-created pixbuf with a reference count of 1,
- * or `NULL` if any of several error conditions occurred:  the file could not be opened,
- * there was no loader for the file's format, there was not enough memory to
- * allocate the image buffer, or the image file contained invalid data.
- **/
-GdkPixbuf* gdk_pixbuf_new_from_file_utf8(const char* filename, GError** error) {
-    return gdk_pixbuf_new_from_file(filename, error);
-}
-
-#endif
 
 /**
  * gdk_pixbuf_new_from_file_at_size: (constructor)
@@ -1126,30 +1084,6 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_size(const char* filename, int width, int
     return gdk_pixbuf_new_from_file_at_scale(filename, width, height, TRUE, error);
 }
 
-#ifdef G_OS_WIN32
-
-/**
- * gdk_pixbuf_new_from_file_at_size_utf8: (constructor)
- * @filename: (type filename): Name of file to load, in the GLib file name encoding
- * @width: The width the image should have or -1 to not constrain the width
- * @height: The height the image should have or -1 to not constrain the height
- * @error: Return location for an error
- *
- * Same as gdk_pixbuf_new_from_file_at_size()
- *
- * Returns: (nullable): A newly-created pixbuf with a reference count of 1, or
- * `NULL` if any of several error conditions occurred:  the file could not
- * be opened, there was no loader for the file's format, there was not
- * enough memory to allocate the image buffer, or the image file contained
- * invalid data.
- *
- * Since: 2.4
- **/
-GdkPixbuf* gdk_pixbuf_new_from_file_at_size_utf8(const char* filename, int width, int height, GError** error) {
-    return gdk_pixbuf_new_from_file_at_size(filename, width, height, error);
-}
-
-#endif
 
 typedef struct {
     gint width;
@@ -1317,33 +1251,6 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
     return pixbuf;
 }
 
-#ifdef G_OS_WIN32
-
-/**
- * gdk_pixbuf_new_from_file_at_scale_utf8: (constructor)
- * @filename: (type filename): Name of file to load, in the GLib file name encoding
- * @width: The width the image should have or -1 to not constrain the width
- * @height: The height the image should have or -1 to not constrain the height
- * @preserve_aspect_ratio: `TRUE` to preserve the image's aspect ratio
- * @error: Return location for an error
- *
- * Same as gdk_pixbuf_new_from_file_at_scale().
- *
- * Returns: (nullable): A newly-created pixbuf with a reference count of 1,
- * or `NULL` if any of several error conditions occurred:  the file could not be opened,
- * there was no loader for the file's format, there was not enough memory to
- * allocate the image buffer, or the image file contained invalid data.
- *
- * Since: 2.6
- **/
-GdkPixbuf* gdk_pixbuf_new_from_file_at_scale_utf8(const char* filename,
-                                                  int width,
-                                                  int height,
-                                                  gboolean preserve_aspect_ratio,
-                                                  GError** error) {
-    return gdk_pixbuf_new_from_file_at_scale(filename, width, height, preserve_aspect_ratio, error);
-}
-#endif
 
 static GdkPixbuf* load_from_stream(GdkPixbufLoader* loader,
                                    GInputStream* stream,
@@ -2330,31 +2237,6 @@ gboolean gdk_pixbuf_savev(GdkPixbuf* pixbuf,
     return TRUE;
 }
 
-#ifdef G_OS_WIN32
-
-/**
- * gdk_pixbuf_savev_utf8:
- * @pixbuf: a `GdkPixbuf`.
- * @filename: name of file to save.
- * @type: name of file format.
- * @option_keys: (array zero-terminated=1) (element-type utf8) (nullable): name of options to set
- * @option_values: (array zero-terminated=1) (element-type utf8) (nullable): values for named options
- * @error: (allow-none): return location for error, or `NULL`
- *
- * Same as gdk_pixbuf_savev()
- *
- * Returns: whether an error was set
- **/
-gboolean gdk_pixbuf_savev_utf8(GdkPixbuf* pixbuf,
-                               const char* filename,
-                               const char* type,
-                               char** option_keys,
-                               char** option_values,
-                               GError** error) {
-    return gdk_pixbuf_savev(pixbuf, filename, type, option_keys, option_values, error);
-}
-
-#endif
 
 /**
  * gdk_pixbuf_save_to_callback:

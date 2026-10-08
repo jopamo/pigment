@@ -117,4 +117,4 @@ void _gdk_pixbuf_init_gettext(void);
 
 gchar* gdk_pixbuf_get_toplevel(void);
 
-#endif /* G_OS_WIN32 */
+#endif /* GDK_PIXBUF_RELOCATABLE */

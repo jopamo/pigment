@@ -39,13 +39,8 @@ static void print_blurb(FILE* bout, gboolean print_help);
 int main(int argc, char* argv[]) {
     GdkPixbuf* pixbuf = NULL;
     GError* error = NULL;
-#ifdef G_OS_WIN32
-    g_autofree gchar* infilename = NULL;
-    g_autofree gchar* outfilename = NULL;
-#else
     gchar* infilename;
     gchar* outfilename;
-#endif
     gpointer free_me = NULL;
     GdkPixdata pixdata;
     guint8* data = NULL;
@@ -60,17 +55,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-#ifdef G_OS_WIN32
-    infilename = g_locale_to_utf8(argv[1], -1, NULL, NULL, NULL);
-#else
     infilename = argv[1];
-#endif
 
-#ifdef G_OS_WIN32
-    outfilename = g_locale_to_utf8(argv[2], -1, NULL, NULL, NULL);
-#else
     outfilename = argv[2];
-#endif
 
     pixbuf = gdk_pixbuf_new_from_file(infilename, &error);
     if (error != NULL) {
