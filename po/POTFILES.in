@@ -8,14 +8,6 @@ src/pixbuf/gdk-pixbuf-simple-anim.c
 src/pixbuf/gdk-pixdata.c
 src/codecs/io-ani.c
 src/codecs/io-bmp.c
-src/codecs/io-gdip-bmp.c
-src/codecs/io-gdip-emf.c
-src/codecs/io-gdip-gif.c
-src/codecs/io-gdip-ico.c
-src/codecs/io-gdip-jpeg.c
-src/codecs/io-gdip-tiff.c
-src/codecs/io-gdip-utils.c
-src/codecs/io-gdip-wmf.c
 src/codecs/io-gif.c
 src/codecs/io-icns.c
 src/codecs/io-ico.c

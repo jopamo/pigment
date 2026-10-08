@@ -95,12 +95,7 @@ gdk_pixbuf_conf.set('HAVE_SIGSETJMP',
 common_cflags = []
 common_ldflags = []
 
-if cc.get_id() == 'msvc'
-  # For Visual Studio, just force-include msvc_reommended_pragmas.h
-  # so that we silence unwanted noise and track potential issues
-  test_cflags = [ '-FImsvc_recommended_pragmas.h', '-utf-8' ]
-  add_project_arguments(cc.get_supported_arguments(test_cflags), language: 'c')
-elif cc.get_id() == 'gcc' or cc.get_id() == 'clang'
+if cc.get_id() == 'gcc' or cc.get_id() == 'clang'
   test_cflags = [
     '-Wpointer-arith',
     '-Wformat=2',
@@ -133,26 +128,14 @@ elif cc.get_id() == 'gcc' or cc.get_id() == 'clang'
     '-Werror=empty-body',
   ]
 
-  # Ensure we have the correct bit packing on Windows
-  if host_system == 'windows'
-    test_cflags += '-mms-bitfields'
-  endif
 else
   test_cflags = []
 endif
 
 # Symbol visibility
 if get_option('default_library') != 'static'
-  if host_system == 'windows'
-    gdk_pixbuf_conf.set('DLL_EXPORT', true)
-    gdk_pixbuf_conf.set('_GDK_PIXBUF_EXTERN', '__declspec(dllexport) extern')
-    if cc.get_id() != 'msvc'
-      test_cflags += ['-fvisibility=hidden']
-    endif
-  else
-    gdk_pixbuf_conf.set('_GDK_PIXBUF_EXTERN', '__attribute__((visibility("default"))) extern')
-    test_cflags += ['-fvisibility=hidden']
-  endif
+  gdk_pixbuf_conf.set('_GDK_PIXBUF_EXTERN', '__attribute__((visibility("default"))) extern')
+  test_cflags += ['-fvisibility=hidden']
 endif
 
 common_cflags += cc.get_supported_arguments(test_cflags)
@@ -168,11 +151,11 @@ if host_machine.system() == 'darwin'
   gdk_pixbuf_conf.set('OS_DARWIN', 1)
 endif
 
-# On non-Windows/macOS/android systems we always required shared-mime-info and GIO
+# On non-macOS/Android systems we require shared-mime-info and GIO
 # shared_mime_dep = []
 shared_mime_dep = []
 use_gio_mime = false
-if get_option('gio_sniffing') and host_system not in ['windows', 'darwin', 'android']
+if get_option('gio_sniffing') and host_system not in ['darwin', 'android']
   shared_mime_dep += dependency('shared-mime-info', allow_fallback: false)
   gdk_pixbuf_conf.set('GDK_PIXBUF_USE_GIO_MIME', 1)
   use_gio_mime = true
@@ -222,14 +205,13 @@ elif builtin_loaders.contains('none')
   builtin_loaders = []
 endif
 
-is_msvc_like = cc.get_argument_syntax() == 'msvc'
 # Loader dependencies
 enabled_loaders = []
 loaders_deps = []
 
 png_opt = get_option('png')
 if not png_opt.disabled()
-  png_dep = dependency(is_msvc_like ? 'png' : 'libpng',
+  png_dep = dependency('libpng',
     required: png_opt, allow_fallback: false)
 
   if png_dep.found()
@@ -259,26 +241,9 @@ if not others_opt.disabled()
   ]
 endif
 
-# On Windows, check whether we are building the native Windows loaders
-# (it is an "all-or-nothing" option for BMP, EMF, GIF, ICO, JPEG, TIFF and WMF)
-# Note that we currently do not use the native Windows loaders to handle PNG and
-# JPEG2000 images
-if host_system == 'windows'
-  native_windows_loaders = get_option('native_windows_loaders')
-else
-  native_windows_loaders = false
-endif
-
-if native_windows_loaders
-  loaders_deps += cc.find_library('gdiplus')
-  loaders_deps += cc.find_library('ole32')
-  enabled_loaders += 'gdiplus'
-endif
-
-# Don't check and build the jpeg loader if native_windows_loaders is true
 jpeg_opt = get_option('jpeg')
-if not jpeg_opt.disabled() and not native_windows_loaders
-  jpeg_dep = dependency(is_msvc_like ? 'jpeg' : 'libjpeg',
+if not jpeg_opt.disabled()
+  jpeg_dep = dependency('libjpeg',
     required: jpeg_opt, allow_fallback: false)
 
   if jpeg_dep.found()
@@ -287,10 +252,9 @@ if not jpeg_opt.disabled() and not native_windows_loaders
   endif
 endif
 
-# Don't check and build the tiff loader if native_windows_loaders is true
 tiff_opt = get_option('tiff')
-if not tiff_opt.disabled() and not native_windows_loaders
-  tiff_dep = dependency(is_msvc_like ? 'tiff' : 'libtiff-4',
+if not tiff_opt.disabled()
+  tiff_dep = dependency('libtiff-4',
     required: tiff_opt, allow_fallback: false)
 
   if tiff_dep.found()
@@ -299,13 +263,7 @@ if not tiff_opt.disabled() and not native_windows_loaders
   endif
 endif
 
-# Determine whether we enable application bundle relocation support, and we use
-# this always on Windows
-if host_system == 'windows'
-  relocatable = (get_option('default_library') != 'static')
-else
-  relocatable = get_option('relocatable')
-endif
+relocatable = get_option('relocatable')
 
 if relocatable
   add_project_arguments([ '-DGDK_PIXBUF_RELOCATABLE' ], language: 'c')

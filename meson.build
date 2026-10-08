@@ -5,6 +5,10 @@ project('pigment', 'c',
   default_options: ['buildtype=debugoptimized', 'c_std=gnu99', 'warning_level=1', 'wrap_mode=nofallback'],
 )
 
+if host_machine.system() in ['windows', 'cygwin']
+  error('Pigment supports Linux/Unix only')
+endif
+
 subdir('src/internal')
 subdir('build-aux/pixbuf')
 subdir('include/gdk-pixbuf')

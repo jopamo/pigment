@@ -638,19 +638,6 @@ static void gdk_pixbuf_io_init_builtin(void) {
 #ifdef INCLUDE_qtif
     load_one_builtin_module(qtif);
 #endif
-#ifdef INCLUDE_gdiplus
-    /* We don't bother having the GDI+ loaders individually selectable
-     * for building in or not.
-     */
-    load_one_builtin_module(ico);
-    load_one_builtin_module(wmf);
-    load_one_builtin_module(emf);
-    load_one_builtin_module(bmp);
-    load_one_builtin_module(gif);
-    load_one_builtin_module(jpeg);
-    load_one_builtin_module(tiff);
-#endif
-
 #undef load_one_builtin_module
 }
 
@@ -680,13 +667,6 @@ module(xbm);
 module(tga);
 module(icns);
 module(qtif);
-module(gdip_ico);
-module(gdip_wmf);
-module(gdip_emf);
-module(gdip_bmp);
-module(gdip_gif);
-module(gdip_jpeg);
-module(gdip_tiff);
 
 #undef module
 
@@ -706,15 +686,6 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
         fill_vtable = _gdk_pixbuf__##id##_fill_vtable;                          \
     }
 
-#ifdef INCLUDE_gdiplus
-    try_module(ico, gdip_ico);
-    try_module(wmf, gdip_wmf);
-    try_module(emf, gdip_emf);
-    try_module(bmp, gdip_bmp);
-    try_module(gif, gdip_gif);
-    try_module(jpeg, gdip_jpeg);
-    try_module(tiff, gdip_tiff);
-#endif
 #ifdef INCLUDE_png
     try_module(png, png);
 #endif
