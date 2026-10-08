@@ -225,13 +225,15 @@ RsvgLength _rsvg_css_parse_length(const char* str) {
 
 /* Recursive evaluation of all parent elements regarding absolute font size */
 double _rsvg_css_normalize_font_size(RsvgState* state, RsvgDrawingCtx* ctx) {
-    RsvgState* parent;
+    RsvgState* parent = rsvg_state_parent(state);
+
+    if (parent && !state->has_font_size)
+        return _rsvg_css_normalize_font_size(parent, ctx);
 
     switch (state->font_size.factor) {
         case 'p':
         case 'm':
         case 'x':
-            parent = rsvg_state_parent(state);
             if (parent) {
                 double parent_size;
                 parent_size = _rsvg_css_normalize_font_size(parent, ctx);
