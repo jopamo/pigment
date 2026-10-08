@@ -652,8 +652,11 @@ static void rsvg_xinclude_handler_end(RsvgSaxHandler* self, const char* name) {
                                   !strcmp(local_name, ctx->priv->currentnode->name);
             }
 
-            if (ctx->priv->currentnode && !strcmp(local_name, ctx->priv->currentnode->name))
+            if (ctx->priv->currentnode && !strcmp(local_name, ctx->priv->currentnode->name)) {
+                if (!closed_root_svg && RSVG_NODE_TYPE(ctx->priv->currentnode) == RSVG_NODE_TYPE_SVG)
+                    _rsvg_node_svg_apply_atts((RsvgNodeSvg*)ctx->priv->currentnode, ctx);
                 rsvg_pop_def_group(ctx);
+            }
 
             if (closed_root_svg) {
                 _rsvg_node_svg_apply_atts((RsvgNodeSvg*)ctx->priv->treebase, ctx);
@@ -952,8 +955,11 @@ static void rsvg_end_element(void* data, const xmlChar* name) {
                 (ctx->priv->currentnode == ctx->priv->treebase) && !strcmp(local_name, ctx->priv->currentnode->name);
         }
 
-        if (ctx->priv->currentnode && !strcmp(local_name, ctx->priv->currentnode->name))
+        if (ctx->priv->currentnode && !strcmp(local_name, ctx->priv->currentnode->name)) {
+            if (!closed_root_svg && RSVG_NODE_TYPE(ctx->priv->currentnode) == RSVG_NODE_TYPE_SVG)
+                _rsvg_node_svg_apply_atts((RsvgNodeSvg*)ctx->priv->currentnode, ctx);
             rsvg_pop_def_group(ctx);
+        }
 
         if (closed_root_svg) {
             _rsvg_node_svg_apply_atts((RsvgNodeSvg*)ctx->priv->treebase, ctx);
