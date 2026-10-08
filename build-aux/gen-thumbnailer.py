@@ -7,7 +7,6 @@
 import argparse
 import os
 import subprocess
-import sys
 
 argparser = argparse.ArgumentParser(description='Compile resources')
 argparser.add_argument('--printer', metavar='PATH', help='Path to gdk-pixbuf-print-mime-types')
@@ -29,19 +28,15 @@ if os.name == 'nt':
 
 cmd = args.printer
 
-mimetypes_out = subprocess.Popen(cmd, env=newenv, stdout=subprocess.PIPE).communicate()[0]
-if not mimetypes_out:
-    sys.exit(1)
+mimetypes = subprocess.check_output(cmd, env=newenv).decode('ascii')
 
 infile = open(args.input, 'r')
 outfile = open(args.output, 'w')
 
 for line in infile:
     line = line.replace('@bindir@', args.bindir)
-    line = line.replace('@mimetypes@', mimetypes_out.decode('ascii'))
+    line = line.replace('@mimetypes@', mimetypes)
     outfile.write(line)
 
 infile.close()
 outfile.close()
-
-sys.exit(0)
