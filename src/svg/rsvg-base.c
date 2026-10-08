@@ -75,6 +75,8 @@
 #define RSVG_XINCLUDE_NS_URI "http://www.w3.org/2001/XInclude"
 #define RSVG_XML_NS_URI "http://www.w3.org/XML/1998/namespace"
 
+static void rsvg_apply_styles_recursive(RsvgHandle* ctx, RsvgNode* node);
+
 static const char* get_localname(const char* name) {
     const char* p = strrchr(name, ':');
     return p ? p + 1 : name;
@@ -653,8 +655,10 @@ static void rsvg_xinclude_handler_end(RsvgSaxHandler* self, const char* name) {
             if (ctx->priv->currentnode && !strcmp(local_name, ctx->priv->currentnode->name))
                 rsvg_pop_def_group(ctx);
 
-            if (closed_root_svg)
+            if (closed_root_svg) {
                 _rsvg_node_svg_apply_atts((RsvgNodeSvg*)ctx->priv->treebase, ctx);
+                rsvg_apply_styles_recursive(ctx, ctx->priv->treebase);
+            }
         }
     }
 }
@@ -951,8 +955,10 @@ static void rsvg_end_element(void* data, const xmlChar* name) {
         if (ctx->priv->currentnode && !strcmp(local_name, ctx->priv->currentnode->name))
             rsvg_pop_def_group(ctx);
 
-        if (closed_root_svg)
+        if (closed_root_svg) {
             _rsvg_node_svg_apply_atts((RsvgNodeSvg*)ctx->priv->treebase, ctx);
+            rsvg_apply_styles_recursive(ctx, ctx->priv->treebase);
+        }
     }
 
     rsvg_pop_xmlns_frame(ctx);
