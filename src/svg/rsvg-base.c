@@ -1500,9 +1500,9 @@ void rsvg_drawing_ctx_free(RsvgDrawingCtx* handle) {
  * @handle: An #RsvgHandle
  *
  * Returns the SVG's metadata in UTF-8 or %NULL. You must make a copy
- * of this metadata if you wish to use it after @handle has been freed.
+ * of this metadata to retain it after @handle is disposed or freed.
  *
- * Returns: (nullable): The SVG's title
+ * Returns: (nullable): The SVG's metadata
  *
  * Since: 2.9
  *
@@ -1510,6 +1510,9 @@ void rsvg_drawing_ctx_free(RsvgDrawingCtx* handle) {
  */
 const char* rsvg_handle_get_metadata(RsvgHandle* handle) {
     g_return_val_if_fail(handle, NULL);
+
+    if (handle->priv->is_disposed)
+        return NULL;
 
     if (handle->priv->metadata)
         return handle->priv->metadata->str;
@@ -1522,7 +1525,7 @@ const char* rsvg_handle_get_metadata(RsvgHandle* handle) {
  * @handle: An #RsvgHandle
  *
  * Returns the SVG's title in UTF-8 or %NULL. You must make a copy
- * of this title if you wish to use it after @handle has been freed.
+ * of this title to retain it after @handle is disposed or freed.
  *
  * Returns: (nullable): The SVG's title
  *
@@ -1532,6 +1535,9 @@ const char* rsvg_handle_get_metadata(RsvgHandle* handle) {
  */
 const char* rsvg_handle_get_title(RsvgHandle* handle) {
     g_return_val_if_fail(handle, NULL);
+
+    if (handle->priv->is_disposed)
+        return NULL;
 
     if (handle->priv->title)
         return handle->priv->title->str;
@@ -1544,7 +1550,7 @@ const char* rsvg_handle_get_title(RsvgHandle* handle) {
  * @handle: An #RsvgHandle
  *
  * Returns the SVG's description in UTF-8 or %NULL. You must make a copy
- * of this description if you wish to use it after @handle has been freed.
+ * of this description to retain it after @handle is disposed or freed.
  *
  * Returns: (nullable): The SVG's description
  *
@@ -1554,6 +1560,9 @@ const char* rsvg_handle_get_title(RsvgHandle* handle) {
  */
 const char* rsvg_handle_get_desc(RsvgHandle* handle) {
     g_return_val_if_fail(handle, NULL);
+
+    if (handle->priv->is_disposed)
+        return NULL;
 
     if (handle->priv->desc)
         return handle->priv->desc->str;
