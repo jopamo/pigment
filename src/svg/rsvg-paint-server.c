@@ -36,6 +36,11 @@
 
 #include "rsvg-css.h"
 
+typedef struct {
+    RsvgPaintServer super;
+    RsvgPaintServer* fallback;
+} RsvgPaintServerIri;
+
 static RsvgPaintServer* rsvg_paint_server_solid(guint32 argb) {
     RsvgPaintServer* result = g_new(RsvgPaintServer, 1);
 
@@ -59,14 +64,18 @@ static RsvgPaintServer* rsvg_paint_server_solid_current_color(void) {
     return result;
 }
 
-static RsvgPaintServer* rsvg_paint_server_iri(char* iri) {
-    RsvgPaintServer* result = g_new(RsvgPaintServer, 1);
+static RsvgPaintServerIri* rsvg_paint_server_iri(char* iri) {
+    RsvgPaintServerIri* result = g_new0(RsvgPaintServerIri, 1);
 
-    result->refcnt = 1;
-    result->type = RSVG_PAINT_SERVER_IRI;
-    result->core.iri = iri;
+    result->super.refcnt = 1;
+    result->super.type = RSVG_PAINT_SERVER_IRI;
+    result->super.core.iri = iri;
 
     return result;
+}
+
+RsvgPaintServer* rsvg_paint_server_get_fallback(RsvgPaintServer* ps) {
+    return ps->type == RSVG_PAINT_SERVER_IRI ? ((RsvgPaintServerIri*)ps)->fallback : NULL;
 }
 
 /**
@@ -89,7 +98,18 @@ RsvgPaintServer* rsvg_paint_server_parse(gboolean* inherit, const char* str) {
 
     name = rsvg_get_url_string(str);
     if (name) {
-        return rsvg_paint_server_iri(name);
+        RsvgPaintServerIri* result = rsvg_paint_server_iri(name);
+        g_autofree char* fallback = g_strdup(strchr(str, ')') + 1);
+        g_strstrip(fallback);
+        if (g_str_equal(fallback, "currentColor"))
+            result->fallback = rsvg_paint_server_solid_current_color();
+        else if (*fallback && !g_str_equal(fallback, "none")) {
+            gboolean valid;
+            argb = rsvg_css_parse_color(fallback, &valid);
+            if (valid)
+                result->fallback = rsvg_paint_server_solid(argb);
+        }
+        return &result->super;
     }
     else if (!strcmp(str, "inherit")) {
         if (inherit != NULL)
@@ -131,8 +151,10 @@ void rsvg_paint_server_unref(RsvgPaintServer* ps) {
     if (--ps->refcnt == 0) {
         if (ps->type == RSVG_PAINT_SERVER_SOLID)
             g_free(ps->core.color);
-        else if (ps->type == RSVG_PAINT_SERVER_IRI)
+        else if (ps->type == RSVG_PAINT_SERVER_IRI) {
+            rsvg_paint_server_unref(rsvg_paint_server_get_fallback(ps));
             g_free(ps->core.iri);
+        }
         g_free(ps);
     }
 }

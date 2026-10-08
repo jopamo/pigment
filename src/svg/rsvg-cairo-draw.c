@@ -335,8 +335,13 @@ static void _set_source_rsvg_paint_server(RsvgDrawingCtx* ctx,
                 _set_source_rsvg_radial_gradient(ctx, (RsvgRadialGradient*)node, current_color_rgb, opacity, bbox);
             else if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_PATTERN)
                 _set_source_rsvg_pattern(ctx, (RsvgPattern*)node, opacity, bbox);
-            else
-                cairo_set_source_rgba(RSVG_CAIRO_RENDER(ctx->render)->cr, 0, 0, 0, 0);
+            else {
+                RsvgPaintServer* fallback = rsvg_paint_server_get_fallback(ps);
+                if (fallback)
+                    _set_source_rsvg_solid_color(ctx, fallback->core.color, opacity, current_color);
+                else
+                    cairo_set_source_rgba(RSVG_CAIRO_RENDER(ctx->render)->cr, 0, 0, 0, 0);
+            }
             rsvg_release_node(ctx, node);
             break;
         case RSVG_PAINT_SERVER_SOLID:

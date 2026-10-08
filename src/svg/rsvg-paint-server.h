@@ -139,6 +139,8 @@ G_GNUC_INTERNAL
 void rsvg_paint_server_ref(RsvgPaintServer* ps);
 G_GNUC_INTERNAL
 void rsvg_paint_server_unref(RsvgPaintServer* ps);
+G_GNUC_INTERNAL
+RsvgPaintServer* rsvg_paint_server_get_fallback(RsvgPaintServer* ps);
 
 G_GNUC_INTERNAL
 RsvgNode* rsvg_new_linear_gradient(void);
