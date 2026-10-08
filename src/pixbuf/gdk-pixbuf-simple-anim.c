@@ -254,6 +254,9 @@ static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* curre
 
     iter = GDK_PIXBUF_SIMPLE_ANIM_ITER(anim_iter);
 
+    if (iter->simple_anim->frames == NULL)
+        return FALSE;
+
     iter->current_time = *current_time;
 
     /* We use milliseconds for all times */
