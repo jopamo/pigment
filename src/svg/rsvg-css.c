@@ -314,8 +314,30 @@ gboolean rsvg_css_parse_baseline_shift(const char* str, RsvgLength* shift) {
                 parsed.length /= 100;
                 parsed.factor = 'p';
             }
-            else if (end - number_end != 2 || g_ascii_strncasecmp(number_end, "px", 2))
+            else if (end - number_end != 2)
                 return FALSE;
+            else {
+                static const struct {
+                    const char* unit;
+                    char factor;
+                    double scale;
+                } units[] = {{"px", '\0', 1},
+                             {"em", 'm', 1},
+                             {"ex", 'x', 1},
+                             {"in", 'i', 1},
+                             {"pt", 'i', 1 / POINTS_PER_INCH},
+                             {"pc", 'i', 1 / PICA_PER_INCH},
+                             {"cm", 'i', 1 / CM_PER_INCH},
+                             {"mm", 'i', 1 / MM_PER_INCH}};
+                guint unit;
+                for (unit = 0; unit < G_N_ELEMENTS(units); unit++)
+                    if (!g_ascii_strncasecmp(number_end, units[unit].unit, 2))
+                        break;
+                if (unit == G_N_ELEMENTS(units))
+                    return FALSE;
+                parsed.length *= units[unit].scale;
+                parsed.factor = units[unit].factor;
+            }
         }
     }
     *shift = parsed;
@@ -332,9 +354,16 @@ double _rsvg_css_accumulate_baseline_shift(RsvgState* state, RsvgDrawingCtx* ctx
         if (state->has_baseline_shift) {
             RsvgLength length;
             StyleValueData* data = g_hash_table_lookup(state->styles, "baseline-shift");
-            if (data && rsvg_css_parse_baseline_shift(data->value, &length) && length.factor != 'b')
-                shift =
-                    length.factor == 'p' ? length.length * _rsvg_css_normalize_font_size(state, ctx) : length.length;
+            if (data && rsvg_css_parse_baseline_shift(data->value, &length) && length.factor != 'b') {
+                if (length.factor == 'i')
+                    shift = length.length * hypot(ctx->dpi_x, ctx->dpi_y) / sqrt(2.);
+                else if (length.factor == '\0')
+                    shift = length.length;
+                else {
+                    double font_size = _rsvg_css_normalize_font_size(state, ctx);
+                    shift = _rsvg_css_hand_normalize_length(&length, 0, font_size, font_size);
+                }
+            }
             else
                 shift = _rsvg_css_normalize_font_size(parent, ctx) * state->baseline_shift;
         }
