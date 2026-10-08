@@ -1442,6 +1442,10 @@ static gboolean rsvg_handle_write_impl(RsvgHandle* handle, const guchar* buf, gs
 
     if (handle->priv->ctxt == NULL) {
         handle->priv->ctxt = create_xml_push_parser(handle, rsvg_handle_get_base_uri(handle));
+        if (handle->priv->ctxt == NULL) {
+            result = XML_ERR_NO_MEMORY;
+            goto out;
+        }
     }
 
     do {
@@ -1454,12 +1458,15 @@ static gboolean rsvg_handle_write_impl(RsvgHandle* handle, const guchar* buf, gs
         buf += chunk;
     } while (count > 0);
 
+out:
     handle->priv->error = NULL;
 
     if (result != 0 || real_error != NULL) {
         handle->priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
         if (real_error != NULL)
             g_propagate_error(error, real_error);
+        else if (handle->priv->ctxt == NULL)
+            g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, _("Error creating XML parser"));
         else
             rsvg_xml_set_error(error, handle->priv->ctxt);
         return FALSE;
