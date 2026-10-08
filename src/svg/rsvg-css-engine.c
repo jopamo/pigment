@@ -13,12 +13,13 @@
 typedef struct {
     RsvgHandle* ctx;
     RsvgState* state;
+    RsvgStyleOrigin origin;
 } StylesData;
 
 static void apply_style(const gchar* key, StyleValueData* value, gpointer user_data) {
     StylesData* data = (StylesData*)user_data;
 
-    rsvg_parse_style_pair(data->ctx, data->state, key, value->value, value->important);
+    rsvg_parse_style_pair(data->ctx, data->state, key, value->value, value->important, data->origin);
 }
 
 static GHashTable* rsvg_css_rules_new(void) {
@@ -28,7 +29,8 @@ static GHashTable* rsvg_css_rules_new(void) {
 static gboolean rsvg_css_apply_styles_from_props(GHashTable* css_props,
                                                  RsvgHandle* ctx,
                                                  const char* target,
-                                                 RsvgState* state) {
+                                                 RsvgState* state,
+                                                 RsvgStyleOrigin origin) {
     GHashTable* styles;
     StylesData data;
 
@@ -38,19 +40,18 @@ static gboolean rsvg_css_apply_styles_from_props(GHashTable* css_props,
 
     data.ctx = ctx;
     data.state = state;
+    data.origin = origin;
     g_hash_table_foreach(styles, (GHFunc)apply_style, &data);
 
     return TRUE;
 }
 
 static gboolean rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, const char* target, RsvgState* state) {
-    gboolean found = FALSE;
-
-    /* Apply document styles first, then user stylesheet to allow overriding. */
-    found = found || rsvg_css_apply_styles_from_props(engine->doc_css_props, engine->ctx, target, state);
-    found = found || rsvg_css_apply_styles_from_props(engine->user_css_props, engine->ctx, target, state);
-
-    return found;
+    gboolean found =
+        rsvg_css_apply_styles_from_props(engine->doc_css_props, engine->ctx, target, state, RSVG_STYLE_ORIGIN_AUTHOR);
+    return rsvg_css_apply_styles_from_props(engine->user_css_props, engine->ctx, target, state,
+                                            RSVG_STYLE_ORIGIN_USER) ||
+           found;
 }
 
 RsvgCssEngine* rsvg_css_engine_new_with_allocator(RsvgHandle* ctx, const lxa_allocator_t* allocator) {

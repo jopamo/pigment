@@ -69,6 +69,7 @@ StyleValueData* rsvg_style_value_data_new(const gchar* value, gboolean important
     ret = g_new(StyleValueData, 1);
     ret->value = g_strdup(value);
     ret->important = important;
+    ret->origin = RSVG_STYLE_ORIGIN_AUTHOR;
 
     return ret;
 }
@@ -217,8 +218,9 @@ void rsvg_state_clone(RsvgState* dst, const RsvgState* src) {
         g_hash_table_iter_init(&iter, src->styles);
         while (g_hash_table_iter_next(&iter, &key, &value)) {
             StyleValueData* val = (StyleValueData*)value;
-            g_hash_table_insert(dst->styles, g_strdup((char*)key),
-                                rsvg_style_value_data_new(val->value, val->important));
+            StyleValueData* copy = rsvg_style_value_data_new(val->value, val->important);
+            copy->origin = val->origin;
+            g_hash_table_insert(dst->styles, g_strdup((char*)key), copy);
         }
     }
 
@@ -454,24 +456,32 @@ void rsvg_state_finalize(RsvgState* state) {
     }
 }
 
+static int style_priority(RsvgStyleOrigin origin, gboolean important) {
+    /* Ordinary author declarations outrank user rules; important rules reverse this. */
+    return important ? 2 + origin : 1 - origin;
+}
+
 /* Parse a CSS2 style argument, setting the SVG context attributes. */
 void rsvg_parse_style_pair(RsvgHandle* ctx,
                            RsvgState* state,
                            const gchar* name,
                            const gchar* value,
-                           gboolean important) {
+                           gboolean important,
+                           RsvgStyleOrigin origin) {
     StyleValueData* data;
 
     (void)ctx;
 
-    data = g_hash_table_lookup(state->styles, name);
-    if (data && data->important && !important)
-        return;
-
     if (name == NULL || value == NULL)
         return;
 
-    g_hash_table_insert(state->styles, (gpointer)g_strdup(name), (gpointer)rsvg_style_value_data_new(value, important));
+    data = g_hash_table_lookup(state->styles, name);
+    if (data && style_priority(data->origin, data->important) > style_priority(origin, important))
+        return;
+
+    data = rsvg_style_value_data_new(value, important);
+    data->origin = origin;
+    g_hash_table_insert(state->styles, (gpointer)g_strdup(name), data);
 
     if (g_str_equal(name, "color"))
         state->current_color = rsvg_css_parse_color(value, &state->has_current_color);
@@ -926,7 +936,7 @@ static void rsvg_lookup_parse_style_pair(RsvgHandle* ctx, RsvgState* state, cons
     const char* value;
 
     if ((value = rsvg_property_bag_lookup(atts, key)) != NULL)
-        rsvg_parse_style_pair(ctx, state, key, value, FALSE);
+        rsvg_parse_style_pair(ctx, state, key, value, FALSE, RSVG_STYLE_ORIGIN_AUTHOR);
 }
 
 /* take a pair of the form (fill="#ff00ff") and parse it as a style */
@@ -1046,7 +1056,8 @@ void rsvg_parse_style(RsvgHandle* ctx, RsvgState* state, const char* str) {
             g_strfreev(split_list);
 
             if (parse_style_value(second_value, &style_value, &important))
-                rsvg_parse_style_pair(ctx, state, g_strstrip(first_value), style_value, important);
+                rsvg_parse_style_pair(ctx, state, g_strstrip(first_value), style_value, important,
+                                      RSVG_STYLE_ORIGIN_AUTHOR);
             g_free(style_value);
             g_free(second_value);
         }

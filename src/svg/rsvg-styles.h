@@ -55,9 +55,12 @@ struct _RsvgVpathDash {
     double* dash;
 };
 
+typedef enum { RSVG_STYLE_ORIGIN_AUTHOR, RSVG_STYLE_ORIGIN_USER } RsvgStyleOrigin;
+
 typedef struct _StyleValueData {
     gchar* value;
     gboolean important;
+    RsvgStyleOrigin origin;
 } StyleValueData;
 
 G_GNUC_INTERNAL
@@ -214,7 +217,8 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
                            RsvgState* state,
                            const gchar* name,
                            const gchar* value,
-                           gboolean important);
+                           gboolean important,
+                           RsvgStyleOrigin origin);
 
 G_GNUC_INTERNAL
 void rsvg_parse_transform_attr(RsvgHandle* ctx, RsvgState* state, const char* str);
