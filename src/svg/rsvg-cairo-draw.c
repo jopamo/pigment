@@ -426,6 +426,7 @@ cairo_path_t* rsvg_cairo_layout_path(PangoLayout* layout, double x, double y) {
         cairo_rotate(scratch, -rotation);
     pango_cairo_update_layout(scratch, layout);
     pango_cairo_layout_path(scratch, layout);
+    cairo_identity_matrix(scratch);
     cairo_path_t* path = cairo_copy_path(scratch);
     cairo_destroy(scratch);
     cairo_surface_destroy(surface);
