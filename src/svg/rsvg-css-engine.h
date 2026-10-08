@@ -41,7 +41,8 @@ void rsvg_css_define_style(GHashTable* css_props,
                            const gchar* selector,
                            const gchar* style_name,
                            const gchar* style_value,
-                           gboolean important);
+                           gboolean important,
+                           size_t source_order);
 
 G_GNUC_INTERNAL
 void rsvg_css_engine_free(RsvgCssEngine* engine);
@@ -63,6 +64,9 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
 
 G_GNUC_INTERNAL
 RsvgCssEngine* rsvg_css_engine_new(RsvgHandle* ctx);
+
+G_GNUC_INTERNAL
+size_t* rsvg_css_engine_document_order(RsvgCssEngine* engine);
 
 /* Internal constructor for deterministic allocator-failure qualification.
    The borrowed allocator context outlives the returned engine. */

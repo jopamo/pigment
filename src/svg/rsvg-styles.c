@@ -70,6 +70,7 @@ StyleValueData* rsvg_style_value_data_new(const gchar* value, gboolean important
     ret->value = g_strdup(value);
     ret->important = important;
     ret->origin = RSVG_STYLE_ORIGIN_AUTHOR;
+    ret->source_order = 0;
 
     return ret;
 }

@@ -17,6 +17,8 @@ typedef struct {
     lxa_budget_t budget;
     size_t rules, declarations;
     size_t new_user_retained;
+    size_t source_order;
+    size_t *document_order;
     gboolean document_sheet;
 } ParseSession;
 
@@ -117,6 +119,10 @@ emit_rule(ParseSession *session, lxa_css_tokens_t *tokens,
         lxa_css_declaration_t decl;
         lxa_css_token_t token;
         lxa_span_t name;
+        if (lxa_size_add(session->source_order, 1, &session->source_order) != LXA_OK)
+            goto value_done;
+        if (session->document_order)
+            *session->document_order = session->source_order;
         if (lxa_css_declarations_get(declarations, d, &decl) != LXA_OK
             || lxa_css_tokens_get(tokens, decl.name, &token, &name) != LXA_OK
             || name.length == 0 || name.length > RSVG_MAX_CSS_SIZE
@@ -147,7 +153,7 @@ emit_rule(ParseSession *session, lxa_css_tokens_t *tokens,
             char *property = g_strndup((const char *) name.data, name.length);
             rsvg_css_define_style(session->props, (const char *) key.data,
                                   property, (const char *) value.data,
-                                  decl.important);
+                                  decl.important, session->source_order);
             g_free(property);
         }
     }
@@ -286,6 +292,8 @@ gboolean rsvg_css_engine_parse_into_props(RsvgCssEngine* engine,
         return FALSE;
     session.engine = engine;
     session.document_sheet = props == engine->doc_css_props;
+    session.document_order = session.document_sheet ? rsvg_css_engine_document_order(engine) : NULL;
+    session.source_order = session.document_order ? *session.document_order : 0;
     session.props = props;
     session.imports = g_hash_table_new_full(g_str_hash, g_str_equal, g_free,
                                             NULL);

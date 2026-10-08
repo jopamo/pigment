@@ -61,6 +61,7 @@ typedef struct _StyleValueData {
     gchar* value;
     gboolean important;
     RsvgStyleOrigin origin;
+    size_t source_order;
 } StyleValueData;
 
 G_GNUC_INTERNAL

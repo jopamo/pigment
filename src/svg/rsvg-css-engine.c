@@ -10,44 +10,63 @@
 
 #include <string.h>
 
+/* Keep the engine layout reachable through exported helper types unchanged. */
 typedef struct {
-    RsvgHandle* ctx;
-    RsvgState* state;
+    RsvgCssEngine engine;
+    size_t document_order;
+} RsvgCssEngineStorage;
+
+typedef struct {
+    const char* property;
+    const StyleValueData* value;
     RsvgStyleOrigin origin;
-} StylesData;
+    guint specificity;
+} MatchedStyle;
 
-static void apply_style(gpointer key, gpointer style_value, gpointer user_data) {
-    const StyleValueData* value = style_value;
-    StylesData* data = (StylesData*)user_data;
+typedef struct {
+    RsvgCssEngine* engine;
+    GArray* values;
+    GHashTable* selectors;
+} StyleMatches;
 
-    rsvg_parse_style_pair(data->ctx, data->state, key, value->value, value->important, data->origin);
+static gint compare_styles(gconstpointer a, gconstpointer b) {
+    const MatchedStyle* left = a;
+    const MatchedStyle* right = b;
+    if (left->specificity != right->specificity)
+        return left->specificity < right->specificity ? -1 : 1;
+    if (left->value->source_order != right->value->source_order)
+        return left->value->source_order < right->value->source_order ? -1 : 1;
+    return 0;
 }
 
 static GHashTable* rsvg_css_rules_new(void) {
     return g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)g_hash_table_destroy);
 }
 
-static void rsvg_css_apply_styles_from_props(GHashTable* css_props,
-                                             RsvgHandle* ctx,
-                                             const char* target,
-                                             RsvgState* state,
-                                             RsvgStyleOrigin origin) {
-    GHashTable* styles;
-    StylesData data;
-
-    styles = g_hash_table_lookup(css_props, target);
-    if (styles == NULL)
+static void collect_styles(StyleMatches* matches, const char* target, guint specificity) {
+    GHashTable* props[] = {matches->engine->doc_css_props, matches->engine->user_css_props};
+    GHashTable* styles[] = {g_hash_table_lookup(props[0], target), g_hash_table_lookup(props[1], target)};
+    if (!styles[0] && !styles[1])
         return;
 
-    data.ctx = ctx;
-    data.state = state;
-    data.origin = origin;
-    g_hash_table_foreach(styles, apply_style, &data);
-}
-
-static void rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, const char* target, RsvgState* state) {
-    rsvg_css_apply_styles_from_props(engine->doc_css_props, engine->ctx, target, state, RSVG_STYLE_ORIGIN_AUTHOR);
-    rsvg_css_apply_styles_from_props(engine->user_css_props, engine->ctx, target, state, RSVG_STYLE_ORIGIN_USER);
+    if (!matches->values) {
+        matches->values = g_array_new(FALSE, FALSE, sizeof(MatchedStyle));
+        matches->selectors = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, NULL);
+    }
+    if (g_hash_table_contains(matches->selectors, target))
+        return;
+    g_hash_table_add(matches->selectors, g_strdup(target));
+    for (guint origin = 0; origin < G_N_ELEMENTS(styles); origin++) {
+        if (!styles[origin])
+            continue;
+        GHashTableIter iter;
+        gpointer property, value;
+        g_hash_table_iter_init(&iter, styles[origin]);
+        while (g_hash_table_iter_next(&iter, &property, &value)) {
+            MatchedStyle match = {property, value, origin, specificity};
+            g_array_append_val(matches->values, match);
+        }
+    }
 }
 
 RsvgCssEngine* rsvg_css_engine_new_with_allocator(RsvgHandle* ctx, const lxa_allocator_t* allocator) {
@@ -55,12 +74,17 @@ RsvgCssEngine* rsvg_css_engine_new_with_allocator(RsvgHandle* ctx, const lxa_all
     if (allocator == NULL || allocator->allocate == NULL || allocator->resize == NULL || allocator->release == NULL)
         return NULL;
 
-    engine = g_new0(RsvgCssEngine, 1);
+    RsvgCssEngineStorage* storage = g_new0(RsvgCssEngineStorage, 1);
+    engine = &storage->engine;
     engine->allocator = *allocator;
     engine->ctx = ctx;
     engine->doc_css_props = rsvg_css_rules_new();
     engine->user_css_props = rsvg_css_rules_new();
     return engine;
+}
+
+size_t* rsvg_css_engine_document_order(RsvgCssEngine* engine) {
+    return &((RsvgCssEngineStorage*)engine)->document_order;
 }
 
 void rsvg_css_engine_free(RsvgCssEngine* engine) {
@@ -75,7 +99,8 @@ void rsvg_css_define_style(GHashTable* css_props,
                            const gchar* selector,
                            const gchar* style_name,
                            const gchar* style_value,
-                           gboolean important) {
+                           gboolean important,
+                           size_t source_order) {
     GHashTable* styles;
     gboolean need_insert = FALSE;
 
@@ -87,13 +112,14 @@ void rsvg_css_define_style(GHashTable* css_props,
     }
     else {
         StyleValueData* current_value = g_hash_table_lookup(styles, style_name);
-        if (current_value == NULL || !current_value->important)
+        if (current_value == NULL || !current_value->important || important)
             need_insert = TRUE;
     }
 
     if (need_insert) {
-        g_hash_table_insert(styles, (gpointer)g_strdup(style_name),
-                            (gpointer)rsvg_style_value_data_new(style_value, important));
+        StyleValueData* value = rsvg_style_value_data_new(style_value, important);
+        value->source_order = source_order;
+        g_hash_table_insert(styles, (gpointer)g_strdup(style_name), value);
     }
 }
 
@@ -137,6 +163,7 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
     int j = 0;
     char* target = NULL;
     GString* klazz_list = NULL;
+    StyleMatches matches = {.engine = engine};
 
     if (engine == NULL)
         return;
@@ -145,11 +172,11 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
         rsvg_parse_style_pairs(engine->ctx, state, atts);
 
     /* * */
-    rsvg_css_engine_lookup_apply_css_style(engine, "*", state);
+    collect_styles(&matches, "*", 0);
 
     /* tag */
     if (tag != NULL)
-        rsvg_css_engine_lookup_apply_css_style(engine, tag, state);
+        collect_styles(&matches, tag, 1);
 
     if (klass != NULL) {
         i = strlen(klass);
@@ -163,20 +190,20 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
                 g_string_append_c(klazz_list, klass[j++]);
 
             if (klazz_list->len != 1) {
-                rsvg_css_engine_lookup_apply_css_style(engine, klazz_list->str, state);
+                collect_styles(&matches, klazz_list->str, 2);
                 if (tag != NULL) {
                     target = g_strdup_printf("%s%s", tag, klazz_list->str);
-                    rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                    collect_styles(&matches, target, 3);
                     g_free(target);
                 }
                 if (id != NULL) {
                     target = g_strdup_printf("%s#%s", klazz_list->str, id);
-                    rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                    collect_styles(&matches, target, 6);
                     g_free(target);
                 }
                 if (tag != NULL && id != NULL) {
                     target = g_strdup_printf("%s%s#%s", tag, klazz_list->str, id);
-                    rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+                    collect_styles(&matches, target, 7);
                     g_free(target);
                 }
             }
@@ -188,15 +215,26 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
     /* #id */
     if (id != NULL) {
         target = g_strdup_printf("#%s", id);
-        rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+        collect_styles(&matches, target, 4);
         g_free(target);
     }
 
     /* tag#id */
     if (tag != NULL && id != NULL) {
         target = g_strdup_printf("%s#%s", tag, id);
-        rsvg_css_engine_lookup_apply_css_style(engine, target, state);
+        collect_styles(&matches, target, 5);
         g_free(target);
+    }
+
+    if (matches.values) {
+        g_array_sort(matches.values, compare_styles);
+        for (guint n = 0; n < matches.values->len; n++) {
+            const MatchedStyle* match = &g_array_index(matches.values, MatchedStyle, n);
+            rsvg_parse_style_pair(engine->ctx, state, match->property, match->value->value, match->value->important,
+                                  match->origin);
+        }
+        g_array_free(matches.values, TRUE);
+        g_hash_table_destroy(matches.selectors);
     }
 
     if (atts != NULL && rsvg_property_bag_size(atts) > 0) {
