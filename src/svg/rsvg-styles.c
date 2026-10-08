@@ -1329,10 +1329,6 @@ guint rsvg_property_bag_size(RsvgPropertyBag* bag) {
     return g_hash_table_size(bag);
 }
 
-void rsvg_property_bag_enumerate(RsvgPropertyBag* bag, RsvgPropertyBagEnumFunc func, gpointer user_data) {
-    g_hash_table_foreach(bag, (GHFunc)func, user_data);
-}
-
 void rsvg_state_push(RsvgDrawingCtx* ctx) {
     RsvgState* data;
     RsvgState* baseon;

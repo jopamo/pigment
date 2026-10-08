@@ -299,8 +299,6 @@ struct _RsvgNodeChars {
     GString* contents;
 };
 
-typedef void (*RsvgPropertyBagEnumFunc)(const char* key, const char* value, gpointer user_data);
-
 G_GNUC_INTERNAL
 RsvgPropertyBag* rsvg_property_bag_new(const char** atts);
 G_GNUC_INTERNAL
@@ -311,8 +309,6 @@ G_GNUC_INTERNAL
 const char* rsvg_property_bag_lookup(RsvgPropertyBag* bag, const char* key);
 G_GNUC_INTERNAL
 guint rsvg_property_bag_size(RsvgPropertyBag* bag);
-G_GNUC_INTERNAL
-void rsvg_property_bag_enumerate(RsvgPropertyBag* bag, RsvgPropertyBagEnumFunc func, gpointer user_data);
 /* for some reason this one's public... */
 GdkPixbuf* rsvg_pixbuf_from_data_with_size_data(const guchar* buff,
                                                 size_t len,

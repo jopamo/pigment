@@ -84,7 +84,9 @@ typedef struct {
     GHashTable* frame;
 } RsvgXmlNsCollectCtx;
 
-static void rsvg_collect_xmlns_declaration(const char* key, const char* value, gpointer user_data) {
+static void rsvg_collect_xmlns_declaration(gpointer raw_key, gpointer raw_value, gpointer user_data) {
+    const char* key = raw_key;
+    const char* value = raw_value;
     RsvgXmlNsCollectCtx* ctx = (RsvgXmlNsCollectCtx*)user_data;
     const char* prefix = NULL;
 
@@ -107,7 +109,7 @@ static void rsvg_push_xmlns_frame(RsvgHandle* ctx, RsvgPropertyBag* atts) {
 
     frame = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
     collect_ctx.frame = frame;
-    rsvg_property_bag_enumerate(atts, rsvg_collect_xmlns_declaration, &collect_ctx);
+    g_hash_table_foreach(atts, rsvg_collect_xmlns_declaration, &collect_ctx);
 
     ctx->priv->xml_ns_stack = g_slist_prepend(ctx->priv->xml_ns_stack, frame);
 }
@@ -534,7 +536,9 @@ static void rsvg_start_title(RsvgHandle* ctx) {
 
 /* start metadata */
 
-static void rsvg_metadata_props_enumerate(const char* key, const char* value, gpointer user_data) {
+static void rsvg_metadata_props_enumerate(gpointer raw_key, gpointer raw_value, gpointer user_data) {
+    const char* key = raw_key;
+    const char* value = raw_value;
     GString* metadata = (GString*)user_data;
     char* escaped = g_markup_escape_text(value, -1);
     g_string_append_printf(metadata, "%s=\"%s\" ", key, escaped);
@@ -550,7 +554,7 @@ static void rsvg_metadata_handler_start(RsvgSaxHandler* self, const char* name, 
         return;
 
     g_string_append_printf(z->string, "<%s ", name);
-    rsvg_property_bag_enumerate(atts, rsvg_metadata_props_enumerate, z->string);
+    g_hash_table_foreach(atts, rsvg_metadata_props_enumerate, z->string);
     g_string_append(z->string, ">\n");
 }
 

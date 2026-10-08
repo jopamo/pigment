@@ -16,7 +16,8 @@ typedef struct {
     RsvgStyleOrigin origin;
 } StylesData;
 
-static void apply_style(const gchar* key, StyleValueData* value, gpointer user_data) {
+static void apply_style(gpointer key, gpointer style_value, gpointer user_data) {
+    const StyleValueData* value = style_value;
     StylesData* data = (StylesData*)user_data;
 
     rsvg_parse_style_pair(data->ctx, data->state, key, value->value, value->important, data->origin);
@@ -41,7 +42,7 @@ static void rsvg_css_apply_styles_from_props(GHashTable* css_props,
     data.ctx = ctx;
     data.state = state;
     data.origin = origin;
-    g_hash_table_foreach(styles, (GHFunc)apply_style, &data);
+    g_hash_table_foreach(styles, apply_style, &data);
 }
 
 static void rsvg_css_engine_lookup_apply_css_style(RsvgCssEngine* engine, const char* target, RsvgState* state) {
