@@ -1309,7 +1309,7 @@ static void rsvg_apply_styles_recursive(RsvgHandle* ctx, RsvgNode* node) {
 
 /**
  * rsvg_handle_set_stylesheet:
- * @handle: A #RsvgHandle
+ * @handle: a fully loaded #RsvgHandle
  * @css: (array length=css_len): a buffer with CSS data
  * @css_len: length of the @css buffer in bytes
  * @error: (allow-none): a location to store a #GError, or %NULL
@@ -1325,15 +1325,22 @@ gboolean rsvg_handle_set_stylesheet(RsvgHandle* handle, const guint8* css, gsize
     g_return_val_if_fail(css != NULL, FALSE);
     g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 
+    if (handle->priv->is_disposed) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG handle is disposed");
+        return FALSE;
+    }
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK || !handle->priv->treebase) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
+        return FALSE;
+    }
+
     if (!rsvg_css_engine_set_user_stylesheet(handle->priv->css_engine, (const char*)css, (size_t)css_len)) {
         g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, _("Failed to parse CSS stylesheet"));
         return FALSE;
     }
 
-    if (handle->priv->treebase) {
-        rsvg_node_snapshot_base_state_recursive(handle->priv->treebase);
-        rsvg_apply_styles_recursive(handle, handle->priv->treebase);
-    }
+    rsvg_node_snapshot_base_state_recursive(handle->priv->treebase);
+    rsvg_apply_styles_recursive(handle, handle->priv->treebase);
 
     return TRUE;
 }
