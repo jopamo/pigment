@@ -631,11 +631,14 @@ GdkPixbuf* gdk_pixbuf_new_subpixbuf(GdkPixbuf* src_pixbuf, int src_x, int src_y,
     GdkPixbuf* sub;
 
     g_return_val_if_fail(GDK_IS_PIXBUF(src_pixbuf), NULL);
-    g_return_val_if_fail(src_x >= 0 && src_x + width <= src_pixbuf->width, NULL);
-    g_return_val_if_fail(src_y >= 0 && src_y + height <= src_pixbuf->height, NULL);
+    g_return_val_if_fail(src_x >= 0 && width > 0 && src_x <= src_pixbuf->width && width <= src_pixbuf->width - src_x,
+                         NULL);
+    g_return_val_if_fail(
+        src_y >= 0 && height > 0 && src_y <= src_pixbuf->height && height <= src_pixbuf->height - src_y, NULL);
 
     /* Note causes an implicit copy where src_pixbuf owns the data */
-    pixels = (gdk_pixbuf_get_pixels(src_pixbuf) + src_y * src_pixbuf->rowstride + src_x * src_pixbuf->n_channels);
+    pixels = gdk_pixbuf_get_pixels(src_pixbuf) + (gsize)src_y * src_pixbuf->rowstride +
+             (gsize)src_x * src_pixbuf->n_channels;
 
     sub = gdk_pixbuf_new_from_data(pixels, src_pixbuf->colorspace, src_pixbuf->has_alpha, src_pixbuf->bits_per_sample,
                                    width, height, src_pixbuf->rowstride, NULL, NULL);
