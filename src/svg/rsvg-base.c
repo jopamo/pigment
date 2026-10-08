@@ -1311,6 +1311,18 @@ static void rsvg_apply_styles_recursive(RsvgHandle* ctx, RsvgNode* node) {
     }
 }
 
+gboolean rsvg_handle_check_loaded(RsvgHandle* handle, GError** error) {
+    if (handle->priv->is_disposed) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG handle is disposed");
+        return FALSE;
+    }
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK || !handle->priv->treebase) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
+        return FALSE;
+    }
+    return TRUE;
+}
+
 /**
  * rsvg_handle_set_stylesheet:
  * @handle: a fully loaded #RsvgHandle
@@ -1329,14 +1341,8 @@ gboolean rsvg_handle_set_stylesheet(RsvgHandle* handle, const guint8* css, gsize
     g_return_val_if_fail(css != NULL, FALSE);
     g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 
-    if (handle->priv->is_disposed) {
-        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG handle is disposed");
+    if (!rsvg_handle_check_loaded(handle, error))
         return FALSE;
-    }
-    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK || !handle->priv->treebase) {
-        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
-        return FALSE;
-    }
 
     if (!rsvg_css_engine_set_user_stylesheet(handle->priv->css_engine, (const char*)css, (size_t)css_len)) {
         g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, _("Failed to parse CSS stylesheet"));

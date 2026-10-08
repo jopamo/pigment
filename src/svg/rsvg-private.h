@@ -381,6 +381,8 @@ void rsvg_SAX_handler_struct_init(void);
 G_GNUC_INTERNAL
 void rsvg_handle_clear_sax_handlers(RsvgHandle* handle);
 G_GNUC_INTERNAL
+gboolean rsvg_handle_check_loaded(RsvgHandle* handle, GError** error);
+G_GNUC_INTERNAL
 char* rsvg_get_url_string(const char* str);
 G_GNUC_INTERNAL
 void rsvg_return_if_fail_warning(const char* pretty_function, const char* expression, GError** error);
