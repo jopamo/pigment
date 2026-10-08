@@ -38,6 +38,7 @@ lib_deps = [
   libxml_dep,
   pangocairo_dep,
   pangoft2_dep,
+  harfbuzz_dep,
   cairo_dep,
   cairo_png_dep,
   css_dep,

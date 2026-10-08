@@ -42,6 +42,7 @@
 #include <string.h>
 
 #include <pango/pangocairo.h>
+#include <hb.h>
 
 static void _pattern_add_rsvg_color_stops(cairo_pattern_t* pattern,
                                           GPtrArray* stops,
@@ -467,11 +468,70 @@ cairo_path_t* rsvg_cairo_layout_path(PangoLayout* layout, double x, double y) {
     return path;
 }
 
+static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, double y, RsvgBbox* bbox) {
+    RsvgBbox cells;
+    PangoLayoutIter* iter = pango_layout_get_iter(layout);
+    gboolean success = FALSE;
+    rsvg_bbox_init(&cells, &bbox->affine);
+    do {
+        PangoLayoutRun* run = pango_layout_iter_get_run_readonly(iter);
+        if (!run)
+            continue;
+        hb_font_t* font = pango_font_get_hb_font(run->item->analysis.font);
+        if (!font)
+            goto cleanup;
+        hb_face_t* face = hb_font_get_face(font);
+        unsigned upem = hb_face_get_upem(face);
+        int x_scale, y_scale;
+        hb_font_get_scale(font, &x_scale, &y_scale);
+        if (!upem || x_scale <= 0 || y_scale <= 0)
+            goto cleanup;
+        hb_blob_t* variation = hb_face_reference_table(face, HB_TAG('M', 'V', 'A', 'R'));
+        gboolean variable_metrics = hb_blob_get_length(variation) != 0;
+        hb_blob_destroy(variation);
+        if (variable_metrics)
+            goto cleanup;
+        hb_blob_t* table = hb_face_reference_table(face, HB_TAG('O', 'S', '/', '2'));
+        unsigned length;
+        const unsigned char* data = (const unsigned char*)hb_blob_get_data(table, &length);
+        if (length < 72) {
+            hb_blob_destroy(table);
+            goto cleanup;
+        }
+        int ascent = (data[68] << 8) | data[69];
+        int descent = (data[70] << 8) | data[71];
+        if (ascent & 0x8000)
+            ascent -= 0x10000;
+        if (descent & 0x8000)
+            descent -= 0x10000;
+        hb_blob_destroy(table);
+        if (ascent < 0 || descent > 0 || ascent == descent)
+            goto cleanup;
+        double scale = y_scale / (double)upem / PANGO_SCALE;
+        PangoRectangle logical;
+        pango_layout_iter_get_run_extents(iter, NULL, &logical);
+        RsvgBbox cell;
+        rsvg_bbox_init(&cell, &bbox->affine);
+        cell.rect.x = x + logical.x / (double)PANGO_SCALE;
+        cell.rect.y = y + pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE - ascent * scale;
+        cell.rect.width = logical.width / (double)PANGO_SCALE;
+        cell.rect.height = (ascent - descent) * scale;
+        cell.virgin = 0;
+        rsvg_bbox_insert(&cells, &cell);
+    } while (pango_layout_iter_next_run(iter));
+    success = !cells.virgin;
+    if (success)
+        *bbox = cells;
+cleanup:
+    pango_layout_iter_free(iter);
+    return success;
+}
+
 void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, double x, double y) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     RsvgState* state = rsvg_current_state(ctx);
     PangoRectangle ink;
-    RsvgBbox bbox;
+    RsvgBbox bbox, paint_bbox;
     PangoGravity gravity = pango_context_get_gravity(pango_layout_get_context(layout));
     double rotation = pango_gravity_to_rotation(gravity);
     cairo_path_t* path = rsvg_cairo_layout_path(layout, x, y);
@@ -502,12 +562,17 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
     bbox.virgin = 0;
     if (render->measure_logical)
         rsvg_bbox_insert(&render->bounds.logical, &bbox);
+    paint_bbox = bbox;
+    if (!PANGO_GRAVITY_IS_VERTICAL(gravity) &&
+        ((state->fill && state->fill->type == RSVG_PAINT_SERVER_IRI) ||
+         (state->stroke && state->stroke->type == RSVG_PAINT_SERVER_IRI)))
+        rsvg_cairo_layout_cell_bbox(layout, x, y, &paint_bbox);
 
     if (state->fill) {
         cairo_save(render->cr);
         cairo_move_to(render->cr, x, y);
         rsvg_bbox_insert(&render->bounds.ink, &bbox);
-        _set_source_rsvg_paint_server(ctx, state->current_color, state->fill, state->fill_opacity, bbox,
+        _set_source_rsvg_paint_server(ctx, state->current_color, state->fill, state->fill_opacity, paint_bbox,
                                       rsvg_current_state(ctx)->current_color);
         if (cairo_surface_get_type(cairo_get_target(render->cr)) == CAIRO_SURFACE_TYPE_PDF) {
             if (rotation != 0.)
@@ -528,7 +593,7 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         cairo_move_to(render->cr, x, y);
         rsvg_bbox_insert(&render->bounds.ink, &bbox);
 
-        _set_source_rsvg_paint_server(ctx, state->current_color, state->stroke, state->stroke_opacity, bbox,
+        _set_source_rsvg_paint_server(ctx, state->current_color, state->stroke, state->stroke_opacity, paint_bbox,
                                       rsvg_current_state(ctx)->current_color);
 
         cairo_new_path(render->cr);
