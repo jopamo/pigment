@@ -1506,7 +1506,7 @@ out:
 }
 
 /**
- * gdk_pixbuf_new_from_stream_at_scale_async:
+ * gdk_pixbuf_new_from_stream_at_scale_async: (finish-func new_from_stream_finish)
  * @stream: a `GInputStream` from which to load the pixbuf
  * @width: the width the image should have or -1 to not constrain the width
  * @height: the height the image should have or -1 to not constrain the height
@@ -2769,7 +2769,7 @@ static void save_to_stream_thread(GTask* task,
 }
 
 /**
- * gdk_pixbuf_save_to_streamv_async:
+ * gdk_pixbuf_save_to_streamv_async: (finish-func save_to_stream_finish)
  * @pixbuf: a `GdkPixbuf`
  * @stream: a `GOutputStream` to which to save the pixbuf
  * @type: name of file format
@@ -2825,7 +2825,7 @@ void gdk_pixbuf_save_to_streamv_async(GdkPixbuf* pixbuf,
 }
 
 /**
- * gdk_pixbuf_save_to_stream_async:
+ * gdk_pixbuf_save_to_stream_async: (finish-func save_to_stream_finish)
  * @pixbuf: a `GdkPixbuf`
  * @stream: a `GOutputStream` to which to save the pixbuf
  * @type: name of file format
