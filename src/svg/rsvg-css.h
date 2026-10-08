@@ -62,6 +62,8 @@ guint rsvg_css_parse_opacity(const char* str);
 G_GNUC_INTERNAL
 double rsvg_css_parse_opacity_value(const char* str);
 G_GNUC_INTERNAL
+guint32 rsvg_css_parse_color_with_alpha(const char* str, gboolean* inherit, double* alpha);
+G_GNUC_INTERNAL
 double rsvg_css_parse_angle(const char* str);
 G_GNUC_INTERNAL
 gboolean rsvg_css_parse_baseline_shift(const char* str, RsvgLength* shift);

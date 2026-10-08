@@ -391,7 +391,7 @@ double _rsvg_css_hand_normalize_length(const RsvgLength* in,
     return 0;
 }
 
-static gint rsvg_css_clip_rgb_percent(const char* s, double max) {
+static double rsvg_css_normalize_component(const char* s, double max) {
     double value;
     char* end;
 
@@ -404,7 +404,11 @@ static gint rsvg_css_clip_rgb_percent(const char* s, double max) {
         value = CLAMP(value, 0, max) / max;
     }
 
-    return (gint)floor(value * 255 + 0.5);
+    return value;
+}
+
+static gint rsvg_css_clip_rgb_percent(const char* s, double max) {
+    return (gint)floor(rsvg_css_normalize_component(s, max) * 255 + 0.5);
 }
 
 /* pack 3 [0,255] ints into one 32 bit one */
@@ -421,7 +425,12 @@ static gint rsvg_css_clip_rgb_percent(const char* s, double max) {
  * Returns: and RGB value
  */
 guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
+    return rsvg_css_parse_color_with_alpha(str, inherit, NULL);
+}
+
+guint32 rsvg_css_parse_color_with_alpha(const char* str, gboolean* inherit, double* alpha) {
     gint val = 0;
+    double color_alpha = 1.;
 
     SETINHERIT();
 
@@ -468,8 +477,11 @@ guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
         }
 
         str = strchr(str, '(');
-        if (str == NULL)
+        if (str == NULL) {
+            if (alpha)
+                *alpha = 0.;
             return val;
+        }
 
         toks = rsvg_css_parse_list(str + 1, &nb_toks);
 
@@ -478,8 +490,10 @@ guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
                 r = rsvg_css_clip_rgb_percent(toks[0], 255.0);
                 g = rsvg_css_clip_rgb_percent(toks[1], 255.0);
                 b = rsvg_css_clip_rgb_percent(toks[2], 255.0);
-                if (has_alpha)
-                    a = rsvg_css_clip_rgb_percent(toks[3], 1.0);
+                if (has_alpha) {
+                    color_alpha = rsvg_css_normalize_component(toks[3], 1.0);
+                    a = (gint)floor(color_alpha * 255 + .5);
+                }
                 else
                     a = 255;
             }
@@ -491,6 +505,10 @@ guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
     }
     else if (!strcmp(str, "inherit"))
         UNSETINHERIT();
+    else if (!strcmp(str, "transparent")) {
+        val = 0;
+        color_alpha = 0.;
+    }
     else {
         PangoColor color;
 
@@ -504,6 +522,8 @@ guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
         }
     }
 
+    if (alpha)
+        *alpha = color_alpha;
     return val;
 }
 

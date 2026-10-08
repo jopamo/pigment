@@ -139,9 +139,15 @@ void rsvg_paint_server_unref(RsvgPaintServer* ps) {
 
 void rsvg_gradient_stop_update_style(RsvgGradientStop* stop) {
     guint32 current_color = 0xff000000;
+    double current_alpha = 1., color_alpha = 1.;
     for (RsvgNode* node = &stop->super; node; node = node->parent) {
         if (node->state->has_current_color) {
             current_color = node->state->current_color;
+            StyleValueData* color = g_hash_table_lookup(node->state->styles, "color");
+            if (color)
+                rsvg_css_parse_color_with_alpha(color->value, NULL, &current_alpha);
+            else
+                current_alpha = (current_color >> 24) / 255.;
             break;
         }
     }
@@ -152,10 +158,15 @@ void rsvg_gradient_stop_update_style(RsvgGradientStop* stop) {
             continue;
         if (color && g_str_equal(color->value, "currentColor")) {
             stop->rgb = current_color;
+            color_alpha = current_alpha;
             break;
         }
         if (node->state->has_stop_color) {
             stop->rgb = node->state->stop_color;
+            if (color)
+                rsvg_css_parse_color_with_alpha(color->value, NULL, &color_alpha);
+            else
+                color_alpha = (stop->rgb >> 24) / 255.;
         }
         break;
     }
@@ -169,6 +180,7 @@ void rsvg_gradient_stop_update_style(RsvgGradientStop* stop) {
         }
         break;
     }
+    stop->opacity *= color_alpha;
 }
 
 static void rsvg_stop_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyBag* atts) {
