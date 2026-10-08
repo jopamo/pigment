@@ -66,11 +66,11 @@ static void _pattern_add_rsvg_color_stops(cairo_pattern_t* pattern,
     }
 }
 
-static void _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
-                                             RsvgLinearGradient* linear,
-                                             guint32 current_color_rgb,
-                                             guint8 opacity,
-                                             RsvgBbox bbox) {
+static gboolean _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
+                                                 RsvgLinearGradient* linear,
+                                                 guint32 current_color_rgb,
+                                                 guint8 opacity,
+                                                 RsvgBbox bbox) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     cairo_t* cr = render->cr;
     cairo_pattern_t* pattern;
@@ -80,10 +80,8 @@ static void _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
     linear = &statlinear;
     rsvg_linear_gradient_fix_fallback(ctx, linear);
 
-    if (linear->obj_bbox && (bbox.rect.width == 0 || bbox.rect.height == 0)) {
-        cairo_set_source_rgba(cr, 0, 0, 0, 0);
-        return;
-    }
+    if (linear->obj_bbox && (bbox.rect.width == 0 || bbox.rect.height == 0))
+        return FALSE;
 
     if (linear->has_current_color)
         current_color_rgb = linear->current_color;
@@ -105,8 +103,7 @@ static void _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
     }
     if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) {
         cairo_pattern_destroy(pattern);
-        cairo_set_source_rgba(cr, 0, 0, 0, 0);
-        return;
+        return FALSE;
     }
     cairo_pattern_set_matrix(pattern, &matrix);
     cairo_pattern_set_extend(pattern, linear->spread);
@@ -115,13 +112,14 @@ static void _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
 
     cairo_set_source(cr, pattern);
     cairo_pattern_destroy(pattern);
+    return TRUE;
 }
 
-static void _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
-                                             RsvgRadialGradient* radial,
-                                             guint32 current_color_rgb,
-                                             guint8 opacity,
-                                             RsvgBbox bbox) {
+static gboolean _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
+                                                 RsvgRadialGradient* radial,
+                                                 guint32 current_color_rgb,
+                                                 guint8 opacity,
+                                                 RsvgBbox bbox) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     cairo_t* cr = render->cr;
     cairo_pattern_t* pattern;
@@ -131,10 +129,8 @@ static void _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
     radial = &statradial;
     rsvg_radial_gradient_fix_fallback(ctx, radial);
 
-    if (radial->obj_bbox && (bbox.rect.width == 0 || bbox.rect.height == 0)) {
-        cairo_set_source_rgba(cr, 0, 0, 0, 0);
-        return;
-    }
+    if (radial->obj_bbox && (bbox.rect.width == 0 || bbox.rect.height == 0))
+        return FALSE;
 
     if (radial->has_current_color)
         current_color_rgb = radial->current_color;
@@ -158,8 +154,7 @@ static void _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
 
     if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) {
         cairo_pattern_destroy(pattern);
-        cairo_set_source_rgba(cr, 0, 0, 0, 0);
-        return;
+        return FALSE;
     }
     cairo_pattern_set_matrix(pattern, &matrix);
     cairo_pattern_set_extend(pattern, radial->spread);
@@ -168,6 +163,7 @@ static void _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
 
     cairo_set_source(cr, pattern);
     cairo_pattern_destroy(pattern);
+    return TRUE;
 }
 
 static void _set_source_rsvg_solid_color(RsvgDrawingCtx* ctx,
@@ -190,7 +186,7 @@ static void _set_source_rsvg_solid_color(RsvgDrawingCtx* ctx,
     cairo_set_source_rgba(cr, r, g, b, a);
 }
 
-static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_pattern, guint8 opacity, RsvgBbox bbox) {
+static gboolean _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_pattern, guint8 opacity, RsvgBbox bbox) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     RsvgPattern local_pattern = *rsvg_pattern;
     cairo_t *cr_render, *cr_pattern;
@@ -202,16 +198,15 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     double patternw, patternh, patternx, patterny;
     double scaled_width, scaled_height;
     int pw, ph;
+    gboolean success = FALSE;
 
     rsvg_pattern = &local_pattern;
     rsvg_pattern_fix_fallback(ctx, rsvg_pattern);
     cr_render = render->cr;
 
     matrix = rsvg_pattern->affine;
-    if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) {
-        cairo_set_source_rgba(cr_render, 0, 0, 0, 0);
-        return;
-    }
+    if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS)
+        return FALSE;
 
     if (rsvg_pattern->obj_bbox)
         _rsvg_push_view_box(ctx, 1., 1.);
@@ -246,10 +241,8 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     scaled_width = patternw * bbwscale;
     scaled_height = patternh * bbhscale;
 
-    if (fabs(scaled_width) < DBL_EPSILON || fabs(scaled_height) < DBL_EPSILON) {
-        cairo_set_source_rgba(cr_render, 0, 0, 0, 0);
-        return;
-    }
+    if (fabs(scaled_width) < DBL_EPSILON || fabs(scaled_height) < DBL_EPSILON)
+        return FALSE;
 
     scwscale = pw / scaled_width;
     schscale = ph / scaled_height;
@@ -337,6 +330,7 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     cairo_pattern_set_filter(pattern, CAIRO_FILTER_BEST);
 
     cairo_set_source(cr_render, pattern);
+    success = TRUE;
 
 cleanup:
     cairo_pattern_destroy(pattern);
@@ -345,6 +339,7 @@ cleanup:
 
     if (rsvg_pattern->obj_cbbox || rsvg_pattern->vbox.active)
         _rsvg_pop_view_box(ctx);
+    return success;
 }
 
 /* note: _set_source_rsvg_paint_server does not change cairo's CTM */
@@ -355,17 +350,21 @@ static void _set_source_rsvg_paint_server(RsvgDrawingCtx* ctx,
                                           RsvgBbox bbox,
                                           guint32 current_color) {
     RsvgNode* node;
+    gboolean success;
 
     switch (ps->type) {
         case RSVG_PAINT_SERVER_IRI:
             node = rsvg_acquire_node(ctx, ps->core.iri);
+            success = FALSE;
             if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_LINEAR_GRADIENT)
-                _set_source_rsvg_linear_gradient(ctx, (RsvgLinearGradient*)node, current_color_rgb, opacity, bbox);
+                success =
+                    _set_source_rsvg_linear_gradient(ctx, (RsvgLinearGradient*)node, current_color_rgb, opacity, bbox);
             else if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_RADIAL_GRADIENT)
-                _set_source_rsvg_radial_gradient(ctx, (RsvgRadialGradient*)node, current_color_rgb, opacity, bbox);
+                success =
+                    _set_source_rsvg_radial_gradient(ctx, (RsvgRadialGradient*)node, current_color_rgb, opacity, bbox);
             else if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_PATTERN)
-                _set_source_rsvg_pattern(ctx, (RsvgPattern*)node, opacity, bbox);
-            else {
+                success = _set_source_rsvg_pattern(ctx, (RsvgPattern*)node, opacity, bbox);
+            if (!success) {
                 RsvgPaintServer* fallback = rsvg_paint_server_get_fallback(ps);
                 if (fallback)
                     _set_source_rsvg_solid_color(ctx, fallback->core.color, opacity, current_color);
