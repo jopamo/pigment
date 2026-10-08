@@ -1595,6 +1595,7 @@ void rsvg_handle_get_dimensions(RsvgHandle* handle, RsvgDimensionData* dimension
  * Returns the intrinsic size for the SVG, if its units can be resolved to
  * pixels. Font-relative units use the root element's font size; percentages
  * require a viewport and cannot be resolved here.
+ * On failure, supplied output sizes are set to zero.
  *
  * Returns: %TRUE if a pixel size can be computed
  */
@@ -1604,6 +1605,11 @@ gboolean rsvg_handle_get_intrinsic_size_in_pixels(RsvgHandle* handle, gdouble* o
     gdouble height;
 
     g_return_val_if_fail(handle != NULL, FALSE);
+
+    if (out_width)
+        *out_width = 0;
+    if (out_height)
+        *out_height = 0;
 
     root = (RsvgNodeSvg*)handle->priv->treebase;
     if (!root)
