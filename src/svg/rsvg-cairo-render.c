@@ -335,6 +335,18 @@ gboolean rsvg_handle_render_document(RsvgHandle* handle, cairo_t* cr, const Rsvg
     return retval;
 }
 
+/**
+ * rsvg_handle_render_layer:
+ * @handle: a fully loaded #RsvgHandle
+ * @cr: a Cairo context
+ * @id: (nullable): a document-local element identifier, or %NULL for the whole document
+ * @viewport: viewport to render into
+ * @error: (nullable): return location for a #GError
+ *
+ * Renders the selected layer in document coordinates.
+ *
+ * Returns: %TRUE if rendering succeeded, or %FALSE otherwise
+ */
 gboolean rsvg_handle_render_layer(RsvgHandle* handle,
                                   cairo_t* cr,
                                   const char* id,
@@ -391,6 +403,18 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
     return retval;
 }
 
+/**
+ * rsvg_handle_render_element:
+ * @handle: a fully loaded #RsvgHandle
+ * @cr: a Cairo context
+ * @id: (nullable): a document-local element identifier, or %NULL for the whole document
+ * @element_viewport: viewport to render into
+ * @error: (nullable): return location for a #GError
+ *
+ * Renders the selected element subtree to a Cairo context.
+ *
+ * Returns: %TRUE if rendering succeeded, or %FALSE otherwise
+ */
 gboolean rsvg_handle_render_element(RsvgHandle* handle,
                                     cairo_t* cr,
                                     const char* id,
@@ -409,6 +433,8 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
 
     if (id && *id)
         drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
+    else if (!id)
+        drawsub = (RsvgNode*)handle->priv->treebase;
 
     if (drawsub == NULL) {
         if (error)

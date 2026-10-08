@@ -110,11 +110,12 @@ if gi_dep.found() and build_gir
     '--symbol-prefix=rsvg',
     '--identifier-prefix=Rsvg',
     '--warn-all',
+    '-DRSVG_COMPILATION',
   ]
 
   gnome.generate_gir(
     librsvg_lib,
-    sources: lib_sources + enum_headers + [enum_source],
+    sources: lib_sources + enum_headers + [svg_cairo_header, enum_source],
     nsversion: api_version,
     namespace: 'Rsvg',
     include_directories: lib_includes,
