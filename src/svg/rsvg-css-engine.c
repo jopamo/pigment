@@ -7,6 +7,7 @@
 #include "config.h"
 #include "rsvg-css-engine.h"
 #include "rsvg-styles.h"
+#include "rsvg-css.h"
 
 #include <string.h>
 
@@ -103,6 +104,10 @@ void rsvg_css_define_style(GHashTable* css_props,
                            size_t source_order) {
     GHashTable* styles;
     gboolean need_insert = FALSE;
+    RsvgLength shift;
+
+    if (g_str_equal(style_name, "baseline-shift") && !rsvg_css_parse_baseline_shift(style_value, &shift))
+        return;
 
     styles = g_hash_table_lookup(css_props, selector);
     if (styles == NULL) {

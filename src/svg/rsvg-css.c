@@ -284,7 +284,45 @@ double _rsvg_css_normalize_length(const RsvgLength* in, RsvgDrawingCtx* ctx, cha
     return 0;
 }
 
-/* Recursive evaluation of all parent elements regarding basline-shift */
+gboolean rsvg_css_parse_baseline_shift(const char* str, RsvgLength* shift) {
+    const char* end;
+    char* number_end;
+    RsvgLength parsed;
+
+    while (g_ascii_isspace(*str))
+        str++;
+    end = str + strlen(str);
+    while (end > str && g_ascii_isspace(end[-1]))
+        end--;
+    size_t len = end - str;
+    if ((len == 3 && !g_ascii_strncasecmp(str, "sub", len)) || (len == 5 && !g_ascii_strncasecmp(str, "super", len)) ||
+        (len == 8 && !g_ascii_strncasecmp(str, "baseline", len))) {
+        /* Retain Inkscape's SP_CSS_BASELINE_SHIFT_(SUB/SUPER/BASELINE) heuristics. */
+        parsed.length = len == 3 ? -0.2 : len == 5 ? 0.4 : 0;
+        parsed.factor = 'b';
+    }
+    else {
+        parsed.length = g_ascii_strtod(str, &number_end);
+        if (number_end == str || !isfinite(parsed.length))
+            return FALSE;
+        for (const char* p = str; p < number_end; p++)
+            if (!strchr("+-0123456789.eE", *p))
+                return FALSE;
+        parsed.factor = '\0';
+        if (number_end < end) {
+            if (end - number_end == 1 && *number_end == '%') {
+                parsed.length /= 100;
+                parsed.factor = 'p';
+            }
+            else if (end - number_end != 2 || g_ascii_strncasecmp(number_end, "px", 2))
+                return FALSE;
+        }
+    }
+    *shift = parsed;
+    return TRUE;
+}
+
+/* Add specified shifts without inheriting them a second time. */
 double _rsvg_css_accumulate_baseline_shift(RsvgState* state, RsvgDrawingCtx* ctx) {
     RsvgState* parent;
     double shift = 0.;
@@ -292,9 +330,13 @@ double _rsvg_css_accumulate_baseline_shift(RsvgState* state, RsvgDrawingCtx* ctx
     parent = rsvg_state_parent(state);
     if (parent) {
         if (state->has_baseline_shift) {
-            double parent_font_size;
-            parent_font_size = _rsvg_css_normalize_font_size(parent, ctx); /* font size from here */
-            shift = parent_font_size * state->baseline_shift;
+            RsvgLength length;
+            StyleValueData* data = g_hash_table_lookup(state->styles, "baseline-shift");
+            if (data && rsvg_css_parse_baseline_shift(data->value, &length) && length.factor != 'b')
+                shift =
+                    length.factor == 'p' ? length.length * _rsvg_css_normalize_font_size(state, ctx) : length.length;
+            else
+                shift = _rsvg_css_normalize_font_size(parent, ctx) * state->baseline_shift;
         }
         shift += _rsvg_css_accumulate_baseline_shift(parent, ctx); /* baseline-shift for parent element */
     }

@@ -245,8 +245,18 @@ static void rsvg_state_inherit_run(RsvgState* dst,
                                    const gboolean inherituninheritables) {
     gint i;
 
-    if (function(dst->has_baseline_shift, src->has_baseline_shift))
+    if (function(dst->has_baseline_shift, src->has_baseline_shift)) {
         dst->baseline_shift = src->baseline_shift;
+        StyleValueData* shift = g_hash_table_lookup(src->styles, "baseline-shift");
+        if (shift) {
+            StyleValueData* copy = rsvg_style_value_data_new(shift->value, shift->important);
+            copy->origin = shift->origin;
+            copy->source_order = shift->source_order;
+            g_hash_table_replace(dst->styles, g_strdup("baseline-shift"), copy);
+        }
+        else
+            g_hash_table_remove(dst->styles, "baseline-shift");
+    }
     if (function(dst->has_current_color, src->has_current_color))
         dst->current_color = src->current_color;
     if (function(dst->has_flood_color, src->has_flood_color))
@@ -480,10 +490,15 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
                            gboolean important,
                            RsvgStyleOrigin origin) {
     StyleValueData* data;
+    RsvgLength shift;
+    gboolean is_baseline_shift;
 
     (void)ctx;
 
     if (name == NULL || value == NULL)
+        return;
+    is_baseline_shift = g_str_equal(name, "baseline-shift");
+    if (is_baseline_shift && !rsvg_css_parse_baseline_shift(value, &shift))
         return;
 
     data = g_hash_table_lookup(state->styles, name);
@@ -512,28 +527,9 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
         g_free(state->mask);
         state->mask = rsvg_get_url_string(value);
     }
-    else if (g_str_equal(name, "baseline-shift")) {
-        /* These values come from Inkscape's SP_CSS_BASELINE_SHIFT_(SUB/SUPER/BASELINE);
-         * see sp_style_merge_baseline_shift_from_parent()
-         */
-        if (g_str_equal(value, "sub")) {
-            state->has_baseline_shift = TRUE;
-            state->baseline_shift = -0.2;
-        }
-        else if (g_str_equal(value, "super")) {
-            state->has_baseline_shift = TRUE;
-            state->baseline_shift = 0.4;
-        }
-        else if (g_str_equal(value, "baseline")) {
-            state->has_baseline_shift = TRUE;
-            state->baseline_shift = 0.;
-        }
-        else {
-            g_warning(
-                "value \'%s\' for attribute \'baseline-shift\' is not supported; only 'sub', 'super', and 'baseline' "
-                "are supported\n",
-                value);
-        }
+    else if (is_baseline_shift) {
+        state->has_baseline_shift = TRUE;
+        state->baseline_shift = shift.length;
     }
     else if (g_str_equal(name, "clip-path")) {
         g_free(state->clip_path);
