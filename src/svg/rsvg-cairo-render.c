@@ -678,6 +678,12 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
     RsvgNode* drawsub = NULL;
     RsvgCairoBounds bbox;
 
+    g_return_val_if_fail(handle != NULL, FALSE);
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
+        return FALSE;
+    }
+
     if (id && *id)
         drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
     else if (!id)
