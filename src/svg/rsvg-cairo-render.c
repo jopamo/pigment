@@ -216,6 +216,15 @@ static gboolean rsvg_cairo_check_context(cairo_t* cr, GError** error) {
     return FALSE;
 }
 
+static gboolean rsvg_cairo_check_viewport(const RsvgRectangle* viewport, const char* name, GError** error) {
+    if (!viewport ||
+        (isfinite(viewport->x) && isfinite(viewport->y) && isfinite(viewport->width) && isfinite(viewport->height)))
+        return TRUE;
+
+    g_set_error(error, RSVG_ERROR, RSVG_ERROR_FAILED, "%s is not finite", name);
+    return FALSE;
+}
+
 static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, RsvgNode* drawsub, GError** error) {
     RsvgDrawingCtx* draw;
     gboolean retval = FALSE;
@@ -331,6 +340,9 @@ gboolean rsvg_handle_render_document(RsvgHandle* handle, cairo_t* cr, const Rsvg
     if (!rsvg_cairo_check_context(cr, error))
         return FALSE;
 
+    if (!rsvg_cairo_check_viewport(viewport, "Viewport", error))
+        return FALSE;
+
     if (!viewport)
         return rsvg_handle_render_cairo_node(handle, cr, NULL, error);
 
@@ -384,6 +396,9 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
     g_return_val_if_fail(cr != NULL, FALSE);
 
     if (!rsvg_cairo_check_context(cr, error))
+        return FALSE;
+
+    if (!rsvg_cairo_check_viewport(viewport, "Viewport", error))
         return FALSE;
 
     if (id) {
@@ -514,11 +529,8 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
     }
 
     if (element_viewport) {
-        if (!isfinite(element_viewport->x) || !isfinite(element_viewport->y) || !isfinite(element_viewport->width) ||
-            !isfinite(element_viewport->height)) {
-            g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Element viewport is not finite");
+        if (!rsvg_cairo_check_viewport(element_viewport, "Element viewport", error))
             return FALSE;
-        }
         if (!rsvg_cairo_measure_element(handle, drawsub, &bbox, FALSE, error))
             return FALSE;
         if (bbox.ink.virgin || bbox.ink.rect.width <= 0 || bbox.ink.rect.height <= 0)
