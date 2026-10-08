@@ -1512,7 +1512,7 @@ out:
  * @height: the height the image should have or -1 to not constrain the height
  * @preserve_aspect_ratio: `TRUE` to preserve the image's aspect ratio
  * @cancellable: (allow-none): optional `GCancellable` object, `NULL` to ignore
- * @callback: a `GAsyncReadyCallback` to call when the pixbuf is loaded
+ * @callback: (not nullable): a `GAsyncReadyCallback` to call when the pixbuf is loaded
  * @user_data: the data to pass to the callback function
  *
  * Creates a new pixbuf by asynchronously loading an image from an input stream.
@@ -1706,7 +1706,7 @@ GdkPixbuf* gdk_pixbuf_new_from_resource_at_scale(const char* resource_path,
  * gdk_pixbuf_new_from_stream_async:
  * @stream: a `GInputStream` from which to load the pixbuf
  * @cancellable: (allow-none): optional `GCancellable` object, `NULL` to ignore
- * @callback: a `GAsyncReadyCallback` to call when the pixbuf is loaded
+ * @callback: (not nullable): a `GAsyncReadyCallback` to call when the pixbuf is loaded
  * @user_data: the data to pass to the callback function
  *
  * Creates a new pixbuf by asynchronously loading an image from an input stream.
@@ -1871,7 +1871,7 @@ static void get_file_info_thread(GTask* task,
  * gdk_pixbuf_get_file_info_async:
  * @filename: (type filename): The name of the file to identify
  * @cancellable: (allow-none): optional `GCancellable` object, `NULL` to ignore
- * @callback: a `GAsyncReadyCallback` to call when the file info is available
+ * @callback: (not nullable): a `GAsyncReadyCallback` to call when the file info is available
  * @user_data: the data to pass to the callback function
  *
  * Asynchronously parses an image file far enough to determine its
@@ -2789,7 +2789,7 @@ static void save_to_stream_thread(GTask* task,
  * @option_keys: (array zero-terminated=1) (element-type utf8) (nullable): name of options to set
  * @option_values: (array zero-terminated=1) (element-type utf8) (nullable): values for named options
  * @cancellable: (allow-none): optional `GCancellable` object, `NULL` to ignore
- * @callback: a `GAsyncReadyCallback` to call when the pixbuf is saved
+ * @callback: (not nullable): a `GAsyncReadyCallback` to call when the pixbuf is saved
  * @user_data: the data to pass to the callback function
  *
  * Saves `pixbuf` to an output stream asynchronously.
@@ -2843,7 +2843,7 @@ void gdk_pixbuf_save_to_streamv_async(GdkPixbuf* pixbuf,
  * @stream: a `GOutputStream` to which to save the pixbuf
  * @type: name of file format
  * @cancellable: (allow-none): optional `GCancellable` object, `NULL` to ignore
- * @callback: a `GAsyncReadyCallback` to call when the pixbuf is saved
+ * @callback: (not nullable): a `GAsyncReadyCallback` to call when the pixbuf is saved
  * @user_data: the data to pass to the callback function
  * @...: list of key-value save options
  *
