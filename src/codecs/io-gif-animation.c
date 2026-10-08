@@ -274,39 +274,71 @@ int gdk_pixbuf_gif_anim_iter_get_delay_time(GdkPixbufAnimationIter* anim_iter) {
         return -1; /* show last frame forever */
 }
 
-static void composite_frame(GdkPixbufGifAnim* anim, GdkPixbufFrame* frame) {
+static void dispose_frame(GdkPixbufGifAnim* anim) {
+    GdkPixbufFrame* frame = anim->last_frame;
+    guchar* pixels;
+    int y, x_end, y_end;
+
+    /* Remove last frame if required */
+    switch (frame->action) {
+        case GDK_PIXBUF_FRAME_RETAIN:
+            break;
+        case GDK_PIXBUF_FRAME_DISPOSE:
+            /* Replace previous area with background */
+            pixels = gdk_pixbuf_get_pixels(anim->last_frame_data);
+            x_end = MIN(anim->last_frame->x_offset + anim->last_frame->width, anim->width);
+            y_end = MIN(anim->last_frame->y_offset + anim->last_frame->height, anim->height);
+            if (x_end <= anim->last_frame->x_offset)
+                break;
+            for (y = anim->last_frame->y_offset; y < y_end; y++) {
+                gsize offset;
+                if (g_size_checked_mul(&offset, gdk_pixbuf_get_rowstride(anim->last_frame_data), y) &&
+                    g_size_checked_add(&offset, offset, anim->last_frame->x_offset * 4)) {
+                    memset(pixels + offset, 0, (x_end - anim->last_frame->x_offset) * 4);
+                }
+            }
+            break;
+        case GDK_PIXBUF_FRAME_REVERT:
+            /* Replace previous area with last retained area */
+            if (anim->last_frame_revert_data != NULL)
+                gdk_pixbuf_copy_area(anim->last_frame_revert_data, 0, 0,
+                                     gdk_pixbuf_get_width(anim->last_frame_revert_data),
+                                     gdk_pixbuf_get_height(anim->last_frame_revert_data), anim->last_frame_data,
+                                     anim->last_frame->x_offset, anim->last_frame->y_offset);
+            break;
+    }
+}
+
+static gboolean composite_frame(GdkPixbufGifAnim* anim, GdkPixbufFrame* frame, gboolean reset) {
     LZWDecoder* lzw_decoder = NULL;
     guint8* index_buffer = NULL;
-    gsize n_indexes, i;
+    gsize capacity, canvas_size, n_indexes, i;
+    gboolean success = FALSE;
+    GdkPixbuf* revert_data = NULL;
     guint16* interlace_rows = NULL;
     guchar* pixels;
 
-    anim->last_frame = frame;
+    if (!g_size_checked_mul(&capacity, frame->width, frame->height) ||
+        !g_size_checked_mul(&canvas_size, gdk_pixbuf_get_rowstride(anim->last_frame_data), anim->height))
+        goto out;
 
-    /* Store overwritten data if required */
-    if (anim->last_frame_revert_data != NULL)
-        g_object_unref(anim->last_frame_revert_data);
-    anim->last_frame_revert_data = NULL;
+    index_buffer = g_try_malloc_n(frame->width, frame->height);
+    if (index_buffer == NULL)
+        goto out;
+    interlace_rows = g_try_new(guint16, frame->height);
+    if (interlace_rows == NULL)
+        goto out;
+
     if (frame->action == GDK_PIXBUF_FRAME_REVERT) {
         int width = MIN(frame->width, MAX(0, anim->width - frame->x_offset));
         int height = MIN(frame->height, MAX(0, anim->height - frame->y_offset));
-
         if (width > 0 && height > 0) {
-            anim->last_frame_revert_data = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
-            if (anim->last_frame_revert_data != NULL)
-                gdk_pixbuf_copy_area(anim->last_frame_data, frame->x_offset, frame->y_offset, width, height,
-                                     anim->last_frame_revert_data, 0, 0);
+            revert_data = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, width, height);
+            if (revert_data == NULL)
+                goto out;
         }
     }
-
     lzw_decoder = lzw_decoder_new(frame->lzw_code_size + 1);
-    index_buffer = g_new(guint8, frame->width * frame->height);
-    if (index_buffer == NULL)
-        goto out;
-
-    interlace_rows = g_new(guint16, frame->height);
-    if (interlace_rows == NULL)
-        goto out;
     if (frame->interlace) {
         int row, n = 0;
         for (row = 0; row < frame->height; row += 8)
@@ -324,8 +356,16 @@ static void composite_frame(GdkPixbufGifAnim* anim, GdkPixbufFrame* frame) {
             interlace_rows[row] = row;
     }
 
-    n_indexes = lzw_decoder_feed(lzw_decoder, frame->lzw_data->data, frame->lzw_data->len, index_buffer,
-                                 frame->width * frame->height);
+    n_indexes = lzw_decoder_feed(lzw_decoder, frame->lzw_data->data, frame->lzw_data->len, index_buffer, capacity);
+    /* All fallible allocations precede changes to the cached frame. */
+    if (reset)
+        memset(gdk_pixbuf_get_pixels(anim->last_frame_data), 0, canvas_size);
+    else
+        dispose_frame(anim);
+    if (revert_data != NULL)
+        gdk_pixbuf_copy_area(anim->last_frame_data, frame->x_offset, frame->y_offset, gdk_pixbuf_get_width(revert_data),
+                             gdk_pixbuf_get_height(revert_data), revert_data, 0, 0);
+
     pixels = gdk_pixbuf_get_pixels(anim->last_frame_data);
     for (i = 0; i < n_indexes; i++) {
         guint8 index = index_buffer[i];
@@ -349,11 +389,19 @@ static void composite_frame(GdkPixbufGifAnim* anim, GdkPixbufFrame* frame) {
         }
     }
 
+    g_clear_object(&anim->last_frame_revert_data);
+    anim->last_frame_revert_data = revert_data;
+    revert_data = NULL;
+    anim->last_frame = frame;
+    success = TRUE;
+
 out:
     if (lzw_decoder != NULL)
         g_object_unref(lzw_decoder);
     g_free(index_buffer);
     g_free(interlace_rows);
+    g_clear_object(&revert_data);
+    return success;
 }
 
 GdkPixbuf* gdk_pixbuf_gif_anim_iter_get_pixbuf(GdkPixbufAnimationIter* anim_iter) {
@@ -361,33 +409,33 @@ GdkPixbuf* gdk_pixbuf_gif_anim_iter_get_pixbuf(GdkPixbufAnimationIter* anim_iter
     GdkPixbufGifAnim* anim = iter->gif_anim;
     GdkPixbufFrame* requested_frame;
     GList* link;
+    gboolean reset = anim->last_frame == NULL;
+
+    if (anim->frames == NULL)
+        return NULL;
 
     if (iter->current_frame != NULL)
         requested_frame = iter->current_frame->data;
     else
         requested_frame = g_list_last(anim->frames)->data;
 
-    /* If the previously rendered frame is not before this one, then throw it away */
+    /* Rebuild from the first frame when the requested frame precedes the cache. */
     if (anim->last_frame != NULL) {
         link = g_list_find(anim->frames, anim->last_frame);
         while (link != NULL && link->data != requested_frame)
             link = link->next;
         if (link == NULL)
-            anim->last_frame = NULL;
+            reset = TRUE;
     }
 
     /* If no rendered frame, render the first frame */
-    if (anim->last_frame == NULL) {
-        gsize len = 0;
+    if (reset) {
         if (anim->last_frame_data == NULL)
             anim->last_frame_data = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, anim->width, anim->height);
         if (anim->last_frame_data == NULL)
             return NULL;
-        if (g_size_checked_mul(&len, gdk_pixbuf_get_rowstride(anim->last_frame_data), anim->height))
-            memset(gdk_pixbuf_get_pixels(anim->last_frame_data), 0, len);
-        else
+        if (!composite_frame(anim, anim->frames->data, TRUE))
             return NULL;
-        composite_frame(anim, g_list_nth_data(anim->frames, 0));
     }
 
     /* If the requested frame is already rendered, then no action required */
@@ -397,41 +445,8 @@ GdkPixbuf* gdk_pixbuf_gif_anim_iter_get_pixbuf(GdkPixbufAnimationIter* anim_iter
     /* Starting from the last rendered frame, render to the current frame */
     for (link = g_list_find(anim->frames, anim->last_frame); link->next != NULL && link->data != requested_frame;
          link = link->next) {
-        GdkPixbufFrame* frame = link->data;
-        guchar* pixels;
-        int y, x_end, y_end;
-
-        /* Remove last frame if required */
-        switch (frame->action) {
-            case GDK_PIXBUF_FRAME_RETAIN:
-                break;
-            case GDK_PIXBUF_FRAME_DISPOSE:
-                /* Replace previous area with background */
-                pixels = gdk_pixbuf_get_pixels(anim->last_frame_data);
-                x_end = MIN(anim->last_frame->x_offset + anim->last_frame->width, anim->width);
-                y_end = MIN(anim->last_frame->y_offset + anim->last_frame->height, anim->height);
-                if (x_end <= anim->last_frame->x_offset)
-                    break;
-                for (y = anim->last_frame->y_offset; y < y_end; y++) {
-                    gsize offset;
-                    if (g_size_checked_mul(&offset, gdk_pixbuf_get_rowstride(anim->last_frame_data), y) &&
-                        g_size_checked_add(&offset, offset, anim->last_frame->x_offset * 4)) {
-                        memset(pixels + offset, 0, (x_end - anim->last_frame->x_offset) * 4);
-                    }
-                }
-                break;
-            case GDK_PIXBUF_FRAME_REVERT:
-                /* Replace previous area with last retained area */
-                if (anim->last_frame_revert_data != NULL)
-                    gdk_pixbuf_copy_area(anim->last_frame_revert_data, 0, 0,
-                                         gdk_pixbuf_get_width(anim->last_frame_revert_data),
-                                         gdk_pixbuf_get_height(anim->last_frame_revert_data), anim->last_frame_data,
-                                         anim->last_frame->x_offset, anim->last_frame->y_offset);
-                break;
-        }
-
-        /* Render next frame */
-        composite_frame(anim, link->next->data);
+        if (!composite_frame(anim, link->next->data, FALSE))
+            return NULL;
     }
 
     return anim->last_frame_data;

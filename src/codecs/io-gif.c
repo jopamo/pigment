@@ -420,8 +420,12 @@ static int gif_get_lzw(GifContext* context) {
         /* Notify when have first frame */
         if (context->animation->frames->next == NULL) {
             GdkPixbuf* pixbuf = gdk_pixbuf_animation_get_static_image(GDK_PIXBUF_ANIMATION(context->animation));
-            if (pixbuf != NULL)
-                (*context->prepared_func)(pixbuf, GDK_PIXBUF_ANIMATION(context->animation), context->user_data);
+            if (pixbuf == NULL) {
+                g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                                    _("Not enough memory to load GIF file"));
+                return -2;
+            }
+            (*context->prepared_func)(pixbuf, GDK_PIXBUF_ANIMATION(context->animation), context->user_data);
         }
     }
 
@@ -430,13 +434,18 @@ static int gif_get_lzw(GifContext* context) {
         gint retval, empty_block = FALSE;
 
         retval = get_data_block(context, (unsigned char*)context->block_buf, &empty_block);
+        if (retval == -2)
+            return retval;
 
         /* Notify frame update */
         if ((retval != 0 || empty_block) && context->animation->frames->next == NULL) {
             GdkPixbuf* pixbuf = gdk_pixbuf_animation_get_static_image(GDK_PIXBUF_ANIMATION(context->animation));
-            if (pixbuf)
-                (*context->updated_func)(pixbuf, 0, 0, context->frame->width, context->frame->height,
-                                         context->user_data);
+            if (pixbuf == NULL) {
+                g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                                    _("Not enough memory to load GIF file"));
+                return -2;
+            }
+            (*context->updated_func)(pixbuf, 0, 0, context->frame->width, context->frame->height, context->user_data);
         }
 
         if (retval != 0)
@@ -789,6 +798,9 @@ static GdkPixbuf* gdk_pixbuf__gif_image_load(FILE* file, GError** error) {
 
     if (pixbuf)
         g_object_ref(pixbuf);
+    else if (context->animation->frames != NULL && (error == NULL || *error == NULL))
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                            _("Not enough memory to load GIF file"));
 
 out:
     g_object_unref(context->animation);
