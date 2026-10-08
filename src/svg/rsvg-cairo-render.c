@@ -375,7 +375,7 @@ gboolean rsvg_handle_render_document(RsvgHandle* handle, cairo_t* cr, const Rsvg
  * @handle: a fully loaded #RsvgHandle
  * @cr: a Cairo context
  * @id: (nullable): a document-local element identifier, or %NULL for the whole document
- * @viewport: viewport to render into
+ * @viewport: (nullable): viewport to render into
  * @error: (nullable): return location for a #GError
  *
  * Renders the selected layer in document coordinates.
@@ -488,7 +488,7 @@ static gboolean rsvg_cairo_measure_element(RsvgHandle* handle,
  * @handle: a fully loaded #RsvgHandle
  * @cr: a Cairo context
  * @id: (nullable): a document-local element identifier, or %NULL for the whole document
- * @element_viewport: viewport to render into
+ * @element_viewport: (nullable): viewport to render into
  * @error: (nullable): return location for a #GError
  *
  * Renders the selected subtree without ancestor transforms, fitting its ink
