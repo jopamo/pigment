@@ -507,8 +507,10 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
     g_return_val_if_fail(handle != NULL, FALSE);
     g_return_val_if_fail(cr != NULL, FALSE);
 
-    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
         return FALSE;
+    }
 
     if (!rsvg_cairo_check_context(cr, error))
         return FALSE;
