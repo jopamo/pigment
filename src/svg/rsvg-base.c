@@ -1765,6 +1765,9 @@ gboolean rsvg_handle_get_dimensions_sub(RsvgHandle* handle, RsvgDimensionData* d
 
     memset(dimension_data, 0, sizeof(RsvgDimensionData));
 
+    if (!rsvg_handle_check_loaded(handle, NULL))
+        return FALSE;
+
     if (id && *id) {
         sself = rsvg_defs_lookup(handle->priv->defs, id);
 
@@ -1887,6 +1890,9 @@ gboolean rsvg_handle_get_position_sub(RsvgHandle* handle, RsvgPositionData* posi
     }
 
     memset(position_data, 0, sizeof(*position_data));
+    if (!rsvg_handle_check_loaded(handle, NULL))
+        return FALSE;
+
     memset(&dimension_data, 0, sizeof(dimension_data));
 
     node = rsvg_defs_lookup(handle->priv->defs, id);
