@@ -393,14 +393,12 @@ static PangoLayout* rsvg_text_create_layout(RsvgDrawingCtx* ctx,
     PangoAttrList* attr_list;
     PangoAttribute* attribute;
 
-    if (state->lang)
-        pango_context_set_language(context, pango_language_from_string(state->lang));
-
-    if (state->unicode_bidi == UNICODE_BIDI_OVERRIDE || state->unicode_bidi == UNICODE_BIDI_EMBED)
-        pango_context_set_base_dir(context, state->text_dir);
-
-    if (PANGO_GRAVITY_IS_VERTICAL(state->text_gravity))
-        pango_context_set_base_gravity(context, state->text_gravity);
+    pango_context_set_language(context, state->lang ? pango_language_from_string(state->lang) : NULL);
+    pango_context_set_base_dir(context,
+                               state->unicode_bidi == UNICODE_BIDI_OVERRIDE || state->unicode_bidi == UNICODE_BIDI_EMBED
+                                   ? state->text_dir
+                                   : PANGO_DIRECTION_WEAK_LTR);
+    pango_context_set_base_gravity(context, state->text_gravity);
 
     font_desc = pango_font_description_copy(pango_context_get_font_description(context));
 
