@@ -179,6 +179,7 @@ RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx(cairo_t* cr, RsvgHandle* handle) {
     draw->dpi_y = handle->priv->dpi_y;
     draw->vb.rect.width = data.em;
     draw->vb.rect.height = data.ex;
+    draw->vb_stack = NULL;
     draw->num_elements_acquired = 0;
     draw->pango_context = NULL;
     draw->drawsub_stack = NULL;
