@@ -1252,7 +1252,7 @@ void rsvg_handle_set_base_uri(RsvgHandle* handle, const char* base_uri) {
 
     g_return_if_fail(handle != NULL);
 
-    if (base_uri == NULL)
+    if (handle->priv->is_disposed || base_uri == NULL)
         return;
 
     if (rsvg_path_is_uri(base_uri))
@@ -1360,7 +1360,7 @@ gboolean rsvg_handle_set_stylesheet(RsvgHandle* handle, const guint8* css, gsize
  * @handle: a #RsvgHandle
  * @base_file: a #GFile
  *
- * Set the base URI for @handle from @file.
+ * Set the base URI for @handle from @base_file.
  * Note: This function may only be called before rsvg_handle_write()
  * or rsvg_handle_read_stream_sync() has been called.
  *
@@ -1368,19 +1368,31 @@ gboolean rsvg_handle_set_stylesheet(RsvgHandle* handle, const guint8* css, gsize
  */
 void rsvg_handle_set_base_gfile(RsvgHandle* handle, GFile* base_file) {
     RsvgHandlePrivate* priv;
+    g_autoptr(GFile) file = NULL;
+    g_autofree gchar* uri = NULL;
+    GFile* old_file;
+    gchar* old_uri;
 
     g_return_if_fail(RSVG_IS_HANDLE(handle));
     g_return_if_fail(G_IS_FILE(base_file));
 
     priv = handle->priv;
+    if (priv->is_disposed)
+        return;
 
-    g_object_ref(base_file);
-    if (priv->base_gfile)
-        g_object_unref(priv->base_gfile);
-    priv->base_gfile = base_file;
+    file = g_object_ref(base_file);
+    uri = g_file_get_uri(file);
+    if (priv->is_disposed)
+        return;
 
-    g_free(priv->base_uri);
-    priv->base_uri = g_file_get_uri(base_file);
+    old_file = priv->base_gfile;
+    old_uri = priv->base_uri;
+    /* Publish both fields before old-file finalization can call back. */
+    priv->base_gfile = g_steal_pointer(&file);
+    priv->base_uri = g_steal_pointer(&uri);
+    g_free(old_uri);
+    if (old_file != NULL)
+        g_object_unref(old_file);
 }
 
 /**
@@ -1388,12 +1400,16 @@ void rsvg_handle_set_base_gfile(RsvgHandle* handle, GFile* base_file) {
  * @handle: A #RsvgHandle
  *
  * Gets the base uri for this #RsvgHandle.
+ * The returned string belongs to @handle. Copy it before changing the base URI,
+ * disposing the handle or releasing its final reference.
  *
  * Returns: the base uri, possibly null
  * Since: 2.8
  */
 const char* rsvg_handle_get_base_uri(RsvgHandle* handle) {
     g_return_val_if_fail(handle, NULL);
+    if (handle->priv->is_disposed)
+        return NULL;
     return handle->priv->base_uri;
 }
 
