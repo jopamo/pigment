@@ -210,6 +210,7 @@ static int _rsvg_node_text_length_tspan(RsvgNodeText* self,
 static gdouble rsvg_text_length_text_as_string(RsvgDrawingCtx* ctx, const char* text, const RsvgTextChunk* chunk);
 
 static int _rsvg_node_text_length_children(RsvgNode* self,
+                                           guint start,
                                            RsvgDrawingCtx* ctx,
                                            gdouble* length,
                                            gboolean* lastwasspace,
@@ -217,7 +218,7 @@ static int _rsvg_node_text_length_children(RsvgNode* self,
                                            const RsvgTextChunk* chunk) {
     guint i;
     int out = FALSE;
-    for (i = 0; i < self->children->len; i++) {
+    for (i = start; i < self->children->len; i++) {
         RsvgNode* node = g_ptr_array_index(self->children, i);
         RsvgNodeType type = RSVG_NODE_TYPE(node);
 
@@ -231,7 +232,7 @@ static int _rsvg_node_text_length_children(RsvgNode* self,
         }
         else {
             if (usetextonly) {
-                out = _rsvg_node_text_length_children(node, ctx, length, lastwasspace, usetextonly, chunk);
+                out = _rsvg_node_text_length_children(node, 0, ctx, length, lastwasspace, usetextonly, chunk);
             }
             else {
                 if (type == RSVG_NODE_TYPE_TSPAN) {
@@ -245,6 +246,38 @@ static int _rsvg_node_text_length_children(RsvgNode* self,
             break;
     }
     return out;
+}
+
+static gdouble rsvg_text_chunk_length(RsvgNode* node,
+                                      RsvgDrawingCtx* ctx,
+                                      gboolean lastwasspace,
+                                      gboolean usetextonly,
+                                      const RsvgTextChunk* chunk) {
+    gdouble length = 0;
+    guint start = 0;
+    RsvgState* saved = rsvg_current_state(ctx);
+    RsvgState* ancestor = saved;
+
+    while (node && ancestor) {
+        /* Measurement pushes its own frames; borrow the ancestor for following siblings. */
+        ctx->state = ancestor;
+        if (_rsvg_node_text_length_children(node, start, ctx, &length, &lastwasspace, usetextonly, chunk) ||
+            RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_TEXT)
+            break;
+
+        RsvgNode* parent = node->parent;
+        if (!parent)
+            break;
+        for (start = 0; start < parent->children->len; start++)
+            if (g_ptr_array_index(parent->children, start) == node)
+                break;
+        g_assert(start < parent->children->len);
+        start++;
+        node = parent;
+        ancestor = ancestor->parent;
+    }
+    ctx->state = saved;
+    return length;
 }
 
 static void _rsvg_node_text_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int dominate) {
@@ -266,7 +299,7 @@ static void _rsvg_node_text_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int domina
     dy = _rsvg_css_normalize_length(&text->dy, ctx, 'v');
 
     if (rsvg_current_state(ctx)->text_anchor != TEXT_ANCHOR_START) {
-        _rsvg_node_text_length_children(self, ctx, &length, &lastwasspace, FALSE, &chunk);
+        _rsvg_node_text_length_children(self, 0, ctx, &length, &lastwasspace, FALSE, &chunk);
         if (rsvg_current_state(ctx)->text_anchor == TEXT_ANCHOR_MIDDLE)
             length /= 2;
     }
@@ -303,36 +336,34 @@ static void _rsvg_node_text_type_tspan(RsvgNodeText* self,
                                        gboolean usetextonly,
                                        RsvgTextChunk* chunk) {
     double dx, dy, length = 0;
+    gboolean positioned = self->x.factor != 'n' || self->y.factor != 'n';
     rsvg_state_reinherit_top(ctx, self->super.state, 0);
-    if (self->x.factor != 'n' || self->y.factor != 'n')
+    if (positioned)
         chunk->direction = rsvg_current_state(ctx)->text_dir;
 
     dx = _rsvg_css_normalize_length(&self->dx, ctx, 'h');
     dy = _rsvg_css_normalize_length(&self->dy, ctx, 'v');
 
-    if (rsvg_current_state(ctx)->text_anchor != TEXT_ANCHOR_START) {
-        gboolean lws = *lastwasspace;
-        _rsvg_node_text_length_children(&self->super, ctx, &length, &lws, usetextonly, chunk);
+    if (positioned && rsvg_current_state(ctx)->text_anchor != TEXT_ANCHOR_START) {
+        length = rsvg_text_chunk_length(&self->super, ctx, *lastwasspace, usetextonly, chunk);
         if (rsvg_current_state(ctx)->text_anchor == TEXT_ANCHOR_MIDDLE)
             length /= 2;
     }
 
-    if (self->x.factor != 'n') {
+    if (self->x.factor != 'n')
         *x = _rsvg_css_normalize_length(&self->x, ctx, 'h');
-        if (!PANGO_GRAVITY_IS_VERTICAL(chunk->gravity)) {
+    if (self->y.factor != 'n')
+        *y = _rsvg_css_normalize_length(&self->y, ctx, 'v');
+    if (positioned) {
+        if (PANGO_GRAVITY_IS_VERTICAL(chunk->gravity))
+            *y -= length;
+        else {
             if (chunk->direction == PANGO_DIRECTION_RTL)
                 length = -length;
             *x -= length;
         }
     }
     *x += dx;
-
-    if (self->y.factor != 'n') {
-        *y = _rsvg_css_normalize_length(&self->y, ctx, 'v');
-        if (PANGO_GRAVITY_IS_VERTICAL(chunk->gravity)) {
-            *y -= length;
-        }
-    }
     *y += dy;
     _rsvg_node_text_type_children(&self->super, ctx, x, y, lastwasspace, usetextonly, chunk);
 }
@@ -351,7 +382,7 @@ static int _rsvg_node_text_length_tspan(RsvgNodeText* self,
     else
         *length += (chunk->direction == PANGO_DIRECTION_RTL ? -1 : 1) * _rsvg_css_normalize_length(&self->dx, ctx, 'h');
 
-    return _rsvg_node_text_length_children(&self->super, ctx, length, lastwasspace, usetextonly, chunk);
+    return _rsvg_node_text_length_children(&self->super, 0, ctx, length, lastwasspace, usetextonly, chunk);
 }
 
 static void _rsvg_node_tspan_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyBag* atts) {
