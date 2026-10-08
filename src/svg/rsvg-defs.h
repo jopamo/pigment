@@ -40,6 +40,8 @@ RsvgDefs* rsvg_defs_new(RsvgHandle* handle);
 /* for some reason this one's public... */
 RsvgNode* rsvg_defs_lookup(const RsvgDefs* defs, const char* name);
 G_GNUC_INTERNAL
+RsvgNode* rsvg_defs_lookup_document(const RsvgDefs* defs, const char* name);
+G_GNUC_INTERNAL
 void rsvg_defs_free(RsvgDefs* defs);
 G_GNUC_INTERNAL
 void rsvg_defs_register_name(RsvgDefs* defs, const char* name, RsvgNode* val);

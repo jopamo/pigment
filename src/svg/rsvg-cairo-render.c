@@ -205,37 +205,12 @@ RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx(cairo_t* cr, RsvgHandle* handle) {
     return draw;
 }
 
-/**
- * rsvg_handle_render_cairo_sub:
- * @handle: A #RsvgHandle
- * @cr: A Cairo renderer
- * @id: (nullable): An element's id within the SVG, or %NULL to render
- *   the whole SVG. For example, if you have a layer called "layer1"
- *   that you wish to render, pass "##layer1" as the id.
- *
- * Draws a subset of a SVG to a Cairo surface
- *
- * Returns: %TRUE if drawing succeeded.
- *
- * Since: 2.14
- */
-gboolean rsvg_handle_render_cairo_sub(RsvgHandle* handle, cairo_t* cr, const char* id) {
+static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, RsvgNode* drawsub) {
     RsvgDrawingCtx* draw;
-    RsvgNode* drawsub = NULL;
     gboolean retval = FALSE;
-
-    g_return_val_if_fail(handle != NULL, FALSE);
 
     if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
         return FALSE;
-
-    if (id && *id)
-        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
-
-    if (drawsub == NULL && id != NULL) {
-        /* todo: there's no way to signal that @id doesn't exist */
-        return FALSE;
-    }
 
     draw = rsvg_cairo_new_drawing_ctx(cr, handle);
     if (!draw)
@@ -263,6 +238,37 @@ gboolean rsvg_handle_render_cairo_sub(RsvgHandle* handle, cairo_t* cr, const cha
     rsvg_drawing_ctx_free(draw);
 
     return retval;
+}
+
+/**
+ * rsvg_handle_render_cairo_sub:
+ * @handle: A #RsvgHandle
+ * @cr: A Cairo renderer
+ * @id: (nullable): An element's id within the SVG, or %NULL to render
+ *   the whole SVG. For example, if you have a layer called "layer1"
+ *   that you wish to render, pass "##layer1" as the id.
+ *
+ * Draws a subset of a SVG to a Cairo surface
+ *
+ * Returns: %TRUE if drawing succeeded.
+ *
+ * Since: 2.14
+ */
+gboolean rsvg_handle_render_cairo_sub(RsvgHandle* handle, cairo_t* cr, const char* id) {
+    RsvgNode* drawsub = NULL;
+
+    g_return_val_if_fail(handle != NULL, FALSE);
+
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
+        return FALSE;
+
+    if (id && *id)
+        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+
+    if (drawsub == NULL && id != NULL)
+        return FALSE;
+
+    return rsvg_handle_render_cairo_node(handle, cr, drawsub);
 }
 
 /**
@@ -338,12 +344,22 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
     gdouble intrinsic_width = 0.0;
     gdouble intrinsic_height = 0.0;
     gboolean retval;
+    RsvgNode* drawsub = NULL;
 
     g_return_val_if_fail(handle != NULL, FALSE);
     g_return_val_if_fail(cr != NULL, FALSE);
 
+    if (id) {
+        drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
+        if (!drawsub) {
+            if (error && *error == NULL)
+                g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Element not found");
+            return FALSE;
+        }
+    }
+
     if (!viewport) {
-        retval = rsvg_handle_render_cairo_sub(handle, cr, id);
+        retval = rsvg_handle_render_cairo_node(handle, cr, drawsub);
         if (!retval && error && *error == NULL)
             g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
         return retval;
@@ -365,7 +381,7 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
     cairo_translate(cr, viewport->x, viewport->y);
     cairo_scale(cr, viewport->width / intrinsic_width, viewport->height / intrinsic_height);
 
-    retval = rsvg_handle_render_cairo_sub(handle, cr, id);
+    retval = rsvg_handle_render_cairo_node(handle, cr, drawsub);
 
     cairo_restore(cr);
 
@@ -392,7 +408,7 @@ gboolean rsvg_handle_render_element(RsvgHandle* handle,
         return FALSE;
 
     if (id && *id)
-        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+        drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
 
     if (drawsub == NULL) {
         if (error)
@@ -472,7 +488,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     RsvgCairoRender* render;
 
     if (id && *id)
-        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+        drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
     else
         drawsub = (RsvgNode*)handle->priv->treebase;
 
@@ -564,7 +580,7 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
     RsvgCairoRender* render;
 
     if (id && *id)
-        drawsub = rsvg_defs_lookup(handle->priv->defs, id);
+        drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
     else if (!id)
         drawsub = (RsvgNode*)handle->priv->treebase;
 

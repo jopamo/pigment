@@ -92,6 +92,13 @@ static RsvgNode* rsvg_defs_extern_lookup(const RsvgDefs* defs, const char* possi
         return NULL;
 }
 
+RsvgNode* rsvg_defs_lookup_document(const RsvgDefs* defs, const char* name) {
+    if (!name || g_strrstr(name, "#") != name || !name[1])
+        return NULL;
+
+    return g_hash_table_lookup(defs->hash, name + 1);
+}
+
 RsvgNode* rsvg_defs_lookup(const RsvgDefs* defs, const char* name) {
     char* hashpos;
     hashpos = g_strrstr(name, "#");
