@@ -30,6 +30,7 @@
 #include "rsvg-structure.h"
 #include "rsvg-image.h"
 #include "rsvg-css.h"
+#include "rsvg-paint-server.h"
 #include "string.h"
 
 #include <stdio.h>
@@ -364,6 +365,13 @@ static void rsvg_node_svg_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgProperty
     }
 }
 
+static void rsvg_update_gradient_stops(RsvgNode* node) {
+    if (RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_STOP)
+        rsvg_gradient_stop_update_style((RsvgGradientStop*)node);
+    for (guint i = 0; i < node->children->len; i++)
+        rsvg_update_gradient_stops(g_ptr_array_index(node->children, i));
+}
+
 void _rsvg_node_svg_apply_atts(RsvgNodeSvg* self, RsvgHandle* ctx) {
     const char *id = NULL, *klazz = NULL, *value;
     if (((RsvgNode*)self)->atts && rsvg_property_bag_size(((RsvgNode*)self)->atts)) {
@@ -373,6 +381,7 @@ void _rsvg_node_svg_apply_atts(RsvgNodeSvg* self, RsvgHandle* ctx) {
             id = value;
         rsvg_parse_style_attrs(ctx, ((RsvgNode*)self)->state, "svg", klazz, id, ((RsvgNode*)self)->atts);
     }
+    rsvg_update_gradient_stops((RsvgNode*)self);
 }
 
 static void _rsvg_svg_free(RsvgNode* self) {

@@ -156,18 +156,18 @@ void rsvg_gradient_stop_update_style(RsvgGradientStop* stop) {
         }
         if (node->state->has_stop_color) {
             stop->rgb = node->state->stop_color;
-            break;
         }
+        break;
     }
     stop->opacity = 1.;
     for (RsvgNode* node = &stop->super; node; node = node->parent) {
+        StyleValueData* opacity = g_hash_table_lookup(node->state->styles, "stop-opacity");
+        if (opacity && g_str_equal(opacity->value, "inherit"))
+            continue;
         if (node->state->has_stop_opacity) {
-            StyleValueData* opacity = g_hash_table_lookup(node->state->styles, "stop-opacity");
-            if (opacity && g_str_equal(opacity->value, "inherit"))
-                continue;
             stop->opacity = opacity ? rsvg_css_parse_opacity_value(opacity->value) : node->state->stop_opacity / 255.;
-            break;
         }
+        break;
     }
 }
 
