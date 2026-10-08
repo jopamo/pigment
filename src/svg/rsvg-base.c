@@ -1337,6 +1337,7 @@ gboolean rsvg_handle_check_loaded(RsvgHandle* handle, GError** error) {
  * @error: (allow-none): a location to store a #GError, or %NULL
  *
  * Sets a CSS stylesheet to use for an SVG document.
+ * An empty stylesheet removes the previous user stylesheet.
  *
  * Returns: %TRUE on success, or %FALSE on error.
  *
@@ -1344,7 +1345,7 @@ gboolean rsvg_handle_check_loaded(RsvgHandle* handle, GError** error) {
  */
 gboolean rsvg_handle_set_stylesheet(RsvgHandle* handle, const guint8* css, gsize css_len, GError** error) {
     g_return_val_if_fail(handle != NULL, FALSE);
-    g_return_val_if_fail(css != NULL, FALSE);
+    g_return_val_if_fail(css != NULL || css_len == 0, FALSE);
     g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 
     if (!rsvg_handle_check_loaded(handle, error))
