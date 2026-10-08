@@ -495,7 +495,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     RsvgState* state = rsvg_current_state(ctx);
     cairo_t* cr;
-    RsvgBbox bbox;
+    RsvgBbox bbox, ink_bbox;
     double backup_tolerance;
 
     rsvg_cairo_push_discrete_layer(ctx);
@@ -511,6 +511,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
     cairo_set_line_cap(cr, (cairo_line_cap_t)state->cap);
     cairo_set_line_join(cr, (cairo_line_join_t)state->join);
     cairo_set_dash(cr, state->dash.dash, state->dash.n_dash, _rsvg_css_normalize_length(&state->dash.offset, ctx, 'o'));
+    cairo_set_fill_rule(cr, state->fill_rule);
 
     cairo_append_path(cr, path);
 
@@ -522,11 +523,7 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
        _rendering_ time speedups, are these rather expensive operations
        really needed here? */
 
-    /* Geometric bounds for objectBoundingBox/viewBox calculations.
-     *
-     * Use path extents instead of fill extents so open paths and fill-less paths
-     * still yield correct geometry for gradients, patterns, clipping and masks.
-     */
+    /* Keep paint-server geometry independent of fill extents. */
     {
         RsvgBbox fb;
         rsvg_bbox_init(&fb, &state->affine);
@@ -539,6 +536,15 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
             rsvg_bbox_insert(&render->bounds.logical, &fb);
     }
 
+    /* Query fill extents even without paint for symbolic bounding frames. */
+    if (render->measure_ink) {
+        rsvg_bbox_init(&ink_bbox, &state->affine);
+        cairo_fill_extents(cr, &ink_bbox.rect.x, &ink_bbox.rect.y, &ink_bbox.rect.width, &ink_bbox.rect.height);
+        ink_bbox.rect.width -= ink_bbox.rect.x;
+        ink_bbox.rect.height -= ink_bbox.rect.y;
+        ink_bbox.virgin = 0;
+    }
+
     /* Bounding box for stroke */
     if (state->stroke != NULL && cairo_get_line_width(cr) > 0) {
         RsvgBbox sb;
@@ -548,16 +554,16 @@ void rsvg_cairo_render_path(RsvgDrawingCtx* ctx, const cairo_path_t* path) {
         sb.rect.height -= sb.rect.y;
         sb.virgin = 0;
         rsvg_bbox_insert(&bbox, &sb);
+        if (render->measure_ink)
+            rsvg_bbox_insert(&ink_bbox, &sb);
     }
 
     cairo_set_tolerance(cr, backup_tolerance);
 
-    rsvg_bbox_insert(&render->bounds.ink, &bbox);
+    rsvg_bbox_insert(&render->bounds.ink, render->measure_ink ? &ink_bbox : &bbox);
 
     if (state->fill != NULL) {
         int opacity;
-
-        cairo_set_fill_rule(cr, state->fill_rule);
 
         opacity = state->fill_opacity;
 

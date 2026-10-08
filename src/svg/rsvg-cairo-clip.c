@@ -159,6 +159,7 @@ static RsvgRender* rsvg_cairo_clip_render_new(cairo_t* cr, RsvgCairoRender* pare
     cairo_render->offset_y = parent->offset_y;
     cairo_render->cr_stack = NULL;
     cairo_render->bounds = parent->bounds;
+    cairo_render->measure_ink = parent->measure_ink;
     cairo_render->measure_logical = parent->measure_logical;
     cairo_render->bb_stack = NULL;
 

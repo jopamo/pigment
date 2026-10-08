@@ -53,6 +53,8 @@ struct _RsvgCairoRender {
     GList* cr_stack;
 
     RsvgCairoBounds bounds;
+    /* Drawing keeps paint bounds; geometry requests fill/stroke extents. */
+    gboolean measure_ink;
     gboolean measure_logical;
     GList* bb_stack;
     GList* surfaces_stack;

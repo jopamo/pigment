@@ -436,6 +436,7 @@ static gboolean rsvg_cairo_draw_element(RsvgHandle* handle,
         return FALSE;
     }
     RSVG_CAIRO_RENDER(draw->render)->measure_logical = measure_logical;
+    RSVG_CAIRO_RENDER(draw->render)->measure_ink = bbox != NULL;
 
     rsvg_state_reconstruct(rsvg_current_state(draw), node->parent);
     rsvg_state_push(draw);
@@ -603,6 +604,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
         return FALSE;
     }
     render = RSVG_CAIRO_RENDER(draw->render);
+    render->measure_ink = out_ink_rect != NULL || out_logical_rect != NULL;
     render->measure_logical = out_logical_rect != NULL;
 
     if (id && *id) {
