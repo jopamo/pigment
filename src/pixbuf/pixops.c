@@ -1823,7 +1823,7 @@ void _pixops_composite_color(guchar* dest_buf,
         return;
     }
 
-    new_dest_buf = dest_buf + dest_y * dest_rowstride + dest_x * dest_channels;
+    new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
     render_x0 = dest_x - offset_x;
     render_y0 = dest_y - offset_y;
     render_x1 = dest_x + dest_region_width - offset_x;
