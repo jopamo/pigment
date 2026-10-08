@@ -2444,7 +2444,7 @@ gboolean rsvg_handle_read_stream_sync(RsvgHandle* handle,
     if (!rsvg_handle_check_not_disposed(handle, error))
         return FALSE;
 
-    g_return_val_if_fail(priv->state == RSVG_HANDLE_STATE_START, FALSE);
+    rsvg_return_val_if_fail(priv->state == RSVG_HANDLE_STATE_START, FALSE, error);
 
     if (g_cancellable_set_error_if_cancelled(cancellable, error)) {
         priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
