@@ -50,7 +50,7 @@ static void _pattern_add_rsvg_color_stops(cairo_pattern_t* pattern,
     gsize i;
     RsvgGradientStop* stop;
     RsvgNode* node;
-    guint32 rgba;
+    guint32 rgb;
 
     (void)current_color_rgb;
 
@@ -59,10 +59,10 @@ static void _pattern_add_rsvg_color_stops(cairo_pattern_t* pattern,
         if (RSVG_NODE_TYPE(node) != RSVG_NODE_TYPE_STOP)
             continue;
         stop = (RsvgGradientStop*)node;
-        rgba = stop->rgba;
-        cairo_pattern_add_color_stop_rgba(pattern, stop->offset, ((rgba >> 24) & 0xff) / 255.0,
-                                          ((rgba >> 16) & 0xff) / 255.0, ((rgba >> 8) & 0xff) / 255.0,
-                                          (((rgba >> 0) & 0xff) * opacity) / 255.0 / 255.0);
+        rgb = stop->rgb;
+        cairo_pattern_add_color_stop_rgba(pattern, stop->offset, ((rgb >> 16) & 0xff) / 255.0,
+                                          ((rgb >> 8) & 0xff) / 255.0, (rgb & 0xff) / 255.0,
+                                          stop->opacity * opacity / 255.0);
     }
 }
 

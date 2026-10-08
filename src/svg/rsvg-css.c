@@ -510,18 +510,22 @@ guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
 #undef PACK_RGB
 #undef PACK_RGBA
 
-guint rsvg_css_parse_opacity(const char* str) {
+double rsvg_css_parse_opacity_value(const char* str) {
     char* end_ptr = NULL;
     double opacity;
 
     opacity = g_ascii_strtod(str, &end_ptr);
 
-    if (((opacity == -HUGE_VAL || opacity == HUGE_VAL) && (ERANGE == errno)) || *end_ptr != '\0')
+    if (!isfinite(opacity) || *end_ptr != '\0')
         opacity = 1.;
 
     opacity = CLAMP(opacity, 0., 1.);
 
-    return (guint)floor(opacity * 255. + 0.5);
+    return opacity;
+}
+
+guint rsvg_css_parse_opacity(const char* str) {
+    return (guint)floor(rsvg_css_parse_opacity_value(str) * 255. + 0.5);
 }
 
 /*

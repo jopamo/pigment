@@ -60,6 +60,8 @@ int rsvg_css_parse_aspect_ratio(const char* str);
 G_GNUC_INTERNAL
 guint rsvg_css_parse_opacity(const char* str);
 G_GNUC_INTERNAL
+double rsvg_css_parse_opacity_value(const char* str);
+G_GNUC_INTERNAL
 double rsvg_css_parse_angle(const char* str);
 G_GNUC_INTERNAL
 gboolean rsvg_css_parse_baseline_shift(const char* str, RsvgLength* shift);

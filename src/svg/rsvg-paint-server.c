@@ -137,6 +137,19 @@ void rsvg_paint_server_unref(RsvgPaintServer* ps) {
     }
 }
 
+void rsvg_gradient_stop_update_opacity(RsvgGradientStop* stop) {
+    stop->opacity = 1.;
+    for (RsvgNode* node = &stop->super; node; node = node->parent) {
+        if (node->state->has_stop_opacity) {
+            StyleValueData* opacity = g_hash_table_lookup(node->state->styles, "stop-opacity");
+            if (opacity && g_str_equal(opacity->value, "inherit"))
+                continue;
+            stop->opacity = opacity ? rsvg_css_parse_opacity_value(opacity->value) : node->state->stop_opacity / 255.;
+            break;
+        }
+    }
+}
+
 static void rsvg_stop_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyBag* atts) {
     double offset = 0;
     gboolean is_current_color = FALSE;
@@ -172,7 +185,8 @@ static void rsvg_stop_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyBag*
     rsvg_state_reconstruct(&state, self);
     if (is_current_color)
         state.stop_color = state.current_color;
-    stop->rgba = (state.stop_color << 8) | state.stop_opacity;
+    stop->rgb = state.stop_color;
+    rsvg_gradient_stop_update_opacity(stop);
     rsvg_state_finalize(&state);
 }
 
@@ -181,7 +195,8 @@ RsvgNode* rsvg_new_stop(void) {
     _rsvg_node_init(&stop->super, RSVG_NODE_TYPE_STOP);
     stop->super.set_atts = rsvg_stop_set_atts;
     stop->offset = 0;
-    stop->rgba = 0;
+    stop->rgb = 0;
+    stop->opacity = 1.;
     return &stop->super;
 }
 
