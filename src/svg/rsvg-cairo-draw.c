@@ -329,14 +329,14 @@ static void _set_source_rsvg_paint_server(RsvgDrawingCtx* ctx,
     switch (ps->type) {
         case RSVG_PAINT_SERVER_IRI:
             node = rsvg_acquire_node(ctx, ps->core.iri);
-            if (node == NULL)
-                break;
-            else if (RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_LINEAR_GRADIENT)
+            if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_LINEAR_GRADIENT)
                 _set_source_rsvg_linear_gradient(ctx, (RsvgLinearGradient*)node, current_color_rgb, opacity, bbox);
-            else if (RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_RADIAL_GRADIENT)
+            else if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_RADIAL_GRADIENT)
                 _set_source_rsvg_radial_gradient(ctx, (RsvgRadialGradient*)node, current_color_rgb, opacity, bbox);
-            else if (RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_PATTERN)
+            else if (node && RSVG_NODE_TYPE(node) == RSVG_NODE_TYPE_PATTERN)
                 _set_source_rsvg_pattern(ctx, (RsvgPattern*)node, opacity, bbox);
+            else
+                cairo_set_source_rgba(RSVG_CAIRO_RENDER(ctx->render)->cr, 0, 0, 0, 0);
             rsvg_release_node(ctx, node);
             break;
         case RSVG_PAINT_SERVER_SOLID:
