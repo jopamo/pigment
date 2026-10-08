@@ -50,6 +50,7 @@ typedef struct {
     GInputStream* stream;
     GCancellable* cancellable;
     GError** error;
+    gboolean* construction_closed;
 } RsvgXmlInputStreamContext;
 
 static void rsvg_xml_start_element_sax1(void* ctx, const xmlChar* name, const xmlChar** atts) {
@@ -172,6 +173,9 @@ static int context_close(void* data) {
     RsvgXmlInputStreamContext* context = data;
     gboolean ret;
 
+    if (context->construction_closed)
+        *context->construction_closed = TRUE;
+
     /* Don't overwrite a previous error */
     ret =
         g_input_stream_close(context->stream, context->cancellable, *(context->error) == NULL ? context->error : NULL);
@@ -191,6 +195,7 @@ xmlParserCtxtPtr rsvg_create_xml_parser_from_stream(xmlSAXHandlerPtr sax,
                                                     GError** error) {
     RsvgXmlInputStreamContext* context;
     xmlParserCtxtPtr parser;
+    gboolean context_closed = FALSE;
 
     g_return_val_if_fail(G_IS_INPUT_STREAM(stream), NULL);
     g_return_val_if_fail(cancellable == NULL || G_IS_CANCELLABLE(cancellable), NULL);
@@ -200,14 +205,19 @@ xmlParserCtxtPtr rsvg_create_xml_parser_from_stream(xmlSAXHandlerPtr sax,
     context->stream = g_object_ref(stream);
     context->cancellable = cancellable ? g_object_ref(cancellable) : NULL;
     context->error = error;
+    context->construction_closed = &context_closed;
 
     parser = xmlCreateIOParserCtxt(sax, sax_user_data, context_read, context_close, context, XML_CHAR_ENCODING_NONE);
 
     if (!parser) {
-        g_set_error(error, rsvg_error_quark(), 0, _("Error creating XML parser"));
-
-        /* on error, xmlCreateIOParserCtxt() frees our context via the context_close function */
+        /* The factory may close the context before returning failure. */
+        if (!context_closed)
+            context_close(context);
+        if (*error == NULL)
+            g_set_error(error, rsvg_error_quark(), RSVG_ERROR_FAILED, _("Error creating XML parser"));
     }
+    else
+        context->construction_closed = NULL;
 
     return parser;
 }
