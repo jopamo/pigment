@@ -230,7 +230,7 @@ G_GNUC_INTERNAL
 gdouble rsvg_dpi_percentage(RsvgHandle* ctx);
 
 G_GNUC_INTERNAL
-gboolean rsvg_parse_transform(cairo_matrix_t* matrix, const char* src);
+gboolean rsvg_parse_transform(cairo_matrix_t* matrix, const char* src, gboolean allow_singular);
 
 G_GNUC_INTERNAL
 RsvgState* rsvg_state_parent(RsvgState* state);

@@ -1068,7 +1068,7 @@ void rsvg_parse_style(RsvgHandle* ctx, RsvgState* state, const char* str) {
 /* Parse an SVG transform string into an affine matrix. Reference: SVG
    working draft dated 1999-07-06, section 8.5. Return TRUE on
    success. */
-gboolean rsvg_parse_transform(cairo_matrix_t* dst, const char* src) {
+gboolean rsvg_parse_transform(cairo_matrix_t* dst, const char* src, gboolean allow_singular) {
     int idx;
     char keyword[32];
     double args[6];
@@ -1203,7 +1203,7 @@ gboolean rsvg_parse_transform(cairo_matrix_t* dst, const char* src) {
     }
 
     inverse = *dst;
-    if (cairo_matrix_invert(&inverse) != CAIRO_STATUS_SUCCESS)
+    if (!allow_singular && cairo_matrix_invert(&inverse) != CAIRO_STATUS_SUCCESS)
         goto invalid;
 
     return TRUE;
@@ -1227,7 +1227,7 @@ void rsvg_parse_transform_attr(RsvgHandle* ctx, RsvgState* state, const char* st
 
     (void)ctx;
 
-    if (rsvg_parse_transform(&affine, str)) {
+    if (rsvg_parse_transform(&affine, str, FALSE)) {
         cairo_matrix_multiply(&state->personal_affine, &affine, &state->personal_affine);
         cairo_matrix_multiply(&state->affine, &affine, &state->affine);
     }

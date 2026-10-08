@@ -103,7 +103,11 @@ static void _set_source_rsvg_linear_gradient(RsvgDrawingCtx* ctx,
         cairo_matrix_init(&bboxmatrix, bbox.rect.width, 0, 0, bbox.rect.height, bbox.rect.x, bbox.rect.y);
         cairo_matrix_multiply(&matrix, &matrix, &bboxmatrix);
     }
-    cairo_matrix_invert(&matrix);
+    if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) {
+        cairo_pattern_destroy(pattern);
+        cairo_set_source_rgba(cr, 0, 0, 0, 0);
+        return;
+    }
     cairo_pattern_set_matrix(pattern, &matrix);
     cairo_pattern_set_extend(pattern, linear->spread);
 
@@ -152,7 +156,11 @@ static void _set_source_rsvg_radial_gradient(RsvgDrawingCtx* ctx,
         cairo_matrix_multiply(&matrix, &matrix, &bboxmatrix);
     }
 
-    cairo_matrix_invert(&matrix);
+    if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) {
+        cairo_pattern_destroy(pattern);
+        cairo_set_source_rgba(cr, 0, 0, 0, 0);
+        return;
+    }
     cairo_pattern_set_matrix(pattern, &matrix);
     cairo_pattern_set_extend(pattern, radial->spread);
 

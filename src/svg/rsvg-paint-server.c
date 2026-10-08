@@ -277,7 +277,7 @@ static void rsvg_linear_gradient_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgP
         g_free(grad->fallback);
         grad->fallback = g_strdup(rsvg_property_bag_lookup(atts, "xlink:href"));
         if ((value = rsvg_property_bag_lookup(atts, "gradientTransform"))) {
-            rsvg_parse_transform(&grad->affine, value);
+            rsvg_parse_transform(&grad->affine, value, TRUE);
             grad->hastransform = TRUE;
         }
         if ((value = rsvg_property_bag_lookup(atts, "color")))
@@ -351,7 +351,7 @@ static void rsvg_radial_gradient_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgP
         g_free(grad->fallback);
         grad->fallback = g_strdup(rsvg_property_bag_lookup(atts, "xlink:href"));
         if ((value = rsvg_property_bag_lookup(atts, "gradientTransform"))) {
-            rsvg_parse_transform(&grad->affine, value);
+            rsvg_parse_transform(&grad->affine, value, TRUE);
             grad->hastransform = TRUE;
         }
         if ((value = rsvg_property_bag_lookup(atts, "color"))) {
@@ -429,7 +429,7 @@ static void rsvg_pattern_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyB
         g_free(pattern->fallback);
         pattern->fallback = g_strdup(rsvg_property_bag_lookup(atts, "xlink:href"));
         if ((value = rsvg_property_bag_lookup(atts, "patternTransform"))) {
-            rsvg_parse_transform(&pattern->affine, value);
+            rsvg_parse_transform(&pattern->affine, value, FALSE);
             pattern->hastransform = TRUE;
         }
         if ((value = rsvg_property_bag_lookup(atts, "patternUnits"))) {
