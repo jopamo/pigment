@@ -546,8 +546,8 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
  * @out_logical_rect: (out caller-allocates) (optional): location for the logical bounds
  * @error: (nullable): return location for a #GError
  *
- * Queries the geometry of an element. Only read output rectangles when the
- * query succeeds.
+ * Queries the geometry of an element without ancestor transforms, with bounds
+ * relative to the ink origin. Only read output rectangles when the query succeeds.
  *
  * Returns: %TRUE if the query succeeded, or %FALSE otherwise
  */
@@ -561,7 +561,6 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
     RsvgDrawingCtx* draw;
     RsvgNode* drawsub = NULL;
     gboolean retval = FALSE;
-    cairo_matrix_t my_affine, inv_parent, parent_aff;
     RsvgCairoRender* render;
 
     if (id && *id)
@@ -584,33 +583,21 @@ gboolean rsvg_handle_get_geometry_for_element(RsvgHandle* handle,
         return FALSE;
     }
 
-    my_affine = drawsub->state->affine;
-    parent_aff = drawsub->state->personal_affine;
-    if (cairo_matrix_invert(&parent_aff) != CAIRO_STATUS_SUCCESS)
-        cairo_matrix_init_identity(&parent_aff);
-    cairo_matrix_multiply(&inv_parent, &parent_aff, &my_affine);
-    if (cairo_matrix_invert(&inv_parent) != CAIRO_STATUS_SUCCESS)
-        cairo_matrix_init_identity(&inv_parent);
-
-    cairo_transform(cr, &inv_parent);
-
-    for (RsvgNode* p = drawsub; p; p = p->parent)
-        draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, p);
-
+    rsvg_state_reconstruct(rsvg_current_state(draw), drawsub->parent);
     rsvg_state_push(draw);
-    rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
+    rsvg_node_draw(drawsub, draw, 0);
 
     render = RSVG_CAIRO_RENDER(draw->render);
 
     if (out_ink_rect) {
-        out_ink_rect->x = render->bbox.rect.x;
-        out_ink_rect->y = render->bbox.rect.y;
+        out_ink_rect->x = 0;
+        out_ink_rect->y = 0;
         out_ink_rect->width = render->bbox.rect.width;
         out_ink_rect->height = render->bbox.rect.height;
     }
     if (out_logical_rect) {
-        out_logical_rect->x = render->bbox.rect.x;
-        out_logical_rect->y = render->bbox.rect.y;
+        out_logical_rect->x = 0;
+        out_logical_rect->y = 0;
         out_logical_rect->width = render->bbox.rect.width;
         out_logical_rect->height = render->bbox.rect.height;
     }
