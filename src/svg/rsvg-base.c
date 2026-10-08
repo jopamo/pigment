@@ -1575,8 +1575,9 @@ void rsvg_handle_get_dimensions(RsvgHandle* handle, RsvgDimensionData* dimension
  * @out_width: (out) (optional): where to store the width in pixels
  * @out_height: (out) (optional): where to store the height in pixels
  *
- * Returns the intrinsic size for the SVG, if it is specified in absolute
- * units that can be resolved to pixels.
+ * Returns the intrinsic size for the SVG, if its units can be resolved to
+ * pixels. Font-relative units use the root element's font size; percentages
+ * require a viewport and cannot be resolved here.
  *
  * Returns: %TRUE if a pixel size can be computed
  */
@@ -1597,14 +1598,19 @@ gboolean rsvg_handle_get_intrinsic_size_in_pixels(RsvgHandle* handle, gdouble* o
     if (root->w.factor == 'p' || root->h.factor == 'p')
         return FALSE;
 
-    if (root->w.factor == 'm' || root->w.factor == 'x' || root->w.factor == 'l' || root->w.factor == 's')
+    if (root->w.factor == 'l' || root->w.factor == 's')
         return FALSE;
 
-    if (root->h.factor == 'm' || root->h.factor == 'x' || root->h.factor == 'l' || root->h.factor == 's')
+    if (root->h.factor == 'l' || root->h.factor == 's')
         return FALSE;
 
-    width = _rsvg_css_hand_normalize_length(&root->w, handle->priv->dpi_x, 0, 12);
-    height = _rsvg_css_hand_normalize_length(&root->h, handle->priv->dpi_y, 0, 12);
+    double font_size = 12;
+    if (root->w.factor == 'm' || root->w.factor == 'x' || root->h.factor == 'm' || root->h.factor == 'x') {
+        RsvgDrawingCtx ctx = {.dpi_x = handle->priv->dpi_x, .dpi_y = handle->priv->dpi_y};
+        font_size = _rsvg_css_normalize_font_size(root->super.state, &ctx);
+    }
+    width = _rsvg_css_hand_normalize_length(&root->w, handle->priv->dpi_x, 0, font_size);
+    height = _rsvg_css_hand_normalize_length(&root->h, handle->priv->dpi_y, 0, font_size);
 
     if (out_width)
         *out_width = width;
