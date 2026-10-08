@@ -586,7 +586,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     if (!rsvg_cairo_check_viewport(viewport, "Viewport", error))
         return FALSE;
 
-    if (id && *id)
+    if (id)
         drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
     else
         drawsub = (RsvgNode*)handle->priv->treebase;
