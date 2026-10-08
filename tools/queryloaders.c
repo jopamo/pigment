@@ -240,8 +240,13 @@ static gchar* gdk_pixbuf_get_module_file(void) {
     gchar* result = g_strdup(g_getenv("GDK_PIXBUF_MODULE_FILE"));
 
     if (!result)
+#ifdef GDK_PIXBUF_RELOCATABLE
+        result =
+            g_build_filename(get_toplevel(), "lib", "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders.cache", NULL);
+#else
         result =
             g_build_filename(GDK_PIXBUF_LIBDIR, "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders.cache", NULL);
+#endif
 
     return result;
 }
@@ -253,17 +258,20 @@ int main(int argc, char** argv) {
     gchar* cache_file = NULL;
     gint first_file = 1;
     gint status = 0;
-    GFile* pixbuf_libdir_file;
     gchar* pixbuf_libdir;
 
-
+#ifdef GDK_PIXBUF_RELOCATABLE
+    pixbuf_libdir =
+        g_build_filename(get_toplevel(), "lib", "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders", NULL);
+#else
+    GFile* pixbuf_libdir_file;
     /* An intermediate GFile here will convert all the path separators
      * to the right one used by the platform
      */
     pixbuf_libdir_file = g_file_new_for_path(PIXBUF_LIBDIR);
     pixbuf_libdir = g_file_get_path(pixbuf_libdir_file);
     g_object_unref(pixbuf_libdir_file);
-
+#endif
 
     /* This call is necessary to ensure we actually link against libgobject;
      * otherwise it may be stripped if -Wl,--as-needed is in use.
