@@ -225,10 +225,11 @@ RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx(cairo_t* cr, RsvgHandle* handle) {
     return rsvg_cairo_new_drawing_ctx_for_viewport(cr, handle, NULL);
 }
 
-const RsvgRectangle* rsvg_drawing_ctx_root_viewport(RsvgDrawingCtx* ctx, RsvgNode* node) {
+const RsvgRectangle* rsvg_drawing_ctx_root_viewport(RsvgDrawingCtx* ctx, RsvgNode* node, gboolean* measuring) {
     if (ctx->render->type != RSVG_RENDER_TYPE_CAIRO)
         return NULL;
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
+    *measuring = render->measure_root;
     return render->viewport_root == node ? &render->root_viewport : NULL;
 }
 
@@ -594,21 +595,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
     cr = cairo_create(surf);
 
-    if (viewport) {
-        RsvgDimensionData dimensions;
-        gdouble i_w = 0, i_h = 0;
-        if (!rsvg_handle_get_intrinsic_size_in_pixels(handle, &i_w, &i_h)) {
-            rsvg_handle_get_dimensions(handle, &dimensions);
-            i_w = dimensions.width;
-            i_h = dimensions.height;
-        }
-        if (i_w > 0 && i_h > 0) {
-            cairo_translate(cr, viewport->x, viewport->y);
-            cairo_scale(cr, viewport->width / i_w, viewport->height / i_h);
-        }
-    }
-
-    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
+    draw = rsvg_cairo_new_drawing_ctx_for_viewport(cr, handle, viewport);
     if (!draw) {
         g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG has invalid intrinsic size");
         cairo_destroy(cr);
@@ -616,6 +603,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
         return FALSE;
     }
     render = RSVG_CAIRO_RENDER(draw->render);
+    render->measure_root = viewport != NULL;
     render->measure_ink = out_ink_rect != NULL || out_logical_rect != NULL;
     render->measure_logical = out_logical_rect != NULL;
 
@@ -633,12 +621,20 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
         out_ink_rect->y = render->bounds.ink.rect.y;
         out_ink_rect->width = render->bounds.ink.rect.width;
         out_ink_rect->height = render->bounds.ink.rect.height;
+        if (viewport && !render->bounds.ink.virgin) {
+            out_ink_rect->x += viewport->x;
+            out_ink_rect->y += viewport->y;
+        }
     }
     if (retval && out_logical_rect) {
         out_logical_rect->x = render->bounds.logical.rect.x;
         out_logical_rect->y = render->bounds.logical.rect.y;
         out_logical_rect->width = render->bounds.logical.rect.width;
         out_logical_rect->height = render->bounds.logical.rect.height;
+        if (viewport && !render->bounds.logical.virgin) {
+            out_logical_rect->x += viewport->x;
+            out_logical_rect->y += viewport->y;
+        }
     }
 
     rsvg_state_pop(draw);

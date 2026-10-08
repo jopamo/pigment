@@ -53,6 +53,7 @@ struct _RsvgCairoRender {
     /* Borrowed primary root; nested and external SVGs keep their own viewports. */
     RsvgNode* viewport_root;
     RsvgRectangle root_viewport;
+    gboolean measure_root;
 
     GList* cr_stack;
 

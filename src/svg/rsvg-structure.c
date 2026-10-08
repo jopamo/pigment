@@ -263,7 +263,8 @@ static void rsvg_node_svg_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int dominate
     guint i;
     double nx, ny, nw, nh;
     RsvgViewBox vbox;
-    const RsvgRectangle* root_viewport = rsvg_drawing_ctx_root_viewport(ctx, self);
+    gboolean measuring = FALSE;
+    const RsvgRectangle* root_viewport = rsvg_drawing_ctx_root_viewport(ctx, self, &measuring);
     sself = (RsvgNodeSvg*)self;
 
     if (root_viewport)
@@ -276,12 +277,14 @@ static void rsvg_node_svg_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int dominate
 
     vbox = sself->vbox;
     if (root_viewport) {
-        if (!vbox.active)
-            vbox = (RsvgViewBox){.rect = {0, 0, nw, nh}, .active = TRUE};
         nx = ny = 0;
-        nw = root_viewport->width;
-        nh = root_viewport->height;
-        if (nw <= 0 || nh <= 0 || vbox.rect.width <= 0 || vbox.rect.height <= 0)
+        if (!measuring) {
+            if (!vbox.active)
+                vbox = (RsvgViewBox){.rect = {0, 0, nw, nh}, .active = TRUE};
+            nw = root_viewport->width;
+            nh = root_viewport->height;
+        }
+        if (nw <= 0 || nh <= 0 || (vbox.active && (vbox.rect.width <= 0 || vbox.rect.height <= 0)))
             return;
     }
     else
@@ -302,7 +305,8 @@ static void rsvg_node_svg_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int dominate
     else {
         cairo_matrix_init_translate(&affine, nx, ny);
         cairo_matrix_multiply(&state->affine, &affine, &state->affine);
-        _rsvg_push_view_box(ctx, nw, nh);
+        _rsvg_push_view_box(ctx, root_viewport && measuring ? root_viewport->width : nw,
+                            root_viewport && measuring ? root_viewport->height : nh);
     }
 
     affine_new = state->affine;
