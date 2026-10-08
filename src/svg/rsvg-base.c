@@ -1311,11 +1311,17 @@ static void rsvg_apply_styles_recursive(RsvgHandle* ctx, RsvgNode* node) {
     }
 }
 
-gboolean rsvg_handle_check_loaded(RsvgHandle* handle, GError** error) {
+static gboolean rsvg_handle_check_not_disposed(RsvgHandle* handle, GError** error) {
     if (handle->priv->is_disposed) {
         g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG handle is disposed");
         return FALSE;
     }
+    return TRUE;
+}
+
+gboolean rsvg_handle_check_loaded(RsvgHandle* handle, GError** error) {
+    if (!rsvg_handle_check_not_disposed(handle, error))
+        return FALSE;
     if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK || !handle->priv->treebase) {
         g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
         return FALSE;
@@ -2243,6 +2249,8 @@ gboolean rsvg_handle_write(RsvgHandle* handle, const guchar* buf, gsize count, G
 
     rsvg_return_val_if_fail(handle, FALSE, error);
     priv = handle->priv;
+    if (!rsvg_handle_check_not_disposed(handle, error))
+        return FALSE;
 
     rsvg_return_val_if_fail(priv->state == RSVG_HANDLE_STATE_START || priv->state == RSVG_HANDLE_STATE_EXPECTING_GZ_1 ||
                                 priv->state == RSVG_HANDLE_STATE_READING_COMPRESSED ||
@@ -2330,6 +2338,8 @@ gboolean rsvg_handle_close(RsvgHandle* handle, GError** error) {
 
     rsvg_return_val_if_fail(handle, FALSE, error);
     priv = handle->priv;
+    if (!rsvg_handle_check_not_disposed(handle, error))
+        return FALSE;
 
     if (priv->state == RSVG_HANDLE_STATE_CLOSED_OK) {
         /* closing is idempotent */
@@ -2424,6 +2434,8 @@ gboolean rsvg_handle_read_stream_sync(RsvgHandle* handle,
     g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 
     priv = handle->priv;
+    if (!rsvg_handle_check_not_disposed(handle, error))
+        return FALSE;
 
     g_return_val_if_fail(priv->state == RSVG_HANDLE_STATE_START, FALSE);
 
