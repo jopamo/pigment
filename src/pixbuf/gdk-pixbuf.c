@@ -434,9 +434,16 @@ static GInputStream* gdk_pixbuf_load(GLoadableIcon* icon,
     GInputStream* stream;
     GBytes* bytes;
 
+    if (g_cancellable_set_error_if_cancelled(cancellable, error))
+        return NULL;
+
     bytes = gdk_pixbuf_make_bytes(GDK_PIXBUF(icon), error);
     if (!bytes)
         return NULL;
+    if (g_cancellable_set_error_if_cancelled(cancellable, error)) {
+        g_bytes_unref(bytes);
+        return NULL;
+    }
 
     stream = g_memory_input_stream_new_from_bytes(bytes);
     g_bytes_unref(bytes);
@@ -465,7 +472,7 @@ static GInputStream* gdk_pixbuf_load_finish(GLoadableIcon* icon, GAsyncResult* r
     if (!g_task_propagate_pointer(G_TASK(res), error))
         return NULL;
 
-    return gdk_pixbuf_load(icon, 0, type, NULL, error);
+    return gdk_pixbuf_load(icon, 0, type, g_task_get_cancellable(G_TASK(res)), error);
 }
 
 static void gdk_pixbuf_loadable_icon_iface_init(GLoadableIconIface* iface) {
