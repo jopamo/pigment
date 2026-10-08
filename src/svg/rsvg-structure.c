@@ -262,28 +262,42 @@ static void rsvg_node_svg_draw(RsvgNode* self, RsvgDrawingCtx* ctx, int dominate
     cairo_matrix_t affine, affine_old, affine_new;
     guint i;
     double nx, ny, nw, nh;
+    RsvgViewBox vbox;
+    const RsvgRectangle* root_viewport = rsvg_drawing_ctx_root_viewport(ctx, self);
     sself = (RsvgNodeSvg*)self;
+
+    if (root_viewport)
+        rsvg_state_reinherit_top(ctx, self->state, dominate);
 
     nx = _rsvg_css_normalize_length(&sself->x, ctx, 'h');
     ny = _rsvg_css_normalize_length(&sself->y, ctx, 'v');
     nw = _rsvg_css_normalize_length(&sself->w, ctx, 'h');
     nh = _rsvg_css_normalize_length(&sself->h, ctx, 'v');
 
-    rsvg_state_reinherit_top(ctx, self->state, dominate);
+    vbox = sself->vbox;
+    if (root_viewport) {
+        if (!vbox.active)
+            vbox = (RsvgViewBox){.rect = {0, 0, nw, nh}, .active = TRUE};
+        nx = ny = 0;
+        nw = root_viewport->width;
+        nh = root_viewport->height;
+        if (nw <= 0 || nh <= 0 || vbox.rect.width <= 0 || vbox.rect.height <= 0)
+            return;
+    }
+    else
+        rsvg_state_reinherit_top(ctx, self->state, dominate);
 
     state = rsvg_current_state(ctx);
 
     affine_old = state->affine;
 
-    if (sself->vbox.active) {
+    if (vbox.active) {
         double x = nx, y = ny, w = nw, h = nh;
-        rsvg_preserve_aspect_ratio(sself->preserve_aspect_ratio, sself->vbox.rect.width, sself->vbox.rect.height, &w,
-                                   &h, &x, &y);
-        cairo_matrix_init(&affine, w / sself->vbox.rect.width, 0, 0, h / sself->vbox.rect.height,
-                          x - sself->vbox.rect.x * w / sself->vbox.rect.width,
-                          y - sself->vbox.rect.y * h / sself->vbox.rect.height);
+        rsvg_preserve_aspect_ratio(sself->preserve_aspect_ratio, vbox.rect.width, vbox.rect.height, &w, &h, &x, &y);
+        cairo_matrix_init(&affine, w / vbox.rect.width, 0, 0, h / vbox.rect.height,
+                          x - vbox.rect.x * w / vbox.rect.width, y - vbox.rect.y * h / vbox.rect.height);
         cairo_matrix_multiply(&state->affine, &affine, &state->affine);
-        _rsvg_push_view_box(ctx, sself->vbox.rect.width, sself->vbox.rect.height);
+        _rsvg_push_view_box(ctx, vbox.rect.width, vbox.rect.height);
     }
     else {
         cairo_matrix_init_translate(&affine, nx, ny);

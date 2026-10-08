@@ -342,6 +342,9 @@ void rsvg_render_surface(RsvgDrawingCtx* ctx,
                          const cairo_rectangle_t* viewport);
 G_GNUC_INTERNAL
 void rsvg_render_free(RsvgRender* render);
+
+G_GNUC_INTERNAL
+const RsvgRectangle* rsvg_drawing_ctx_root_viewport(RsvgDrawingCtx* ctx, RsvgNode* node);
 G_GNUC_INTERNAL
 void rsvg_add_clipping_rect(RsvgDrawingCtx* ctx, double x, double y, double w, double h);
 G_GNUC_INTERNAL

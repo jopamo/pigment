@@ -50,6 +50,10 @@ struct _RsvgCairoRender {
     double offset_x;
     double offset_y;
 
+    /* Borrowed primary root; nested and external SVGs keep their own viewports. */
+    RsvgNode* viewport_root;
+    RsvgRectangle root_viewport;
+
     GList* cr_stack;
 
     RsvgCairoBounds bounds;
