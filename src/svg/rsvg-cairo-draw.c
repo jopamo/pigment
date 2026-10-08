@@ -486,6 +486,19 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
         cairo_set_line_join(render->cr, (cairo_line_join_t)state->join);
         cairo_set_dash(render->cr, state->dash.dash, state->dash.n_dash,
                        _rsvg_css_normalize_length(&state->dash.offset, ctx, 'o'));
+        if (render->measure_ink && cairo_get_line_width(render->cr) > 0) {
+            RsvgBbox stroke_bbox;
+            cairo_matrix_t affine = state->affine;
+            if (rotation != 0.)
+                cairo_matrix_rotate(&affine, -rotation);
+            rsvg_bbox_init(&stroke_bbox, &affine);
+            cairo_stroke_extents(render->cr, &stroke_bbox.rect.x, &stroke_bbox.rect.y, &stroke_bbox.rect.width,
+                                 &stroke_bbox.rect.height);
+            stroke_bbox.rect.width -= stroke_bbox.rect.x;
+            stroke_bbox.rect.height -= stroke_bbox.rect.y;
+            stroke_bbox.virgin = 0;
+            rsvg_bbox_insert(&render->bounds.ink, &stroke_bbox);
+        }
         cairo_stroke(render->cr);
         cairo_restore(render->cr);
     }
