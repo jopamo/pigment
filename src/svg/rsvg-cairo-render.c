@@ -225,6 +225,15 @@ static gboolean rsvg_cairo_check_viewport(const RsvgRectangle* viewport, const c
     return FALSE;
 }
 
+static gboolean rsvg_cairo_check_drawing(RsvgDrawingCtx* draw, cairo_t* cr, GError** error) {
+    if (rsvg_drawing_ctx_limits_exceeded(draw)) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG drawing limits exceeded");
+        return FALSE;
+    }
+
+    return rsvg_cairo_check_context(cr, error);
+}
+
 static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, RsvgNode* drawsub, GError** error) {
     RsvgDrawingCtx* draw;
     gboolean retval = FALSE;
@@ -253,13 +262,7 @@ static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, R
 
     rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
 
-    if (rsvg_drawing_ctx_limits_exceeded(draw)) {
-        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG drawing limits exceeded");
-        retval = FALSE;
-    }
-    else {
-        retval = rsvg_cairo_check_context(cr, error);
-    }
+    retval = rsvg_cairo_check_drawing(draw, cr, error);
 
     cairo_restore(cr);
     rsvg_state_pop(draw);
@@ -457,14 +460,7 @@ static gboolean rsvg_cairo_draw_element(RsvgHandle* handle,
     rsvg_state_push(draw);
     rsvg_node_draw(node, draw, 0);
 
-    gboolean retval;
-    if (rsvg_drawing_ctx_limits_exceeded(draw)) {
-        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG drawing limits exceeded");
-        retval = FALSE;
-    }
-    else {
-        retval = rsvg_cairo_check_context(cr, error);
-    }
+    gboolean retval = rsvg_cairo_check_drawing(draw, cr, error);
     if (retval && bbox)
         *bbox = RSVG_CAIRO_RENDER(draw->render)->bounds;
 
@@ -575,12 +571,20 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
                                             RsvgRectangle* out_ink_rect,
                                             RsvgRectangle* out_logical_rect,
                                             GError** error) {
-    cairo_surface_t* surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
-    cairo_t* cr = cairo_create(surf);
+    cairo_surface_t* surf;
+    cairo_t* cr;
     RsvgDrawingCtx* draw;
     RsvgNode* drawsub = NULL;
     gboolean retval = FALSE;
     RsvgCairoRender* render;
+
+    g_return_val_if_fail(handle != NULL, FALSE);
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
+        return FALSE;
+    }
+    if (!rsvg_cairo_check_viewport(viewport, "Viewport", error))
+        return FALSE;
 
     if (id && *id)
         drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
@@ -590,10 +594,11 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     if (!drawsub) {
         if (error)
             g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Element not found");
-        cairo_destroy(cr);
-        cairo_surface_destroy(surf);
         return FALSE;
     }
+
+    surf = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, 1, 1);
+    cr = cairo_create(surf);
 
     if (viewport) {
         RsvgDimensionData dimensions;
@@ -611,6 +616,7 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
 
     draw = rsvg_cairo_new_drawing_ctx(cr, handle);
     if (!draw) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG has invalid intrinsic size");
         cairo_destroy(cr);
         cairo_surface_destroy(surf);
         return FALSE;
@@ -627,20 +633,19 @@ gboolean rsvg_handle_get_geometry_for_layer(RsvgHandle* handle,
     rsvg_state_push(draw);
     rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
 
-    if (out_ink_rect) {
+    retval = rsvg_cairo_check_drawing(draw, cr, error);
+    if (retval && out_ink_rect) {
         out_ink_rect->x = render->bounds.ink.rect.x;
         out_ink_rect->y = render->bounds.ink.rect.y;
         out_ink_rect->width = render->bounds.ink.rect.width;
         out_ink_rect->height = render->bounds.ink.rect.height;
     }
-    if (out_logical_rect) {
+    if (retval && out_logical_rect) {
         out_logical_rect->x = render->bounds.logical.rect.x;
         out_logical_rect->y = render->bounds.logical.rect.y;
         out_logical_rect->width = render->bounds.logical.rect.width;
         out_logical_rect->height = render->bounds.logical.rect.height;
     }
-
-    retval = !rsvg_drawing_ctx_limits_exceeded(draw);
 
     rsvg_state_pop(draw);
     rsvg_drawing_ctx_free(draw);
