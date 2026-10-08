@@ -1611,9 +1611,10 @@ gboolean rsvg_handle_get_intrinsic_size_in_pixels(RsvgHandle* handle, gdouble* o
     if (out_height)
         *out_height = 0;
 
-    root = (RsvgNodeSvg*)handle->priv->treebase;
-    if (!root)
+    if (!rsvg_handle_check_loaded(handle, NULL))
         return FALSE;
+
+    root = (RsvgNodeSvg*)handle->priv->treebase;
 
     if (root->w.length == -1 || root->h.length == -1)
         return FALSE;
@@ -1674,6 +1675,7 @@ static RsvgLengthUnit rsvg_length_unit_from_factor(char factor) {
  * lengths to pixels. Unspecified width and height default to 100%.
  * Read each length or rectangle only when its corresponding flag is true.
  * Use rsvg_handle_get_intrinsic_size_in_pixels() for resolved pixel sizes.
+ * If a loaded document is unavailable, flags are false and records are unchanged.
  */
 void rsvg_handle_get_intrinsic_dimensions(RsvgHandle* handle,
                                           gboolean* out_has_width,
@@ -1686,8 +1688,7 @@ void rsvg_handle_get_intrinsic_dimensions(RsvgHandle* handle,
 
     g_return_if_fail(handle != NULL);
 
-    root = (RsvgNodeSvg*)handle->priv->treebase;
-    if (!root) {
+    if (!rsvg_handle_check_loaded(handle, NULL)) {
         if (out_has_width)
             *out_has_width = FALSE;
         if (out_has_height)
@@ -1696,6 +1697,8 @@ void rsvg_handle_get_intrinsic_dimensions(RsvgHandle* handle,
             *out_has_viewbox = FALSE;
         return;
     }
+
+    root = (RsvgNodeSvg*)handle->priv->treebase;
 
     if (out_has_width)
         *out_has_width = (root->w.length != -1);
