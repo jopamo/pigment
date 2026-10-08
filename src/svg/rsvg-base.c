@@ -1860,7 +1860,7 @@ gboolean rsvg_handle_get_dimensions_sub(RsvgHandle* handle, RsvgDimensionData* d
  * rsvg_handle_get_position_sub:
  * @handle: A #RsvgHandle
  * @position_data: (out): A place to store the SVG fragment's position.
- * @id: An element's id within the SVG.
+ * @id: (nullable): An element's id within the SVG, or %NULL for the origin.
  * For example, if you have a layer called "layer1" for that you want to get
  * the position, pass "##layer1" as the id.
  *
