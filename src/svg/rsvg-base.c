@@ -2453,7 +2453,18 @@ gboolean rsvg_handle_read_stream_sync(RsvgHandle* handle,
 
     /* detect zipped streams */
     buffered_stream = g_buffered_input_stream_new(stream);
-    num_read = g_buffered_input_stream_fill(G_BUFFERED_INPUT_STREAM(buffered_stream), 2, cancellable, error);
+    num_read = 0;
+    while (num_read < 2) {
+        gssize filled =
+            g_buffered_input_stream_fill(G_BUFFERED_INPUT_STREAM(buffered_stream), 2 - num_read, cancellable, error);
+        if (filled < 0 || g_cancellable_set_error_if_cancelled(cancellable, error)) {
+            num_read = -1;
+            break;
+        }
+        if (filled == 0)
+            break;
+        num_read += filled;
+    }
     if (num_read < 2) {
         priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
         if (num_read >= 0) {

@@ -150,14 +150,20 @@ void rsvg_xml_set_error(GError** error, xmlParserCtxtPtr ctxt) {
 /* this should use gsize, but libxml2 is borked */
 static int context_read(void* data, char* buffer, int len) {
     RsvgXmlInputStreamContext* context = data;
-    gssize n_read;
+    gsize n_read = 0;
 
-    if (*(context->error) || g_cancellable_set_error_if_cancelled(context->cancellable, context->error))
-        return -1;
-
-    n_read = g_input_stream_read(context->stream, buffer, (gsize)len, context->cancellable, context->error);
-    if (n_read < 0 || g_cancellable_set_error_if_cancelled(context->cancellable, context->error))
-        return -1;
+    /* Fill libxml's buffer for prolog lookahead unless the stream reaches EOF. */
+    while (n_read < (gsize)len) {
+        if (*(context->error) || g_cancellable_set_error_if_cancelled(context->cancellable, context->error))
+            return -1;
+        gssize chunk = g_input_stream_read(context->stream, buffer + n_read, (gsize)len - n_read, context->cancellable,
+                                           context->error);
+        if (chunk < 0 || g_cancellable_set_error_if_cancelled(context->cancellable, context->error))
+            return -1;
+        if (chunk == 0)
+            break;
+        n_read += chunk;
+    }
 
     return (int)n_read;
 }
