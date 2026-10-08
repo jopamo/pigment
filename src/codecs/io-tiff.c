@@ -328,7 +328,8 @@ static GdkPixbuf* gdk_pixbuf__tiff_image_load(FILE* f, GError** error) {
 
     pixbuf = tiff_image_parse(tiff, NULL, error);
 
-    TIFFClose(tiff);
+    /* The caller owns and closes f. */
+    TIFFCleanup(tiff);
 
     return pixbuf;
 }
