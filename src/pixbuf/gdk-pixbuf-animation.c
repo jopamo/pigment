@@ -540,7 +540,7 @@ gboolean gdk_pixbuf_animation_is_static_image(GdkPixbufAnimation* animation) {
  * If an animation hasn't loaded any frames yet, this function will
  * return `NULL`.
  *
- * Return value: (transfer none): unanimated image representing the animation
+ * Return value: (transfer none) (nullable): unanimated image representing the animation
  */
 GdkPixbuf* gdk_pixbuf_animation_get_static_image(GdkPixbufAnimation* animation) {
     g_return_val_if_fail(GDK_IS_PIXBUF_ANIMATION(animation), NULL);
@@ -690,7 +690,7 @@ gint gdk_pixbuf_animation_iter_get_delay_time(GdkPixbufAnimationIter* iter) {
  * Copy the pixbuf to keep it (don't just add a reference), as it may get
  * recycled as you advance the iterator.
  *
- * Return value: (transfer none): the pixbuf to be displayed
+ * Return value: (transfer none) (nullable): the pixbuf to be displayed, or `NULL` if no frame is available
  */
 GdkPixbuf* gdk_pixbuf_animation_iter_get_pixbuf(GdkPixbufAnimationIter* iter) {
     g_return_val_if_fail(GDK_IS_PIXBUF_ANIMATION_ITER(iter), NULL);
