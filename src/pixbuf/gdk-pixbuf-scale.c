@@ -83,9 +83,6 @@ void gdk_pixbuf_scale(const GdkPixbuf* src,
     dest_pixels = gdk_pixbuf_get_pixels(dest);
     src_pixels = gdk_pixbuf_read_pixels(src);
 
-    if (dest_width == 0 || dest_height == 0)
-        return;
-
     _pixops_scale(dest_pixels, dest->width, dest->height, dest->rowstride, dest->n_channels, dest->has_alpha,
                   src_pixels, src->width, src->height, src->rowstride, src->n_channels, src->has_alpha, dest_x, dest_y,
                   dest_width, dest_height, offset_x, offset_y, scale_x, scale_y, (PixopsInterpType)interp_type);
@@ -147,9 +144,6 @@ void gdk_pixbuf_composite(const GdkPixbuf* src,
     /* Force an implicit copy */
     dest_pixels = gdk_pixbuf_get_pixels(dest);
     src_pixels = gdk_pixbuf_read_pixels(src);
-
-    if (dest_width == 0 || dest_height == 0)
-        return;
 
     _pixops_composite(dest_pixels, dest->width, dest->height, dest->rowstride, dest->n_channels, dest->has_alpha,
                       src_pixels, src->width, src->height, src->rowstride, src->n_channels, src->has_alpha, dest_x,
@@ -222,9 +216,6 @@ void gdk_pixbuf_composite_color(const GdkPixbuf* src,
     /* Force an implicit copy */
     dest_pixels = gdk_pixbuf_get_pixels(dest);
     src_pixels = gdk_pixbuf_read_pixels(src);
-
-    if (dest_width == 0 || dest_height == 0)
-        return;
 
     _pixops_composite_color(dest_pixels, dest_width, dest_height, dest->rowstride, dest->n_channels, dest->has_alpha,
                             src_pixels, src->width, src->height, src->rowstride, src->n_channels, src->has_alpha,

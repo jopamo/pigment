@@ -1755,7 +1755,7 @@ static void _pixops_composite_color_real(guchar* dest_buf,
     g_return_if_fail(!(dest_channels == 3 && dest_has_alpha));
     g_return_if_fail(!(src_channels == 3 && src_has_alpha));
 
-    if (scale_x == 0 || scale_y == 0)
+    if (scale_x == 0 || scale_y == 0 || render_x0 == render_x1 || render_y0 == render_y1)
         return;
 
     if (interp_type == PIXOPS_INTERP_NEAREST) {
@@ -1813,11 +1813,11 @@ void _pixops_composite_color(guchar* dest_buf,
                              int check_size,
                              guint32 color1,
                              guint32 color2) {
-    guchar* new_dest_buf;
-    int render_x0;
-    int render_y0;
-    int render_x1;
-    int render_y1;
+    guchar* new_dest_buf = dest_buf;
+    int render_x0 = 0;
+    int render_y0 = 0;
+    int render_x1 = 0;
+    int render_y1 = 0;
 
     if (!src_has_alpha && overall_alpha == 255) {
         _pixops_scale(dest_buf, dest_width, dest_height, dest_rowstride, dest_channels, dest_has_alpha, src_buf,
@@ -1826,11 +1826,13 @@ void _pixops_composite_color(guchar* dest_buf,
         return;
     }
 
-    new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
-    render_x0 = dest_x - offset_x;
-    render_y0 = dest_y - offset_y;
-    render_x1 = dest_x + dest_region_width - offset_x;
-    render_y1 = dest_y + dest_region_height - offset_y;
+    if (dest_region_width != 0 && dest_region_height != 0) {
+        new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
+        render_x0 = dest_x - offset_x;
+        render_y0 = dest_y - offset_y;
+        render_x1 = dest_x + dest_region_width - offset_x;
+        render_y1 = dest_y + dest_region_height - offset_y;
+    }
 
     _pixops_composite_color_real(new_dest_buf, render_x0, render_y0, render_x1, render_y1, dest_rowstride,
                                  dest_channels, dest_has_alpha, src_buf, src_width, src_height, src_rowstride,
@@ -1887,7 +1889,7 @@ static void _pixops_composite_real(guchar* dest_buf,
     g_return_if_fail(!(dest_channels == 3 && dest_has_alpha));
     g_return_if_fail(!(src_channels == 3 && src_has_alpha));
 
-    if (scale_x == 0 || scale_y == 0)
+    if (scale_x == 0 || scale_y == 0 || render_x0 == render_x1 || render_y0 == render_y1)
         return;
 
     if (interp_type == PIXOPS_INTERP_NEAREST) {
@@ -1948,11 +1950,11 @@ void _pixops_composite(guchar* dest_buf,
                        double scale_y,
                        PixopsInterpType interp_type,
                        int overall_alpha) {
-    guchar* new_dest_buf;
-    int render_x0;
-    int render_y0;
-    int render_x1;
-    int render_y1;
+    guchar* new_dest_buf = dest_buf;
+    int render_x0 = 0;
+    int render_y0 = 0;
+    int render_x1 = 0;
+    int render_y1 = 0;
 
     if (!src_has_alpha && overall_alpha == 255) {
         _pixops_scale(dest_buf, dest_width, dest_height, dest_rowstride, dest_channels, dest_has_alpha, src_buf,
@@ -1969,11 +1971,13 @@ void _pixops_composite(guchar* dest_buf,
     return;
 #endif
 
-    new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
-    render_x0 = dest_x - offset_x;
-    render_y0 = dest_y - offset_y;
-    render_x1 = dest_x + dest_region_width - offset_x;
-    render_y1 = dest_y + dest_region_height - offset_y;
+    if (dest_region_width != 0 && dest_region_height != 0) {
+        new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
+        render_x0 = dest_x - offset_x;
+        render_y0 = dest_y - offset_y;
+        render_x1 = dest_x + dest_region_width - offset_x;
+        render_y1 = dest_y + dest_region_height - offset_y;
+    }
 
     _pixops_composite_real(new_dest_buf, render_x0, render_y0, render_x1, render_y1, dest_rowstride, dest_channels,
                            dest_has_alpha, src_buf, src_width, src_height, src_rowstride, src_channels, src_has_alpha,
@@ -2213,7 +2217,7 @@ static void _pixops_scale_real(guchar* dest_buf,
     g_return_if_fail(!(src_channels == 3 && src_has_alpha));
     g_return_if_fail(!(src_has_alpha && !dest_has_alpha));
 
-    if (scale_x == 0 || scale_y == 0)
+    if (scale_x == 0 || scale_y == 0 || render_x0 == render_x1 || render_y0 == render_y1)
         return;
 
     if (interp_type == PIXOPS_INTERP_NEAREST) {
@@ -2267,11 +2271,11 @@ void _pixops_scale(guchar* dest_buf,
                    double scale_x,
                    double scale_y,
                    PixopsInterpType interp_type) {
-    guchar* new_dest_buf;
-    int render_x0;
-    int render_y0;
-    int render_x1;
-    int render_y1;
+    guchar* new_dest_buf = dest_buf;
+    int render_x0 = 0;
+    int render_y0 = 0;
+    int render_x1 = 0;
+    int render_y1 = 0;
 
 #ifdef USE_MEDIALIB
     pixops_medialib_scale(dest_buf, dest_width, dest_height, dest_rowstride, dest_channels, dest_has_alpha, src_buf,
@@ -2281,11 +2285,13 @@ void _pixops_scale(guchar* dest_buf,
     return;
 #endif
 
-    new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
-    render_x0 = dest_x - offset_x;
-    render_y0 = dest_y - offset_y;
-    render_x1 = dest_x + dest_region_width - offset_x;
-    render_y1 = dest_y + dest_region_height - offset_y;
+    if (dest_region_width != 0 && dest_region_height != 0) {
+        new_dest_buf = dest_buf + (gsize)dest_y * dest_rowstride + (gsize)dest_x * dest_channels;
+        render_x0 = dest_x - offset_x;
+        render_y0 = dest_y - offset_y;
+        render_x1 = dest_x + dest_region_width - offset_x;
+        render_y1 = dest_y + dest_region_height - offset_y;
+    }
 
     _pixops_scale_real(new_dest_buf, render_x0, render_y0, render_x1, render_y1, dest_rowstride, dest_channels,
                        dest_has_alpha, src_buf, src_width, src_height, src_rowstride, src_channels, src_has_alpha,
