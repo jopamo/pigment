@@ -207,6 +207,12 @@ static void _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_patt
     rsvg_pattern_fix_fallback(ctx, rsvg_pattern);
     cr_render = render->cr;
 
+    matrix = rsvg_pattern->affine;
+    if (cairo_matrix_invert(&matrix) != CAIRO_STATUS_SUCCESS) {
+        cairo_set_source_rgba(cr_render, 0, 0, 0, 0);
+        return;
+    }
+
     if (rsvg_pattern->obj_bbox)
         _rsvg_push_view_box(ctx, 1., 1.);
 

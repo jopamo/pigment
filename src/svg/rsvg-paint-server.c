@@ -429,7 +429,7 @@ static void rsvg_pattern_set_atts(RsvgNode* self, RsvgHandle* ctx, RsvgPropertyB
         g_free(pattern->fallback);
         pattern->fallback = g_strdup(rsvg_property_bag_lookup(atts, "xlink:href"));
         if ((value = rsvg_property_bag_lookup(atts, "patternTransform"))) {
-            rsvg_parse_transform(&pattern->affine, value, FALSE);
+            rsvg_parse_transform(&pattern->affine, value, TRUE);
             pattern->hastransform = TRUE;
         }
         if ((value = rsvg_property_bag_lookup(atts, "patternUnits"))) {
