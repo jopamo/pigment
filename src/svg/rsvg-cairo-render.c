@@ -205,16 +205,32 @@ RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx(cairo_t* cr, RsvgHandle* handle) {
     return draw;
 }
 
-static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, RsvgNode* drawsub) {
+static gboolean rsvg_cairo_check_context(cairo_t* cr, GError** error) {
+    cairo_status_t status = cairo_status(cr);
+    if (status == CAIRO_STATUS_SUCCESS)
+        return TRUE;
+
+    g_set_error(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Cairo context: %s", cairo_status_to_string(status));
+    return FALSE;
+}
+
+static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, RsvgNode* drawsub, GError** error) {
     RsvgDrawingCtx* draw;
     gboolean retval = FALSE;
 
-    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
+    if (!rsvg_cairo_check_context(cr, error))
         return FALSE;
 
-    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
-    if (!draw)
+    if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG is not fully loaded");
         return FALSE;
+    }
+
+    draw = rsvg_cairo_new_drawing_ctx(cr, handle);
+    if (!draw) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG has invalid intrinsic size");
+        return FALSE;
+    }
 
     while (drawsub != NULL) {
         draw->drawsub_stack = g_slist_prepend(draw->drawsub_stack, drawsub);
@@ -227,10 +243,11 @@ static gboolean rsvg_handle_render_cairo_node(RsvgHandle* handle, cairo_t* cr, R
     rsvg_node_draw((RsvgNode*)handle->priv->treebase, draw, 0);
 
     if (rsvg_drawing_ctx_limits_exceeded(draw)) {
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "SVG drawing limits exceeded");
         retval = FALSE;
     }
     else {
-        retval = TRUE;
+        retval = rsvg_cairo_check_context(cr, error);
     }
 
     cairo_restore(cr);
@@ -258,8 +275,12 @@ gboolean rsvg_handle_render_cairo_sub(RsvgHandle* handle, cairo_t* cr, const cha
     RsvgNode* drawsub = NULL;
 
     g_return_val_if_fail(handle != NULL, FALSE);
+    g_return_val_if_fail(cr != NULL, FALSE);
 
     if (handle->priv->state != RSVG_HANDLE_STATE_CLOSED_OK)
+        return FALSE;
+
+    if (!rsvg_cairo_check_context(cr, NULL))
         return FALSE;
 
     if (id && *id)
@@ -268,7 +289,7 @@ gboolean rsvg_handle_render_cairo_sub(RsvgHandle* handle, cairo_t* cr, const cha
     if (drawsub == NULL && id != NULL)
         return FALSE;
 
-    return rsvg_handle_render_cairo_node(handle, cr, drawsub);
+    return rsvg_handle_render_cairo_node(handle, cr, drawsub, NULL);
 }
 
 /**
@@ -305,12 +326,11 @@ gboolean rsvg_handle_render_document(RsvgHandle* handle, cairo_t* cr, const Rsvg
     g_return_val_if_fail(handle != NULL, FALSE);
     g_return_val_if_fail(cr != NULL, FALSE);
 
-    if (!viewport) {
-        retval = rsvg_handle_render_cairo(handle, cr);
-        if (!retval && error && *error == NULL)
-            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
-        return retval;
-    }
+    if (!rsvg_cairo_check_context(cr, error))
+        return FALSE;
+
+    if (!viewport)
+        return rsvg_handle_render_cairo_node(handle, cr, NULL, error);
 
     if (!rsvg_handle_get_intrinsic_size_in_pixels(handle, &intrinsic_width, &intrinsic_height)) {
         rsvg_handle_get_dimensions(handle, &dimensions);
@@ -328,7 +348,7 @@ gboolean rsvg_handle_render_document(RsvgHandle* handle, cairo_t* cr, const Rsvg
     cairo_translate(cr, viewport->x, viewport->y);
     cairo_scale(cr, viewport->width / intrinsic_width, viewport->height / intrinsic_height);
 
-    retval = rsvg_handle_render_cairo(handle, cr);
+    retval = rsvg_handle_render_cairo_node(handle, cr, NULL, error);
 
     cairo_restore(cr);
 
@@ -361,6 +381,9 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
     g_return_val_if_fail(handle != NULL, FALSE);
     g_return_val_if_fail(cr != NULL, FALSE);
 
+    if (!rsvg_cairo_check_context(cr, error))
+        return FALSE;
+
     if (id) {
         drawsub = rsvg_defs_lookup_document(handle->priv->defs, id);
         if (!drawsub) {
@@ -370,12 +393,8 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
         }
     }
 
-    if (!viewport) {
-        retval = rsvg_handle_render_cairo_node(handle, cr, drawsub);
-        if (!retval && error && *error == NULL)
-            g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
-        return retval;
-    }
+    if (!viewport)
+        return rsvg_handle_render_cairo_node(handle, cr, drawsub, error);
 
     if (!rsvg_handle_get_intrinsic_size_in_pixels(handle, &intrinsic_width, &intrinsic_height)) {
         rsvg_handle_get_dimensions(handle, &dimensions);
@@ -393,23 +412,11 @@ gboolean rsvg_handle_render_layer(RsvgHandle* handle,
     cairo_translate(cr, viewport->x, viewport->y);
     cairo_scale(cr, viewport->width / intrinsic_width, viewport->height / intrinsic_height);
 
-    retval = rsvg_handle_render_cairo_node(handle, cr, drawsub);
+    retval = rsvg_handle_render_cairo_node(handle, cr, drawsub, error);
 
     cairo_restore(cr);
 
-    if (!retval && error && *error == NULL)
-        g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Rendering failed");
-
     return retval;
-}
-
-static gboolean rsvg_cairo_check_context(cairo_t* cr, GError** error) {
-    cairo_status_t status = cairo_status(cr);
-    if (status == CAIRO_STATUS_SUCCESS)
-        return TRUE;
-
-    g_set_error(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Cairo context: %s", cairo_status_to_string(status));
-    return FALSE;
 }
 
 static gboolean rsvg_cairo_draw_element(RsvgHandle* handle,
