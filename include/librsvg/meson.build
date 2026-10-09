@@ -62,13 +62,14 @@ enum_source = gnome.mkenums(
   vhead: '''GType
 @enum_name@_get_type (void)
 {
-  static GType etype = 0;
-  if (etype == 0) {
+  static gsize etype = 0;
+  if (g_once_init_enter (&etype)) {
     static const G@Type@Value values[] = {''',
   vprod: '      { @VALUENAME@, "@VALUENAME@", "@valuenick@" },',
   vtail: '''      { 0, NULL, NULL }
     };
-    etype = g_@type@_register_static ("@EnumName@", values);
+    GType registered_type = g_@type@_register_static ("@EnumName@", values);
+    g_once_init_leave (&etype, registered_type);
   }
   return etype;
 }
