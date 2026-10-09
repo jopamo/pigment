@@ -332,29 +332,17 @@ GdkPixbuf* gdk_pixbuf_apply_embedded_orientation(GdkPixbuf* src) {
     return dest;
 }
 
-#ifdef GDK_PIXBUF_RELOCATABLE
-
-static const gchar* get_localedir(void) {
-    gchar* temp;
-    const gchar* toplevel = gdk_pixbuf_get_toplevel();
-    if (toplevel == NULL)
-        return NULL;
-
-    temp = g_build_filename(toplevel, "share/locale", NULL);
-
-    return temp;
-}
-
-#undef GDK_PIXBUF_LOCALEDIR
-#define GDK_PIXBUF_LOCALEDIR get_localedir()
-
-#endif
-
 void _gdk_pixbuf_init_gettext(void) {
     static gsize gettext_initialized = FALSE;
 
     if (G_UNLIKELY(g_once_init_enter(&gettext_initialized))) {
+#ifdef GDK_PIXBUF_RELOCATABLE
+        const gchar* toplevel = gdk_pixbuf_get_toplevel();
+        g_autofree gchar* localedir = toplevel ? g_build_filename(toplevel, "share/locale", NULL) : NULL;
+        bindtextdomain(GETTEXT_PACKAGE, localedir);
+#else
         bindtextdomain(GETTEXT_PACKAGE, GDK_PIXBUF_LOCALEDIR);
+#endif
 #ifdef HAVE_BIND_TEXTDOMAIN_CODESET
         bind_textdomain_codeset(GETTEXT_PACKAGE, "UTF-8");
 #endif
