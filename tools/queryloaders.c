@@ -124,6 +124,8 @@ static gchar* get_toplevel(void) {
         gchar *exe_path, *bin_dir;
 
         exe_path = g_file_read_link("/proc/self/exe", NULL);
+        if (exe_path == NULL)
+            return NULL;
         bin_dir = g_dirname(exe_path);
         toplevel = g_build_path(G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
         g_free(exe_path);
@@ -261,8 +263,12 @@ int main(int argc, char** argv) {
     gchar* pixbuf_libdir;
 
 #ifdef GDK_PIXBUF_RELOCATABLE
-    pixbuf_libdir =
-        g_build_filename(get_toplevel(), "lib", "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders", NULL);
+    const gchar* toplevel = get_toplevel();
+    if (toplevel == NULL) {
+        g_fprintf(stderr, "Cannot determine executable prefix\n");
+        return 1;
+    }
+    pixbuf_libdir = g_build_filename(toplevel, "lib", "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders", NULL);
 #else
     GFile* pixbuf_libdir_file;
     /* An intermediate GFile here will convert all the path separators
