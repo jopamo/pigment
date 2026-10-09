@@ -336,8 +336,11 @@ GdkPixbuf* gdk_pixbuf_apply_embedded_orientation(GdkPixbuf* src) {
 
 static const gchar* get_localedir(void) {
     gchar* temp;
+    const gchar* toplevel = gdk_pixbuf_get_toplevel();
+    if (toplevel == NULL)
+        return NULL;
 
-    temp = g_build_filename(gdk_pixbuf_get_toplevel(), "share/locale", NULL);
+    temp = g_build_filename(toplevel, "share/locale", NULL);
 
     return temp;
 }

@@ -202,6 +202,8 @@ gchar* gdk_pixbuf_get_toplevel(void) {
         gchar *exe_path, *bin_dir;
 
         exe_path = g_file_read_link("/proc/self/exe", NULL);
+        if (exe_path == NULL)
+            return NULL;
         bin_dir = g_dirname(exe_path);
         toplevel = g_build_path(G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
         g_free(exe_path);
@@ -295,8 +297,11 @@ static gboolean skip_space(const char** pos) {
 static char* get_libdir(void) {
     static char* libdir = NULL;
 
-    if (libdir == NULL)
-        libdir = g_build_filename(gdk_pixbuf_get_toplevel(), "lib", NULL);
+    if (libdir == NULL) {
+        const gchar* toplevel = gdk_pixbuf_get_toplevel();
+        if (toplevel != NULL)
+            libdir = g_build_filename(toplevel, "lib", NULL);
+    }
 
     return libdir;
 }
@@ -314,7 +319,8 @@ static gchar* build_module_path(const gchar* path) {
         return g_strdup(path);
     }
     else {
-        return g_build_filename(gdk_pixbuf_get_toplevel(), path, NULL);
+        const gchar* toplevel = gdk_pixbuf_get_toplevel();
+        return toplevel ? g_build_filename(toplevel, path, NULL) : NULL;
     }
 #else
     return g_strdup(path);
@@ -324,9 +330,11 @@ static gchar* build_module_path(const gchar* path) {
 static gchar* gdk_pixbuf_get_module_file(void) {
     gchar* result = g_strdup(g_getenv("GDK_PIXBUF_MODULE_FILE"));
 
-    if (!result)
-        result =
-            g_build_filename(GDK_PIXBUF_LIBDIR, "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders.cache", NULL);
+    if (!result) {
+        const gchar* libdir = GDK_PIXBUF_LIBDIR;
+        if (libdir != NULL)
+            result = g_build_filename(libdir, "gdk-pixbuf-2.0", GDK_PIXBUF_BINARY_VERSION, "loaders.cache", NULL);
+    }
 
     return result;
 }
@@ -422,6 +430,13 @@ static gboolean gdk_pixbuf_io_init_modules(const char* filename, GError** error)
                 have_error = TRUE;
             }
             module->module_path = build_module_path(tmp_buf->str);
+#ifdef GDK_PIXBUF_RELOCATABLE
+            if (module->module_path == NULL) {
+                g_set_error_literal(&local_error, G_IO_ERROR, G_IO_ERROR_NOT_INITIALIZED,
+                                    "Cannot determine executable prefix");
+                have_error = TRUE;
+            }
+#endif
         }
         else if (!module->module_name) {
             module->info = g_new0(GdkPixbufFormat, 1);
@@ -518,6 +533,13 @@ static gboolean gdk_pixbuf_io_init_modules(const char* filename, GError** error)
     g_string_free(tmp_buf, TRUE);
     g_io_channel_unref(channel);
     free_cache_module(module);
+
+#ifdef GDK_PIXBUF_RELOCATABLE
+    if (local_error != NULL) {
+        g_propagate_error(error, local_error);
+        return FALSE;
+    }
+#endif
 
     if (g_slist_length(file_formats) <= num_formats) {
         char* filename_utf8 = g_filename_display_name(filename);
@@ -622,7 +644,10 @@ static void gdk_pixbuf_io_init(void) {
     gdk_pixbuf_io_init_builtin();
 #ifdef USE_GMODULE
     char* module_file = gdk_pixbuf_get_module_file();
-    gdk_pixbuf_io_init_modules(module_file, NULL);
+#ifdef GDK_PIXBUF_RELOCATABLE
+    if (module_file != NULL)
+#endif
+        gdk_pixbuf_io_init_modules(module_file, NULL);
     g_free(module_file);
 #endif
 }
