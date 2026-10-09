@@ -1433,7 +1433,7 @@ static void make_gaussian_convolution_matrix(gdouble radius, gdouble** out_matri
     }
 
     /* mirror to the bottom half */
-    for (i = 0; i <= matrix_len / 2; i++)
+    for (i = 0; i < matrix_len / 2; i++)
         matrix[i] = matrix[matrix_len - 1 - i];
 
     /* find center val -- calculate an odd number of quanta to make it
