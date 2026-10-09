@@ -184,10 +184,13 @@ static GSList* get_file_formats(void) {
 
 #ifdef GDK_PIXBUF_RELOCATABLE
 
+G_LOCK_DEFINE_STATIC(toplevel_lock);
 
 gchar* gdk_pixbuf_get_toplevel(void) {
     static gchar* toplevel = NULL;
+    gchar* result;
 
+    G_LOCK(toplevel_lock);
     if (toplevel == NULL) {
 #if   defined(OS_DARWIN)
         char pathbuf[PATH_MAX + 1];
@@ -202,17 +205,19 @@ gchar* gdk_pixbuf_get_toplevel(void) {
         gchar *exe_path, *bin_dir;
 
         exe_path = g_file_read_link("/proc/self/exe", NULL);
-        if (exe_path == NULL)
-            return NULL;
-        bin_dir = g_dirname(exe_path);
-        toplevel = g_build_path(G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
-        g_free(exe_path);
-        g_free(bin_dir);
+        if (exe_path != NULL) {
+            bin_dir = g_dirname(exe_path);
+            toplevel = g_build_path(G_DIR_SEPARATOR_S, bin_dir, "..", NULL);
+            g_free(exe_path);
+            g_free(bin_dir);
+        }
 #else
 #error "Relocations not supported for this platform"
 #endif
     }
-    return toplevel;
+    result = toplevel;
+    G_UNLOCK(toplevel_lock);
+    return result;
 }
 
 #endif /* GDK_PIXBUF_RELOCATABLE */
