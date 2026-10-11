@@ -9,6 +9,7 @@
 #include "rsvg-styles.h"
 #include "rsvg-css.h"
 
+#include <liblexa/css.h>
 #include <string.h>
 
 /* Keep the engine layout reachable through exported helper types unchanged. */
@@ -164,14 +165,17 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
                                   const char* klass,
                                   const char* id,
                                   RsvgPropertyBag* atts) {
-    int i = 0;
-    int j = 0;
+    size_t i = 0;
+    size_t j = 0;
     char* target = NULL;
     GString* klazz_list = NULL;
     StyleMatches matches = {.engine = engine};
 
     if (engine == NULL)
         return;
+
+    gboolean tag_unambiguous = tag != NULL && lxa_css_selector_key_names_unambiguous(
+                                                  (lxa_span_t){(const uint8_t*)tag, strlen(tag)}, (lxa_span_t){0});
 
     if (atts != NULL && rsvg_property_bag_size(atts) > 0)
         rsvg_parse_style_pairs(engine->ctx, state, atts);
@@ -180,7 +184,7 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
     collect_styles(&matches, "*", 0);
 
     /* tag */
-    if (tag != NULL)
+    if (tag_unambiguous)
         collect_styles(&matches, tag, 1);
 
     if (klass != NULL) {
@@ -194,9 +198,11 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
             while (j < i && !g_ascii_isspace(klass[j]))
                 g_string_append_c(klazz_list, klass[j++]);
 
-            if (klazz_list->len != 1) {
+            if (klazz_list->len != 1 &&
+                lxa_css_selector_key_names_unambiguous(
+                    (lxa_span_t){0}, (lxa_span_t){(const uint8_t*)klazz_list->str + 1, klazz_list->len - 1})) {
                 collect_styles(&matches, klazz_list->str, 2);
-                if (tag != NULL) {
+                if (tag_unambiguous) {
                     target = g_strdup_printf("%s%s", tag, klazz_list->str);
                     collect_styles(&matches, target, 3);
                     g_free(target);
@@ -206,7 +212,7 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
                     collect_styles(&matches, target, 6);
                     g_free(target);
                 }
-                if (tag != NULL && id != NULL) {
+                if (tag_unambiguous && id != NULL) {
                     target = g_strdup_printf("%s%s#%s", tag, klazz_list->str, id);
                     collect_styles(&matches, target, 7);
                     g_free(target);
@@ -225,7 +231,7 @@ void rsvg_css_engine_apply_styles(RsvgCssEngine* engine,
     }
 
     /* tag#id */
-    if (tag != NULL && id != NULL) {
+    if (tag_unambiguous && id != NULL) {
         target = g_strdup_printf("%s#%s", tag, id);
         collect_styles(&matches, target, 5);
         g_free(target);
