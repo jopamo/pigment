@@ -42,7 +42,7 @@
 #include <string.h>
 
 #include <pango/pangocairo.h>
-#include <hb.h>
+#include <hb-ot.h>
 
 static void _pattern_add_rsvg_color_stops(cairo_pattern_t* pattern,
                                           GPtrArray* stops,
@@ -486,11 +486,6 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         hb_font_get_scale(font, &x_scale, &y_scale);
         if (!upem || x_scale <= 0 || y_scale <= 0)
             goto cleanup;
-        hb_blob_t* variation = hb_face_reference_table(face, HB_TAG('M', 'V', 'A', 'R'));
-        gboolean variable_metrics = hb_blob_get_length(variation) != 0;
-        hb_blob_destroy(variation);
-        if (variable_metrics)
-            goto cleanup;
         hb_blob_t* table = hb_face_reference_table(face, HB_TAG('O', 'S', '/', '2'));
         unsigned length;
         const unsigned char* data = (const unsigned char*)hb_blob_get_data(table, &length);
@@ -505,7 +500,10 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         if (descent & 0x8000)
             descent -= 0x10000;
         hb_blob_destroy(table);
-        if (ascent < 0 || descent > 0 || ascent == descent)
+        double ascent_units = ascent + (double)hb_ot_metrics_get_variation(font, HB_OT_METRICS_TAG_HORIZONTAL_ASCENDER);
+        double descent_units =
+            descent + (double)hb_ot_metrics_get_variation(font, HB_OT_METRICS_TAG_HORIZONTAL_DESCENDER);
+        if (ascent_units < 0 || descent_units > 0 || ascent_units == descent_units)
             goto cleanup;
         double scale = y_scale / (double)upem / PANGO_SCALE;
         PangoRectangle logical;
@@ -513,9 +511,9 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         RsvgBbox cell;
         rsvg_bbox_init(&cell, &bbox->affine);
         cell.rect.x = x + logical.x / (double)PANGO_SCALE;
-        cell.rect.y = y + pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE - ascent * scale;
+        cell.rect.y = y + pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE - ascent_units * scale;
         cell.rect.width = logical.width / (double)PANGO_SCALE;
-        cell.rect.height = (ascent - descent) * scale;
+        cell.rect.height = (ascent_units - descent_units) * scale;
         cell.virgin = 0;
         rsvg_bbox_insert(&cells, &cell);
     } while (pango_layout_iter_next_run(iter));
