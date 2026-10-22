@@ -69,7 +69,6 @@ static void rsvg_handle_init(RsvgHandle* self) {
 
     self->priv->flags = RSVG_HANDLE_FLAGS_NONE;
     self->priv->state = RSVG_HANDLE_STATE_START;
-    self->priv->load_policy = RSVG_LOAD_POLICY_DEFAULT;
     self->priv->defs = rsvg_defs_new(self);
     self->priv->handler_nest = 0;
     self->priv->entities = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, (GDestroyNotify)xmlFreeNode);

@@ -84,10 +84,6 @@ struct RsvgSaxHandler {
     void (*characters)(RsvgSaxHandler* self, const char* ch, int len);
 };
 
-typedef enum { RSVG_LOAD_POLICY_STRICT } RsvgLoadPolicy;
-
-#define RSVG_LOAD_POLICY_DEFAULT (RSVG_LOAD_POLICY_STRICT)
-
 /* Reading state for an RsvgHandle */
 typedef enum {
     RSVG_HANDLE_STATE_START,
@@ -102,8 +98,6 @@ struct RsvgHandlePrivate {
     RsvgHandleFlags flags;
 
     RsvgHandleState state;
-
-    RsvgLoadPolicy load_policy;
 
     gboolean is_disposed;
 
