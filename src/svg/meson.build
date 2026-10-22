@@ -103,6 +103,7 @@ pkgconfig.generate(
     'cairo-png',
     'fontconfig',
   ],
+  requires_private: ['harfbuzz >=2.6.0'],
 )
 
 if gi_dep.found() and build_gir

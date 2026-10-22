@@ -17,7 +17,7 @@ gdk_pixbuf_dep = gdkpixbuf_dep
 libxml_dep = dependency('libxml-2.0', version: '>=2.9.0', allow_fallback: false)
 pangocairo_dep = dependency('pangocairo', version: '>=1.44.0', allow_fallback: false)
 pangoft2_dep = dependency('pangoft2', version: '>=1.44.0', allow_fallback: false)
-harfbuzz_dep = dependency('harfbuzz', allow_fallback: false)
+harfbuzz_dep = dependency('harfbuzz', version: '>=2.6.0', allow_fallback: false)
 fontconfig_dep = dependency('fontconfig', allow_fallback: false)
 cairo_dep = dependency('cairo', version: '>=1.10.0', allow_fallback: false)
 cairo_png_dep = dependency('cairo-png', version: '>=1.10.0', allow_fallback: false)

@@ -35,6 +35,7 @@
 
 /* what we use for text rendering depends on what cairo has to offer */
 #include <pango/pangocairo.h>
+#include <hb-ot.h>
 
 typedef struct _RsvgNodeText RsvgNodeText;
 
@@ -49,16 +50,12 @@ typedef struct {
     PangoDirection direction;
 } RsvgTextChunk;
 
-gboolean rsvg_text_get_font_shift_factor(hb_face_t* face, gboolean superscript, double* factor) {
-    if (!face)
+gboolean rsvg_text_get_font_shift_factor(hb_font_t* font, gboolean superscript, double* factor) {
+    if (!font)
         return FALSE;
+    hb_face_t* face = hb_font_get_face(font);
     unsigned upem = hb_face_get_upem(face);
     if (!upem)
-        return FALSE;
-    hb_blob_t* variation = hb_face_reference_table(face, HB_TAG('M', 'V', 'A', 'R'));
-    gboolean variable_metrics = hb_blob_get_length(variation) != 0;
-    hb_blob_destroy(variation);
-    if (variable_metrics)
         return FALSE;
     hb_blob_t* table = hb_face_reference_table(face, HB_TAG('O', 'S', '/', '2'));
     unsigned length;
@@ -72,7 +69,11 @@ gboolean rsvg_text_get_font_shift_factor(hb_face_t* face, gboolean superscript, 
     if (offset & 0x8000)
         offset -= 0x10000;
     hb_blob_destroy(table);
-    *factor = (superscript ? offset : -offset) / (double)upem;
+    hb_ot_metrics_tag_t tag =
+        superscript ? HB_OT_METRICS_TAG_SUPERSCRIPT_EM_Y_OFFSET : HB_OT_METRICS_TAG_SUBSCRIPT_EM_Y_OFFSET;
+    /* Keep fractional deltas in font units, before Pango-scale rounding. */
+    double adjusted = offset + (double)hb_ot_metrics_get_variation(font, tag);
+    *factor = (superscript ? adjusted : -adjusted) / upem;
     return TRUE;
 }
 
@@ -486,7 +487,7 @@ static double rsvg_text_keyword_shift_factor(RsvgDrawingCtx* ctx,
     if (font) {
         hb_font_t* hb_font = pango_font_get_hb_font(font);
         if (hb_font)
-            rsvg_text_get_font_shift_factor(hb_font_get_face(hb_font), fallback > 0., &factor);
+            rsvg_text_get_font_shift_factor(hb_font, fallback > 0., &factor);
         g_object_unref(font);
     }
     return factor;
