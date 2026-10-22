@@ -22,14 +22,6 @@ fontconfig_dep = dependency('fontconfig', allow_fallback: false)
 cairo_dep = dependency('cairo', version: '>=1.10.0', allow_fallback: false)
 cairo_png_dep = dependency('cairo-png', version: '>=1.10.0', allow_fallback: false)
 
-introspection_feature = get_option('introspection')
-gi_dep = dependency(
-  'gobject-introspection-1.0',
-  version: '>=0.10.8',
-  required: introspection_feature,
-  allow_fallback: false,
-)
-
 bsymbolic_link_args = []
 if cc.has_link_argument('-Wl,-Bsymbolic-functions')
   bsymbolic_link_args = ['-Wl,-Bsymbolic-functions']

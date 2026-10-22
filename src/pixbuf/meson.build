@@ -141,6 +141,7 @@ gir = find_program('g-ir-scanner', required : get_option('introspection'))
 build_gir = gir.found() and (not meson.is_cross_build() or get_option('introspection').enabled())
 
 if build_gir
+  dependency('gobject-introspection-1.0', version: '>=0.10.8', allow_fallback: false)
   gir_args = [
     '--quiet',
     '-DGDK_PIXBUF_COMPILATION',

@@ -106,7 +106,7 @@ pkgconfig.generate(
   requires_private: ['harfbuzz >=2.6.0'],
 )
 
-if gi_dep.found() and build_gir
+if build_gir
   gir_extra_args = [
     '--c-include=librsvg/rsvg.h',
     '--symbol-prefix=rsvg',
