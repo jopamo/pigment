@@ -468,6 +468,58 @@ cairo_path_t* rsvg_cairo_layout_path(PangoLayout* layout, double x, double y) {
     return path;
 }
 
+static gboolean rsvg_cairo_upright_cell_bbox(PangoLayoutRun* run,
+                                             hb_font_t* font,
+                                             double x,
+                                             double y,
+                                             RsvgBbox* cells) {
+    int x_scale, y_scale;
+    hb_font_get_scale(font, &x_scale, &y_scale);
+    hb_position_t left = 0, right = x_scale;
+    hb_tag_t scripts[HB_OT_MAX_TAGS_PER_SCRIPT], languages[HB_OT_MAX_TAGS_PER_LANGUAGE];
+    unsigned script_count = G_N_ELEMENTS(scripts), language_count = G_N_ELEMENTS(languages);
+    hb_ot_tags_from_script_and_language(
+        (hb_script_t)g_unicode_script_to_iso15924(run->item->analysis.script),
+        hb_language_from_string(pango_language_to_string(run->item->analysis.language), -1), &script_count, scripts,
+        &language_count, languages);
+    hb_tag_t script = script_count ? scripts[script_count - 1] : HB_OT_TAG_DEFAULT_SCRIPT;
+    hb_tag_t language = language_count ? languages[language_count - 1] : HB_OT_TAG_DEFAULT_LANGUAGE;
+    hb_ot_layout_get_baseline(font, HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_BOTTOM_OR_LEFT, HB_DIRECTION_TTB, script,
+                              language, &left);
+    hb_ot_layout_get_baseline(font, HB_OT_LAYOUT_BASELINE_TAG_IDEO_EMBOX_TOP_OR_RIGHT, HB_DIRECTION_TTB, script,
+                              language, &right);
+    if (right <= left)
+        return FALSE;
+    hb_blob_t* table = hb_face_reference_table(hb_font_get_face(font), HB_TAG('v', 'm', 't', 'x'));
+    gboolean has_vertical_metrics = hb_blob_get_length(table) != 0;
+    hb_blob_destroy(table);
+    double pen = 0;
+    for (int i = 0; i < run->glyphs->num_glyphs; i++) {
+        PangoGlyphInfo* glyph = &run->glyphs->glyphs[i];
+        if (glyph->glyph != PANGO_GLYPH_EMPTY) {
+            if (glyph->glyph & PANGO_GLYPH_UNKNOWN_FLAG)
+                return FALSE;
+            hb_position_t origin_x, origin_y;
+            if (!hb_font_get_glyph_v_origin(font, glyph->glyph, &origin_x, &origin_y))
+                return FALSE;
+            /* SVG uses one em without vmtx, not HarfBuzz's synthesized line height. */
+            double advance = has_vertical_metrics ? -(double)hb_font_get_glyph_v_advance(font, glyph->glyph) : y_scale;
+            if (advance <= 0)
+                return FALSE;
+            RsvgBbox cell;
+            rsvg_bbox_init(&cell, &cells->affine);
+            cell.rect.x = x + (left - (double)glyph->geometry.y_offset) / PANGO_SCALE;
+            cell.rect.y = y + pen + (glyph->geometry.x_offset - (double)origin_y) / PANGO_SCALE;
+            cell.rect.width = (right - (double)left) / PANGO_SCALE;
+            cell.rect.height = advance / PANGO_SCALE;
+            cell.virgin = 0;
+            rsvg_bbox_insert(cells, &cell);
+        }
+        pen += glyph->geometry.width / (double)PANGO_SCALE;
+    }
+    return TRUE;
+}
+
 static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, double y, RsvgBbox* bbox) {
     RsvgBbox cells;
     PangoLayoutIter* iter = pango_layout_get_iter(layout);
@@ -478,7 +530,8 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         PangoLayoutRun* run = pango_layout_iter_get_run_readonly(iter);
         if (!run)
             continue;
-        if (vertical && run->item->analysis.gravity != PANGO_GRAVITY_SOUTH)
+        if (vertical && run->item->analysis.gravity != PANGO_GRAVITY_SOUTH &&
+            run->item->analysis.gravity != PANGO_GRAVITY_EAST)
             goto cleanup;
         hb_font_t* font = pango_font_get_hb_font(run->item->analysis.font);
         if (!font)
@@ -489,6 +542,14 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         hb_font_get_scale(font, &x_scale, &y_scale);
         if (!upem || x_scale <= 0 || y_scale <= 0)
             goto cleanup;
+        PangoRectangle logical;
+        pango_layout_iter_get_run_extents(iter, NULL, &logical);
+        double baseline = pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE;
+        if (vertical && run->item->analysis.gravity == PANGO_GRAVITY_EAST) {
+            if (!rsvg_cairo_upright_cell_bbox(run, font, x - baseline, y + logical.x / (double)PANGO_SCALE, &cells))
+                goto cleanup;
+            continue;
+        }
         hb_blob_t* table = hb_face_reference_table(face, HB_TAG('O', 'S', '/', '2'));
         unsigned length;
         const unsigned char* data = (const unsigned char*)hb_blob_get_data(table, &length);
@@ -509,11 +570,8 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         if (ascent_units < 0 || descent_units > 0 || ascent_units == descent_units)
             goto cleanup;
         double scale = y_scale / (double)upem / PANGO_SCALE;
-        PangoRectangle logical;
-        pango_layout_iter_get_run_extents(iter, NULL, &logical);
         RsvgBbox cell;
         rsvg_bbox_init(&cell, &bbox->affine);
-        double baseline = pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE;
         if (vertical) {
             cell.rect.x = x - baseline + descent_units * scale;
             cell.rect.y = y + logical.x / (double)PANGO_SCALE;
