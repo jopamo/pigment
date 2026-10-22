@@ -472,11 +472,14 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
     RsvgBbox cells;
     PangoLayoutIter* iter = pango_layout_get_iter(layout);
     gboolean success = FALSE;
+    gboolean vertical = pango_context_get_gravity(pango_layout_get_context(layout)) == PANGO_GRAVITY_EAST;
     rsvg_bbox_init(&cells, &bbox->affine);
     do {
         PangoLayoutRun* run = pango_layout_iter_get_run_readonly(iter);
         if (!run)
             continue;
+        if (vertical && run->item->analysis.gravity != PANGO_GRAVITY_SOUTH)
+            goto cleanup;
         hb_font_t* font = pango_font_get_hb_font(run->item->analysis.font);
         if (!font)
             goto cleanup;
@@ -510,10 +513,19 @@ static gboolean rsvg_cairo_layout_cell_bbox(PangoLayout* layout, double x, doubl
         pango_layout_iter_get_run_extents(iter, NULL, &logical);
         RsvgBbox cell;
         rsvg_bbox_init(&cell, &bbox->affine);
-        cell.rect.x = x + logical.x / (double)PANGO_SCALE;
-        cell.rect.y = y + pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE - ascent_units * scale;
-        cell.rect.width = logical.width / (double)PANGO_SCALE;
-        cell.rect.height = (ascent_units - descent_units) * scale;
+        double baseline = pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE;
+        if (vertical) {
+            cell.rect.x = x - baseline + descent_units * scale;
+            cell.rect.y = y + logical.x / (double)PANGO_SCALE;
+            cell.rect.width = (ascent_units - descent_units) * scale;
+            cell.rect.height = logical.width / (double)PANGO_SCALE;
+        }
+        else {
+            cell.rect.x = x + logical.x / (double)PANGO_SCALE;
+            cell.rect.y = y + baseline - ascent_units * scale;
+            cell.rect.width = logical.width / (double)PANGO_SCALE;
+            cell.rect.height = (ascent_units - descent_units) * scale;
+        }
         cell.virgin = 0;
         rsvg_bbox_insert(&cells, &cell);
     } while (pango_layout_iter_next_run(iter));
@@ -561,7 +573,7 @@ void rsvg_cairo_render_pango_layout(RsvgDrawingCtx* ctx, PangoLayout* layout, do
     if (render->measure_logical)
         rsvg_bbox_insert(&render->bounds.logical, &bbox);
     paint_bbox = bbox;
-    if (!PANGO_GRAVITY_IS_VERTICAL(gravity) &&
+    if ((!PANGO_GRAVITY_IS_VERTICAL(gravity) || gravity == PANGO_GRAVITY_EAST) &&
         ((state->fill && state->fill->type == RSVG_PAINT_SERVER_IRI) ||
          (state->stroke && state->stroke->type == RSVG_PAINT_SERVER_IRI)))
         rsvg_cairo_layout_cell_bbox(layout, x, y, &paint_bbox);
