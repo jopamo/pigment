@@ -49,6 +49,33 @@ typedef struct {
     PangoDirection direction;
 } RsvgTextChunk;
 
+gboolean rsvg_text_get_font_shift_factor(hb_face_t* face, gboolean superscript, double* factor) {
+    if (!face)
+        return FALSE;
+    unsigned upem = hb_face_get_upem(face);
+    if (!upem)
+        return FALSE;
+    hb_blob_t* variation = hb_face_reference_table(face, HB_TAG('M', 'V', 'A', 'R'));
+    gboolean variable_metrics = hb_blob_get_length(variation) != 0;
+    hb_blob_destroy(variation);
+    if (variable_metrics)
+        return FALSE;
+    hb_blob_t* table = hb_face_reference_table(face, HB_TAG('O', 'S', '/', '2'));
+    unsigned length;
+    const unsigned char* data = (const unsigned char*)hb_blob_get_data(table, &length);
+    if (length < 26) {
+        hb_blob_destroy(table);
+        return FALSE;
+    }
+    unsigned index = superscript ? 24 : 16;
+    int offset = (data[index] << 8) | data[index + 1];
+    if (offset & 0x8000)
+        offset -= 0x10000;
+    hb_blob_destroy(table);
+    *factor = (superscript ? offset : -offset) / (double)upem;
+    return TRUE;
+}
+
 char* rsvg_make_valid_utf8(const char* str, int len) {
     GString* string;
     const char *remainder, *invalid;
@@ -429,16 +456,74 @@ static void rsvg_text_layout_free(RsvgTextLayout* layout) {
     g_free(layout);
 }
 
+static PangoFontDescription* rsvg_text_font_description(RsvgDrawingCtx* ctx, RsvgState* state, PangoContext* context) {
+    PangoFontDescription* font_desc = pango_font_description_copy(pango_context_get_font_description(context));
+    if (state->font_family)
+        pango_font_description_set_family_static(font_desc, state->font_family);
+    pango_font_description_set_style(font_desc, state->font_style);
+    pango_font_description_set_variant(font_desc, state->font_variant);
+    pango_font_description_set_weight(font_desc, state->font_weight);
+    pango_font_description_set_stretch(font_desc, state->font_stretch);
+    pango_font_description_set_absolute_size(font_desc, _rsvg_css_normalize_font_size(state, ctx) * PANGO_SCALE);
+    return font_desc;
+}
+
+static double rsvg_text_keyword_shift_factor(RsvgDrawingCtx* ctx,
+                                             RsvgState* parent,
+                                             PangoContext* context,
+                                             double fallback) {
+    if (fallback == 0.)
+        return 0.;
+    /* Select the parent's nominal font without changing the child layout's context. */
+    PangoContext* parent_context = ctx->render->create_pango_context(ctx);
+    pango_context_set_language(parent_context, parent->lang ? pango_language_from_string(parent->lang) : NULL);
+    pango_context_set_base_gravity(parent_context, parent->text_gravity);
+    PangoFontDescription* font_desc = rsvg_text_font_description(ctx, parent, context);
+    PangoFont* font = pango_context_load_font(parent_context, font_desc);
+    pango_font_description_free(font_desc);
+    g_object_unref(parent_context);
+    double factor = fallback;
+    if (font) {
+        hb_font_t* hb_font = pango_font_get_hb_font(font);
+        if (hb_font)
+            rsvg_text_get_font_shift_factor(hb_font_get_face(hb_font), fallback > 0., &factor);
+        g_object_unref(font);
+    }
+    return factor;
+}
+
+/* Add specified shifts without inheriting them a second time. */
+static double rsvg_text_accumulate_baseline_shift(RsvgState* state, RsvgDrawingCtx* ctx, PangoContext* context) {
+    RsvgState* parent = rsvg_state_parent(state);
+    double shift = 0.;
+    if (parent) {
+        if (state->has_baseline_shift) {
+            RsvgLength length;
+            StyleValueData* data = g_hash_table_lookup(state->styles, "baseline-shift");
+            if (data && rsvg_css_parse_baseline_shift(data->value, &length) && length.factor != 'b') {
+                if (length.factor == 'i')
+                    shift = length.length * rsvg_viewport_percentage(ctx->dpi_x, ctx->dpi_y);
+                else if (length.factor == '\0')
+                    shift = length.length;
+                else {
+                    double font_size = _rsvg_css_normalize_font_size(state, ctx);
+                    shift = _rsvg_css_hand_normalize_length(&length, 0, font_size, font_size);
+                }
+            }
+            else
+                shift = _rsvg_css_normalize_font_size(parent, ctx) *
+                        rsvg_text_keyword_shift_factor(ctx, parent, context, state->baseline_shift);
+        }
+        shift += rsvg_text_accumulate_baseline_shift(parent, ctx, context);
+    }
+    return shift;
+}
+
 static PangoLayout* rsvg_text_create_layout(RsvgDrawingCtx* ctx,
                                             RsvgState* state,
                                             const char* text,
                                             PangoContext* context,
                                             const RsvgTextChunk* chunk) {
-    PangoFontDescription* font_desc;
-    PangoLayout* layout;
-    PangoAttrList* attr_list;
-    PangoAttribute* attribute;
-
     PangoDirection direction = state->text_dir;
     if (direction == PANGO_DIRECTION_LTR && state->unicode_bidi == UNICODE_BIDI_NORMAL)
         direction = chunk->writing_direction;
@@ -447,24 +532,13 @@ static PangoLayout* rsvg_text_create_layout(RsvgDrawingCtx* ctx,
     pango_context_set_base_dir(context, direction);
     pango_context_set_base_gravity(context, chunk->gravity);
 
-    font_desc = pango_font_description_copy(pango_context_get_font_description(context));
-
-    if (state->font_family)
-        pango_font_description_set_family_static(font_desc, state->font_family);
-
-    pango_font_description_set_style(font_desc, state->font_style);
-    pango_font_description_set_variant(font_desc, state->font_variant);
-    pango_font_description_set_weight(font_desc, state->font_weight);
-    pango_font_description_set_stretch(font_desc, state->font_stretch);
-
-    pango_font_description_set_absolute_size(font_desc, _rsvg_css_normalize_font_size(state, ctx) * PANGO_SCALE);
-
-    layout = pango_layout_new(context);
+    PangoFontDescription* font_desc = rsvg_text_font_description(ctx, state, context);
+    PangoLayout* layout = pango_layout_new(context);
     pango_layout_set_font_description(layout, font_desc);
     pango_font_description_free(font_desc);
 
-    attr_list = pango_attr_list_new();
-    attribute =
+    PangoAttrList* attr_list = pango_attr_list_new();
+    PangoAttribute* attribute =
         pango_attr_letter_spacing_new(_rsvg_css_normalize_length(&state->letter_spacing, ctx, 'h') * PANGO_SCALE);
     attribute->start_index = 0;
     attribute->end_index = G_MAXINT;
@@ -536,7 +610,7 @@ void rsvg_text_render_text(RsvgDrawingCtx* ctx, const char* text, gdouble* x, gd
     pango_layout_get_size(layout, &w, &h);
     iter = pango_layout_get_iter(layout);
     offset = pango_layout_iter_get_baseline(iter) / (double)PANGO_SCALE;
-    offset += _rsvg_css_accumulate_baseline_shift(state, ctx);
+    offset += rsvg_text_accumulate_baseline_shift(state, ctx, context);
     if (PANGO_GRAVITY_IS_VERTICAL(chunk->gravity)) {
         offset_x = -offset;
         offset_y = 0;

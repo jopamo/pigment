@@ -29,6 +29,7 @@
 
 #include "rsvg.h"
 #include "rsvg-shapes.h"
+#include <hb.h>
 
 G_BEGIN_DECLS
 
@@ -38,6 +39,8 @@ G_GNUC_INTERNAL
 RsvgNode* rsvg_new_tspan(void);
 G_GNUC_INTERNAL
 char* rsvg_make_valid_utf8(const char* str, int len);
+G_GNUC_INTERNAL
+gboolean rsvg_text_get_font_shift_factor(hb_face_t* face, gboolean superscript, double* factor);
 
 G_END_DECLS
 

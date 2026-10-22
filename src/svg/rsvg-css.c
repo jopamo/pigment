@@ -297,7 +297,7 @@ gboolean rsvg_css_parse_baseline_shift(const char* str, RsvgLength* shift) {
     size_t len = end - str;
     if ((len == 3 && !g_ascii_strncasecmp(str, "sub", len)) || (len == 5 && !g_ascii_strncasecmp(str, "super", len)) ||
         (len == 8 && !g_ascii_strncasecmp(str, "baseline", len))) {
-        /* Retain Inkscape's SP_CSS_BASELINE_SHIFT_(SUB/SUPER/BASELINE) heuristics. */
+        /* Fallback factors from Inkscape's SP_CSS_BASELINE_SHIFT_(SUB/SUPER/BASELINE). */
         parsed.length = len == 3 ? -0.2 : len == 5 ? 0.4 : 0;
         parsed.factor = 'b';
     }
@@ -342,35 +342,6 @@ gboolean rsvg_css_parse_baseline_shift(const char* str, RsvgLength* shift) {
     }
     *shift = parsed;
     return TRUE;
-}
-
-/* Add specified shifts without inheriting them a second time. */
-double _rsvg_css_accumulate_baseline_shift(RsvgState* state, RsvgDrawingCtx* ctx) {
-    RsvgState* parent;
-    double shift = 0.;
-
-    parent = rsvg_state_parent(state);
-    if (parent) {
-        if (state->has_baseline_shift) {
-            RsvgLength length;
-            StyleValueData* data = g_hash_table_lookup(state->styles, "baseline-shift");
-            if (data && rsvg_css_parse_baseline_shift(data->value, &length) && length.factor != 'b') {
-                if (length.factor == 'i')
-                    shift = length.length * rsvg_viewport_percentage(ctx->dpi_x, ctx->dpi_y);
-                else if (length.factor == '\0')
-                    shift = length.length;
-                else {
-                    double font_size = _rsvg_css_normalize_font_size(state, ctx);
-                    shift = _rsvg_css_hand_normalize_length(&length, 0, font_size, font_size);
-                }
-            }
-            else
-                shift = _rsvg_css_normalize_font_size(parent, ctx) * state->baseline_shift;
-        }
-        shift += _rsvg_css_accumulate_baseline_shift(parent, ctx); /* baseline-shift for parent element */
-    }
-
-    return shift;
 }
 
 double _rsvg_css_hand_normalize_length(const RsvgLength* in,
