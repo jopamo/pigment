@@ -789,7 +789,7 @@ static void rsvg_cairo_generate_mask(cairo_t* cr, RsvgMask* self, RsvgDrawingCtx
     RsvgState* state = rsvg_current_state(ctx);
     guint8* pixels;
     guint32 width = render->width, height = render->height;
-    guint32 rowstride = width * 4, row, i;
+    guint32 rowstride, row, i;
     cairo_matrix_t affinesave;
     double sx, sy, sw, sh;
     gboolean nest = cr != render->initial_cr;
