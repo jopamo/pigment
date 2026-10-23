@@ -586,6 +586,7 @@ GdkPixbuf* gdk_pixbuf_new(GdkColorspace colorspace, gboolean has_alpha, int bits
 GdkPixbuf* gdk_pixbuf_copy(const GdkPixbuf* pixbuf) {
     guchar* buf;
     gsize size;
+    GdkPixbuf* copy;
 
     g_return_val_if_fail(GDK_IS_PIXBUF(pixbuf), NULL);
 
@@ -602,8 +603,11 @@ GdkPixbuf* gdk_pixbuf_copy(const GdkPixbuf* pixbuf) {
 
     memcpy(buf, gdk_pixbuf_read_pixels(pixbuf), size);
 
-    return gdk_pixbuf_new_from_data(buf, pixbuf->colorspace, pixbuf->has_alpha, pixbuf->bits_per_sample, pixbuf->width,
+    copy = gdk_pixbuf_new_from_data(buf, pixbuf->colorspace, pixbuf->has_alpha, pixbuf->bits_per_sample, pixbuf->width,
                                     pixbuf->height, pixbuf->rowstride, free_buffer, NULL);
+    if (!copy)
+        g_free(buf);
+    return copy;
 }
 
 /**
@@ -642,6 +646,8 @@ GdkPixbuf* gdk_pixbuf_new_subpixbuf(GdkPixbuf* src_pixbuf, int src_x, int src_y,
 
     sub = gdk_pixbuf_new_from_data(pixels, src_pixbuf->colorspace, src_pixbuf->has_alpha, src_pixbuf->bits_per_sample,
                                    width, height, src_pixbuf->rowstride, NULL, NULL);
+    if (!sub)
+        return NULL;
 
     /* Keep a reference to src_pixbuf */
     g_object_ref(src_pixbuf);

@@ -24,6 +24,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+static gboolean pixel_data_size(int width, int height, int rowstride, guint channels, gsize* size) {
+    gsize row_width, preceding_rows;
+
+    return rowstride > 0 && g_size_checked_mul(&row_width, (gsize)width, channels) && (gsize)rowstride >= row_width &&
+           g_size_checked_mul(&preceding_rows, (gsize)(height - 1), (gsize)rowstride) &&
+           g_size_checked_add(size, preceding_rows, row_width);
+}
+
 /**
  * gdk_pixbuf_new_from_data:
  * @data: (array): Image data in 8-bit/sample packed format
@@ -61,6 +69,7 @@ GdkPixbuf* gdk_pixbuf_new_from_data(const guchar* data,
                                     GdkPixbufDestroyNotify destroy_fn,
                                     gpointer destroy_fn_data) {
     GdkPixbuf* pixbuf;
+    gsize required_size;
 
     /* Only 8-bit/sample RGB buffers are supported for now */
 
@@ -69,6 +78,7 @@ GdkPixbuf* gdk_pixbuf_new_from_data(const guchar* data,
     g_return_val_if_fail(bits_per_sample == 8, NULL);
     g_return_val_if_fail(width > 0, NULL);
     g_return_val_if_fail(height > 0, NULL);
+    g_return_val_if_fail(pixel_data_size(width, height, rowstride, has_alpha ? 4 : 3, &required_size), NULL);
 
     pixbuf = g_object_new(GDK_TYPE_PIXBUF, "colorspace", colorspace, "n-channels", has_alpha ? 4 : 3, "bits-per-sample",
                           bits_per_sample, "has-alpha", has_alpha ? TRUE : FALSE, "width", width, "height", height,
@@ -109,32 +119,15 @@ GdkPixbuf* gdk_pixbuf_new_from_bytes(GBytes* data,
                                      int height,
                                      int rowstride) {
     const guint n_channels = has_alpha ? 4u : 3u;
+    gsize required_size;
 
     g_return_val_if_fail(data != NULL, NULL);
     g_return_val_if_fail(colorspace == GDK_COLORSPACE_RGB, NULL);
     g_return_val_if_fail(bits_per_sample == 8, NULL);
     g_return_val_if_fail(width > 0, NULL);
     g_return_val_if_fail(height > 0, NULL);
-    g_return_val_if_fail(rowstride > 0, NULL);
-    {
-        gsize bytes_per_pixel;
-        gsize row_width;
-        gsize required_size;
-        gsize tmp;
-
-        /* Make sure the declared dimensions fit within the backing GBytes,
-         * taking the rowstride into account.
-         */
-        bytes_per_pixel = (gsize)(((n_channels * (guint)bits_per_sample) + 7u) / 8u);
-
-        g_return_val_if_fail(g_size_checked_mul(&row_width, (gsize)width, bytes_per_pixel), NULL);
-        g_return_val_if_fail((gsize)rowstride >= row_width, NULL);
-
-        g_return_val_if_fail(g_size_checked_mul(&tmp, (gsize)(height - 1), (gsize)rowstride), NULL);
-        g_return_val_if_fail(g_size_checked_add(&required_size, tmp, row_width), NULL);
-
-        g_return_val_if_fail(g_bytes_get_size(data) >= required_size, NULL);
-    }
+    g_return_val_if_fail(pixel_data_size(width, height, rowstride, n_channels, &required_size), NULL);
+    g_return_val_if_fail(g_bytes_get_size(data) >= required_size, NULL);
 
     return g_object_new(GDK_TYPE_PIXBUF, "pixel-bytes", data, "colorspace", colorspace, "n-channels", (int)n_channels,
                         "bits-per-sample", bits_per_sample, "has-alpha", has_alpha ? TRUE : FALSE, "width", width,
