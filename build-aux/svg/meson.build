@@ -2,18 +2,9 @@ rsvg_version = '2.52.0'
 api_version = '2.0'
 api_major = '2'
 
-gnome = import('gnome')
-pkgconfig = import('pkgconfig')
-
-cc = meson.get_compiler('c')
 rsvg_c_args = cc.get_supported_arguments(['-Wno-c23-extensions', '-Wno-#warnings'])
-m_dep = cc.find_library('m', required: false)
 
-glib_dep = dependency('glib-2.0', version: '>=2.12.0', allow_fallback: false)
-gobject_dep = dependency('gobject-2.0', allow_fallback: false)
-gio_dep = dependency('gio-2.0', version: '>=2.24.0', allow_fallback: false)
 gio_unix_dep = dependency('gio-unix-2.0', allow_fallback: false)
-gdk_pixbuf_dep = gdkpixbuf_dep
 libxml_dep = dependency('libxml-2.0', version: '>=2.9.0', allow_fallback: false)
 pangocairo_dep = dependency('pangocairo', version: '>=1.44.0', allow_fallback: false)
 pangoft2_dep = dependency('pangoft2', version: '>=1.44.0', allow_fallback: false)

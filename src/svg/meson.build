@@ -34,7 +34,7 @@ lib_deps = [
   glib_dep,
   gobject_dep,
   gio_dep,
-  gdk_pixbuf_dep,
+  gdkpixbuf_dep,
   libxml_dep,
   pangocairo_dep,
   pangoft2_dep,
@@ -48,8 +48,8 @@ if rooted_file_io
   lib_deps += gio_unix_dep.partial_dependency(compile_args: true, includes: true)
 endif
 
-if m_dep.found()
-  lib_deps += m_dep
+if mathlib_dep.found()
+  lib_deps += mathlib_dep
 endif
 
 lib_includes = [

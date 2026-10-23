@@ -5,7 +5,7 @@ loader = shared_module(
   c_args: ['-DGDK_PIXBUF_ENABLE_BACKEND'],
   dependencies: [
     librsvg_dep,
-    gdk_pixbuf_dep,
+    gdkpixbuf_dep,
     glib_dep,
   ],
   name_prefix: 'lib',
