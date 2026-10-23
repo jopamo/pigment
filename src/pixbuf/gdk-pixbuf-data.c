@@ -24,14 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-static gboolean pixel_data_size(int width, int height, int rowstride, guint channels, gsize* size) {
-    gsize row_width, preceding_rows;
-
-    return rowstride > 0 && g_size_checked_mul(&row_width, (gsize)width, channels) && (gsize)rowstride >= row_width &&
-           g_size_checked_mul(&preceding_rows, (gsize)(height - 1), (gsize)rowstride) &&
-           g_size_checked_add(size, preceding_rows, row_width);
-}
-
 /**
  * gdk_pixbuf_new_from_data:
  * @data: (array): Image data in 8-bit/sample packed format
@@ -78,7 +70,9 @@ GdkPixbuf* gdk_pixbuf_new_from_data(const guchar* data,
     g_return_val_if_fail(bits_per_sample == 8, NULL);
     g_return_val_if_fail(width > 0, NULL);
     g_return_val_if_fail(height > 0, NULL);
-    g_return_val_if_fail(pixel_data_size(width, height, rowstride, has_alpha ? 4 : 3, &required_size), NULL);
+    g_return_val_if_fail(
+        _gdk_pixbuf_pixel_data_size(width, height, rowstride, has_alpha ? 4 : 3, bits_per_sample, &required_size),
+        NULL);
 
     pixbuf = g_object_new(GDK_TYPE_PIXBUF, "colorspace", colorspace, "n-channels", has_alpha ? 4 : 3, "bits-per-sample",
                           bits_per_sample, "has-alpha", has_alpha ? TRUE : FALSE, "width", width, "height", height,
@@ -126,7 +120,8 @@ GdkPixbuf* gdk_pixbuf_new_from_bytes(GBytes* data,
     g_return_val_if_fail(bits_per_sample == 8, NULL);
     g_return_val_if_fail(width > 0, NULL);
     g_return_val_if_fail(height > 0, NULL);
-    g_return_val_if_fail(pixel_data_size(width, height, rowstride, n_channels, &required_size), NULL);
+    g_return_val_if_fail(
+        _gdk_pixbuf_pixel_data_size(width, height, rowstride, n_channels, bits_per_sample, &required_size), NULL);
     g_return_val_if_fail(g_bytes_get_size(data) >= required_size, NULL);
 
     return g_object_new(GDK_TYPE_PIXBUF, "pixel-bytes", data, "colorspace", colorspace, "n-channels", (int)n_channels,

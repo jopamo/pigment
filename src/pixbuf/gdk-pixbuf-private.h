@@ -94,6 +94,23 @@ struct _GdkPixbufClass {
     GObjectClass parent_class;
 };
 
+static inline gboolean _gdk_pixbuf_pixel_data_size(int width,
+                                                   int height,
+                                                   int rowstride,
+                                                   int channels,
+                                                   int bits_per_sample,
+                                                   gsize* size) {
+    gsize bits_per_pixel, row_width, preceding_rows;
+
+    if (width < 1 || height < 1 || rowstride < 1 || channels < 1 || bits_per_sample < 1)
+        return FALSE;
+    return g_size_checked_mul(&bits_per_pixel, (gsize)channels, (gsize)bits_per_sample) &&
+           g_size_checked_add(&bits_per_pixel, bits_per_pixel, 7) &&
+           g_size_checked_mul(&row_width, (gsize)width, bits_per_pixel / 8) && (gsize)rowstride >= row_width &&
+           g_size_checked_mul(&preceding_rows, (gsize)(height - 1), (gsize)rowstride) &&
+           g_size_checked_add(size, preceding_rows, row_width);
+}
+
 #ifdef GDK_PIXBUF_ENABLE_BACKEND
 
 GdkPixbufModule* _gdk_pixbuf_get_module(guchar* buffer, guint size, const gchar* filename, GError** error);

@@ -913,27 +913,12 @@ int gdk_pixbuf_get_rowstride(const GdkPixbuf* pixbuf) {
  * Since: 2.26
  */
 gsize gdk_pixbuf_get_byte_length(const GdkPixbuf* pixbuf) {
-    gsize bits_per_pixel;
-    gsize bytes_per_pixel;
-    gsize row_width;
-    gsize tmp;
     gsize result;
 
     g_return_val_if_fail(GDK_IS_PIXBUF(pixbuf), -1);
 
-    /* Avoid signed overflow/UB on large dimensions. */
-    if (pixbuf->width < 1 || pixbuf->height < 1 || pixbuf->rowstride < 1)
-        return G_MAXSIZE;
-
-    if (!g_size_checked_mul(&bits_per_pixel, (gsize)pixbuf->n_channels, (gsize)pixbuf->bits_per_sample) ||
-        !g_size_checked_add(&bits_per_pixel, bits_per_pixel, 7)) {
-        return G_MAXSIZE;
-    }
-    bytes_per_pixel = bits_per_pixel / 8;
-
-    if (!g_size_checked_mul(&row_width, (gsize)pixbuf->width, bytes_per_pixel) ||
-        !g_size_checked_mul(&tmp, (gsize)(pixbuf->height - 1), (gsize)pixbuf->rowstride) ||
-        !g_size_checked_add(&result, tmp, row_width)) {
+    if (!_gdk_pixbuf_pixel_data_size(pixbuf->width, pixbuf->height, pixbuf->rowstride, pixbuf->n_channels,
+                                     pixbuf->bits_per_sample, &result)) {
         return G_MAXSIZE;
     }
 
@@ -1385,6 +1370,7 @@ static void make_storage_invalid(GdkPixbuf* pixbuf) {
 
 static void gdk_pixbuf_constructed(GObject* object) {
     GdkPixbuf* pixbuf = GDK_PIXBUF(object);
+    gsize required_size;
 
     G_OBJECT_CLASS(gdk_pixbuf_parent_class)->constructed(object);
 
@@ -1404,41 +1390,18 @@ static void gdk_pixbuf_constructed(GObject* object) {
 
         case STORAGE_PIXELS:
             g_assert(pixbuf->s.pixels.pixels != NULL);
+            if (!_gdk_pixbuf_pixel_data_size(pixbuf->width, pixbuf->height, pixbuf->rowstride, pixbuf->n_channels,
+                                             pixbuf->bits_per_sample, &required_size))
+                g_error("Invalid pixel storage layout");
             break;
 
-        case STORAGE_BYTES: {
-            gsize bytes_size;
-            gint width, height, rowstride, n_channels, bits_per_sample;
-
+        case STORAGE_BYTES:
             g_assert(pixbuf->s.bytes.bytes != NULL);
-
-            bytes_size = g_bytes_get_size(pixbuf->s.bytes.bytes);
-            width = pixbuf->width;
-            height = pixbuf->height;
-            rowstride = pixbuf->rowstride;
-            n_channels = pixbuf->n_channels;
-            bits_per_sample = pixbuf->bits_per_sample;
-
-            /* This is the same check as in gdk_pixbuf_new_from_bytes() */
-            {
-                gsize bytes_per_pixel;
-                gsize row_width;
-                gsize required_size;
-                gsize tmp;
-
-                bytes_per_pixel = (gsize)((((guint)n_channels * (guint)bits_per_sample) + 7u) / 8u);
-
-                /* Fail hard: a pixbuf with backing storage smaller than its computed
-                 * byte length can lead to OOB reads/writes when pixels are accessed.
-                 */
-                if (rowstride <= 0 || !g_size_checked_mul(&row_width, (gsize)width, bytes_per_pixel) ||
-                    (gsize)rowstride < row_width || !g_size_checked_mul(&tmp, (gsize)(height - 1), (gsize)rowstride) ||
-                    !g_size_checked_add(&required_size, tmp, row_width) || bytes_size < required_size) {
-                    g_error("GBytes is too small to fit the pixbuf's declared dimensions");
-                }
-            }
+            if (!_gdk_pixbuf_pixel_data_size(pixbuf->width, pixbuf->height, pixbuf->rowstride, pixbuf->n_channels,
+                                             pixbuf->bits_per_sample, &required_size) ||
+                g_bytes_get_size(pixbuf->s.bytes.bytes) < required_size)
+                g_error("GBytes is too small to fit the pixbuf's declared dimensions");
             break;
-        }
 
         default:
             g_assert_not_reached();
