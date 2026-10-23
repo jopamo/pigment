@@ -63,6 +63,18 @@ static gboolean pixdata_get_image_size(const GdkPixdata* pixdata, guint bpp, gsi
     return TRUE;
 }
 
+static gboolean pixdata_get_raw_size(const GdkPixdata* pixdata, guint bpp, gsize image_size, gsize* input_size) {
+    *input_size = image_size;
+    if (pixdata->length >= 1) {
+        if (pixdata->length < GDK_PIXDATA_HEADER_LENGTH)
+            return FALSE;
+        *input_size = MIN(image_size, (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH);
+        if (*input_size < image_size - pixdata->rowstride + (gsize)pixdata->width * bpp)
+            return FALSE;
+    }
+    return TRUE;
+}
+
 static gboolean pixdata_walk_rle(const GdkPixdata* pixdata,
                                  guint bpp,
                                  gsize image_size,
@@ -113,10 +125,11 @@ static gboolean pixdata_walk_rle(const GdkPixdata* pixdata,
     return TRUE;
 }
 
-static guint pixdata_get_length(const GdkPixdata* pixdata) {
+static guint pixdata_get_length(const GdkPixdata* pixdata, guint* padding) {
     guint bpp;
-    gsize image_size, length;
+    gsize image_size, length, input_size;
 
+    *padding = 0;
     if ((pixdata->pixdata_type & GDK_PIXDATA_COLOR_TYPE_MASK) == GDK_PIXDATA_COLOR_TYPE_RGB)
         bpp = 3;
     else if ((pixdata->pixdata_type & GDK_PIXDATA_COLOR_TYPE_MASK) == GDK_PIXDATA_COLOR_TYPE_RGBA)
@@ -128,9 +141,9 @@ static guint pixdata_get_length(const GdkPixdata* pixdata) {
     switch (pixdata->pixdata_type & GDK_PIXDATA_ENCODING_MASK) {
         case GDK_PIXDATA_ENCODING_RAW:
             length = image_size;
-            if (pixdata->length >= 1 && (pixdata->length < GDK_PIXDATA_HEADER_LENGTH ||
-                                         (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH < length))
+            if (!pixdata_get_raw_size(pixdata, bpp, image_size, &input_size))
                 return 0;
+            *padding = image_size - input_size;
             break;
         case GDK_PIXDATA_ENCODING_RLE:
             if (!pixdata_walk_rle(pixdata, bpp, image_size, NULL, &length))
@@ -168,7 +181,7 @@ static inline void put_uint32(guint8** stream, guint32 value) {
 guint8* /* free result */
 gdk_pixdata_serialize(const GdkPixdata* pixdata, guint* stream_length_p) {
     guint8 *stream, *s;
-    guint length;
+    guint length, padding;
 
     /* check args passing */
     g_return_val_if_fail(pixdata != NULL, NULL);
@@ -187,7 +200,7 @@ gdk_pixdata_serialize(const GdkPixdata* pixdata, guint* stream_length_p) {
                          NULL);
     g_return_val_if_fail(pixdata->pixel_data != NULL, NULL);
 
-    length = pixdata_get_length(pixdata);
+    length = pixdata_get_length(pixdata, &padding);
 
     /* check length field */
     g_return_val_if_fail(length != 0, NULL);
@@ -204,7 +217,8 @@ gdk_pixdata_serialize(const GdkPixdata* pixdata, guint* stream_length_p) {
     put_uint32(&s, pixdata->height);
 
     /* copy pixel data */
-    memcpy(s, pixdata->pixel_data, length);
+    memcpy(s, pixdata->pixel_data, length - padding);
+    memset(s + length - padding, 0, padding);
     s += length;
 
     *stream_length_p = GDK_PIXDATA_HEADER_LENGTH + length;
@@ -319,7 +333,12 @@ rl_encode_rgbx(guint8* bp,          /* dest buffer */
     const guint8* ilimit = limit - n_ch;
 
     while (ip < limit) {
-        g_assert(ip < ilimit); /* paranoid */
+        if (ip == ilimit) {
+            *(bp++) = 1;
+            memcpy(bp, ip, n_ch);
+            bp += n_ch;
+            break;
+        }
 
         if (diff2_pix(ip)) {
             const guint8* s_ip = ip;
@@ -351,20 +370,9 @@ rl_encode_rgbx(guint8* bp,          /* dest buffer */
             ip += n_ch;
             bp += n_ch;
         }
-        if (ip == ilimit) {
-            *(bp++) = 1;
-            memcpy(bp, ip, n_ch);
-            ip += n_ch;
-            bp += n_ch;
-        }
     }
 
     return bp;
-}
-
-/* Used as the destroy notification function for gdk_pixbuf_new() */
-static void free_buffer(guchar* pixels, gpointer data) {
-    g_free(pixels);
 }
 
 /**
@@ -375,12 +383,14 @@ static void free_buffer(guchar* pixels, gpointer data) {
  *
  * Converts a `GdkPixbuf` to a `GdkPixdata`.
  *
- * If `use_rle` is `TRUE`, the pixel data is run-length encoded into
- * newly-allocated memory and a pointer to that memory is returned.
+ * If run-length encoding is selected, the pixel data is encoded into
+ * newly-allocated memory and a pointer to that memory is returned. A
+ * single-pixel image may use raw storage even when `use_rle` is `TRUE`.
+ * Raw pixel data borrows the pixbuf's storage through the last logical row.
+ * Serialization fills missing final-row padding with zeroes in its own output.
  *
- * Returns: (nullable) (array) (element-type guint8): If `use_rle` is
- *   `TRUE`, a pointer to the newly-allocated memory for the run-length
- *   encoded pixel data, otherwise `NULL`.
+ * Returns: (nullable) (array) (element-type guint8): Newly-allocated encoded
+ *   pixel data, or `NULL` when raw pixels are borrowed or conversion fails.
  *
  * Deprecated: 2.32: Use #GResource instead.
  **/
@@ -389,7 +399,7 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
     guint height, rowstride, encoding, bpp;
     gsize length, n_bytes;
     GdkPixdata result = {0};
-    const guint8* pixels = NULL;
+    const guint8* pixels;
     guint8* img_buffer;
 
     g_return_val_if_fail(pixdata != NULL, NULL);
@@ -409,9 +419,8 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
     encoding = use_rle && ((rowstride / bpp | height) > 1) ? GDK_PIXDATA_ENCODING_RLE : GDK_PIXDATA_ENCODING_RAW;
 
     if (encoding == GDK_PIXDATA_ENCODING_RLE) {
-        gsize pad, allocation_size;
-        guint8 *img_buffer_end, *data;
-        GdkPixbuf* buf = NULL;
+        gsize pad, allocation_size, source_size;
+        guint8 *img_buffer_end, *data, *packed = NULL;
 
         if (n_bytes % bpp != 0) {
             rowstride = pixbuf->width * bpp;
@@ -421,23 +430,27 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
         g_return_val_if_fail(g_size_checked_add(&allocation_size, pad, n_bytes), NULL);
         g_return_val_if_fail(allocation_size <= G_MAXSSIZE, NULL);
 
-        if (rowstride != (guint)pixbuf->rowstride) {
-            data = g_malloc(n_bytes);
-            buf = gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, pixbuf->has_alpha, 8, pixbuf->width,
-                                           pixbuf->height, rowstride, free_buffer, NULL);
-            gdk_pixbuf_copy_area(pixbuf, 0, 0, pixbuf->width, pixbuf->height, buf, 0, 0);
+        pixels = gdk_pixbuf_read_pixels(pixbuf);
+        source_size = gdk_pixbuf_get_byte_length(pixbuf);
+        if (rowstride != (guint)pixbuf->rowstride || n_bytes > source_size) {
+            packed = g_malloc(n_bytes);
+            if (rowstride != (guint)pixbuf->rowstride) {
+                for (guint y = 0; y < height; y++)
+                    memcpy(packed + (gsize)y * rowstride, pixels + (gsize)y * pixbuf->rowstride, rowstride);
+            }
+            else {
+                memcpy(packed, pixels, source_size);
+                memset(packed + source_size, 0, n_bytes - source_size);
+            }
+            pixels = packed;
         }
-        else
-            buf = (GdkPixbuf*)pixbuf;
 
-        pixels = gdk_pixbuf_read_pixels(buf);
         data = g_malloc(allocation_size);
         free_me = data;
         img_buffer = data;
         img_buffer_end = rl_encode_rgbx(img_buffer, pixels, pixels + n_bytes, bpp);
         length = img_buffer_end - img_buffer;
-        if (buf != pixbuf)
-            g_object_unref(buf);
+        g_free(packed);
         if (length > G_MAXINT - GDK_PIXDATA_HEADER_LENGTH) {
             g_free(free_me);
             g_critical("Encoded pixdata exceeds the signed length field");
@@ -447,7 +460,7 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
     else {
         g_return_val_if_fail(n_bytes <= G_MAXINT - GDK_PIXDATA_HEADER_LENGTH, NULL);
         img_buffer = (guint8*)gdk_pixbuf_read_pixels(pixbuf);
-        length = n_bytes;
+        length = gdk_pixbuf_get_byte_length(pixbuf);
     }
 
     result.magic = GDK_PIXBUF_MAGIC_NUMBER;
@@ -481,7 +494,7 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
 GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixels, GError** error) {
     guint encoding, bpp;
     guint8* data = NULL;
-    gsize image_size;
+    gsize image_size, input_size = 0;
 
     g_return_val_if_fail(pixdata != NULL, NULL);
     g_return_val_if_fail(pixdata->width > 0, NULL);
@@ -514,9 +527,8 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
         return NULL;
     }
 
-    if (pixdata->length >= 1 &&
-        (pixdata->length < GDK_PIXDATA_HEADER_LENGTH ||
-         (encoding == GDK_PIXDATA_ENCODING_RAW && (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH < image_size))) {
+    if ((pixdata->length >= 1 && pixdata->length < GDK_PIXDATA_HEADER_LENGTH) ||
+        (encoding == GDK_PIXDATA_ENCODING_RAW && !pixdata_get_raw_size(pixdata, bpp, image_size, &input_size))) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
         return NULL;
     }
@@ -538,8 +550,10 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
             return NULL;
         }
     }
-    else if (copy_pixels)
-        memcpy(data, pixdata->pixel_data, image_size);
+    else if (copy_pixels) {
+        memcpy(data, pixdata->pixel_data, input_size);
+        memset(data + input_size, 0, image_size - input_size);
+    }
     else
         data = pixdata->pixel_data;
 
@@ -659,7 +673,7 @@ GString* gdk_pixdata_to_csource(GdkPixdata* pixdata, const gchar* name, GdkPixda
     gboolean rle_encoded;
     gchar* macro_name;
     guint8 *img_buffer, *img_buffer_end, *stream = NULL;
-    guint stream_length, pixel_length;
+    guint stream_length, pixel_length, padding = 0;
     GString* gstring;
 
     /* check args passing */
@@ -694,7 +708,7 @@ GString* gdk_pixdata_to_csource(GdkPixdata* pixdata, const gchar* name, GdkPixda
         img_buffer_end = stream + stream_length;
     }
     else {
-        pixel_length = pixdata_get_length(pixdata);
+        pixel_length = pixdata_get_length(pixdata, &padding);
         g_return_val_if_fail(pixel_length != 0, NULL);
         img_buffer = pixdata->pixel_data;
         img_buffer_end =
@@ -828,6 +842,8 @@ GString* gdk_pixdata_to_csource(GdkPixdata* pixdata, const gchar* name, GdkPixda
     do
         save_uchar(&cdata, *img_buffer++);
     while (img_buffer < img_buffer_end);
+    for (guint i = 0; i < padding; i++)
+        save_uchar(&cdata, 0);
 
     /* pixel_data trailer
      */
