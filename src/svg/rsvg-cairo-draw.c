@@ -307,7 +307,9 @@ static gboolean _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_
     rsvg_current_state(ctx)->personal_affine = rsvg_current_state(ctx)->affine = caffine;
 
     /* Draw everything */
+    RsvgCairoBounds saved_bounds = render->bounds;
     _rsvg_node_draw_children((RsvgNode*)rsvg_pattern, ctx, 2);
+    render->bounds = saved_bounds;
     /* Return to the original coordinate system */
     rsvg_state_pop(ctx);
 
