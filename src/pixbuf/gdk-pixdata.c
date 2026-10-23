@@ -215,6 +215,9 @@ static void gdk_pixdata_destroy_pixels(guchar* pixels, gpointer data) {
  * The `pixdata` contents are reconstructed byte by byte and are checked
  * for validity.
  *
+ * On success, `pixel_data` points into @stream. Keep that storage alive while
+ * using `pixdata` or a pixbuf created from it without copying the pixels.
+ *
  * This function may fail with `GDK_PIXBUF_ERROR_CORRUPT_IMAGE`
  * or `GDK_PIXBUF_ERROR_UNKNOWN_TYPE`.
  *
@@ -251,7 +254,7 @@ gboolean gdk_pixdata_deserialize(GdkPixdata* pixdata, guint stream_length, const
         return_invalid_format(error);
 
     /* deserialize pixel data */
-    if (stream_length < (guint)(pixdata->length - GDK_PIXDATA_HEADER_LENGTH))
+    if (stream_length < (guint)pixdata->length)
         return_pixel_corrupt(error);
     pixdata->pixel_data = (guint8*)stream;
 
@@ -460,13 +463,12 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
         return NULL;
     }
 
-    if (encoding == GDK_PIXDATA_ENCODING_RAW && pixdata->length >= 1) {
-        gsize min_length = (gsize)pixdata->height * (gsize)pixdata->rowstride - (gsize)GDK_PIXDATA_HEADER_LENGTH;
-
-        if ((gsize)pixdata->length < min_length) {
-            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
-            return NULL;
-        }
+    if (pixdata->length >= 1 &&
+        (pixdata->length < GDK_PIXDATA_HEADER_LENGTH ||
+         (encoding == GDK_PIXDATA_ENCODING_RAW &&
+          (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH < (gsize)pixdata->height * pixdata->rowstride))) {
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
+        return NULL;
     }
 
     if (copy_pixels) {
