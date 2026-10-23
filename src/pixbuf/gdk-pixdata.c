@@ -386,7 +386,9 @@ static void free_buffer(guchar* pixels, gpointer data) {
  **/
 gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, gboolean use_rle) {
     gpointer free_me = NULL;
-    guint height, rowstride, encoding, bpp, length;
+    guint height, rowstride, encoding, bpp;
+    gsize length, n_bytes;
+    GdkPixdata result = {0};
     const guint8* pixels = NULL;
     guint8* img_buffer;
 
@@ -400,16 +402,26 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
     height = pixbuf->height;
     rowstride = pixbuf->rowstride;
     bpp = pixbuf->has_alpha ? 4 : 3;
+    result.width = pixbuf->width;
+    result.height = height;
+    result.rowstride = rowstride;
+    g_return_val_if_fail(pixdata_get_image_size(&result, bpp, &n_bytes), NULL);
     encoding = use_rle && ((rowstride / bpp | height) > 1) ? GDK_PIXDATA_ENCODING_RLE : GDK_PIXDATA_ENCODING_RAW;
 
     if (encoding == GDK_PIXDATA_ENCODING_RLE) {
-        guint pad, n_bytes = rowstride * height;
+        gsize pad, allocation_size;
         guint8 *img_buffer_end, *data;
         GdkPixbuf* buf = NULL;
 
         if (n_bytes % bpp != 0) {
             rowstride = pixbuf->width * bpp;
-            n_bytes = rowstride * height;
+            n_bytes = (gsize)rowstride * height;
+        }
+        pad = MAX((gsize)rowstride, 130 + n_bytes / 127);
+        g_return_val_if_fail(g_size_checked_add(&allocation_size, pad, n_bytes), NULL);
+        g_return_val_if_fail(allocation_size <= G_MAXSSIZE, NULL);
+
+        if (rowstride != (guint)pixbuf->rowstride) {
             data = g_malloc(n_bytes);
             buf = gdk_pixbuf_new_from_data(data, GDK_COLORSPACE_RGB, pixbuf->has_alpha, 8, pixbuf->width,
                                            pixbuf->height, rowstride, free_buffer, NULL);
@@ -419,30 +431,32 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
             buf = (GdkPixbuf*)pixbuf;
 
         pixels = gdk_pixbuf_read_pixels(buf);
-        pad = rowstride;
-        pad = MAX(pad, 130 + n_bytes / 127);
-        data = g_new(guint8, pad + n_bytes);
+        data = g_malloc(allocation_size);
         free_me = data;
         img_buffer = data;
         img_buffer_end = rl_encode_rgbx(img_buffer, pixels, pixels + n_bytes, bpp);
         length = img_buffer_end - img_buffer;
         if (buf != pixbuf)
             g_object_unref(buf);
+        if (length > G_MAXINT - GDK_PIXDATA_HEADER_LENGTH) {
+            g_free(free_me);
+            g_critical("Encoded pixdata exceeds the signed length field");
+            return NULL;
+        }
     }
     else {
+        g_return_val_if_fail(n_bytes <= G_MAXINT - GDK_PIXDATA_HEADER_LENGTH, NULL);
         img_buffer = (guint8*)gdk_pixbuf_read_pixels(pixbuf);
-        length = rowstride * height;
+        length = n_bytes;
     }
 
-    pixdata->magic = GDK_PIXBUF_MAGIC_NUMBER;
-    pixdata->length = GDK_PIXDATA_HEADER_LENGTH + length;
-    pixdata->pixdata_type = pixbuf->has_alpha ? GDK_PIXDATA_COLOR_TYPE_RGBA : GDK_PIXDATA_COLOR_TYPE_RGB;
-    pixdata->pixdata_type |= GDK_PIXDATA_SAMPLE_WIDTH_8;
-    pixdata->pixdata_type |= encoding;
-    pixdata->rowstride = rowstride;
-    pixdata->width = pixbuf->width;
-    pixdata->height = height;
-    pixdata->pixel_data = img_buffer;
+    result.magic = GDK_PIXBUF_MAGIC_NUMBER;
+    result.length = GDK_PIXDATA_HEADER_LENGTH + length;
+    result.pixdata_type = pixbuf->has_alpha ? GDK_PIXDATA_COLOR_TYPE_RGBA : GDK_PIXDATA_COLOR_TYPE_RGB;
+    result.pixdata_type |= GDK_PIXDATA_SAMPLE_WIDTH_8 | encoding;
+    result.rowstride = rowstride;
+    result.pixel_data = img_buffer;
+    *pixdata = result;
 
     return free_me;
 }

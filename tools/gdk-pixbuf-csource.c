@@ -44,11 +44,15 @@ static gboolean build_list = FALSE;
 /* --- functions --- */
 static gboolean print_csource(FILE* f_out, GdkPixbuf* pixbuf, const gchar* filename) {
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
-    GdkPixdata pixdata;
+    GdkPixdata pixdata = {0};
     gpointer free_me;
     GString* gstring;
 
     free_me = gdk_pixdata_from_pixbuf(&pixdata, pixbuf, use_rle);
+    if (!pixdata.pixel_data) {
+        g_fprintf(stderr, "failed to convert \"%s\" to pixdata\n", filename);
+        return FALSE;
+    }
     gstring = gdk_pixdata_to_csource(&pixdata, image_name,
                                      gen_type | gen_ctype | (with_decoder ? GDK_PIXDATA_DUMP_RLE_DECODER : 0));
     g_free(free_me);

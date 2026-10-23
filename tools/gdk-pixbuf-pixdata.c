@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
     gchar* infilename;
     gchar* outfilename;
     gpointer free_me = NULL;
-    GdkPixdata pixdata;
+    GdkPixdata pixdata = {0};
     guint8* data = NULL;
     guint data_len;
     gint status = 1;
@@ -67,6 +67,10 @@ int main(int argc, char* argv[]) {
 
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     free_me = gdk_pixdata_from_pixbuf(&pixdata, pixbuf, use_rle);
+    if (!pixdata.pixel_data) {
+        g_printerr("failed to convert \"%s\" to pixdata\n", infilename);
+        goto out;
+    }
     data = gdk_pixdata_serialize(&pixdata, &data_len);
     G_GNUC_END_IGNORE_DEPRECATIONS
     if (data == NULL) {
