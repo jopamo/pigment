@@ -409,8 +409,6 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
 /* From glib's gmem.c */
 #define SIZE_OVERFLOWS(a, b) (G_UNLIKELY((b) > 0 && (a) > G_MAXSIZE / (b)))
 
-#define RLE_OVERRUN(offset) (rle_buffer_limit == NULL ? FALSE : rle_buffer + (offset) > rle_buffer_limit)
-
 /**
  * gdk_pixbuf_from_pixdata:
  * @pixdata: a #GdkPixdata to convert into a `GdkPixbuf`.
@@ -431,6 +429,7 @@ gpointer gdk_pixdata_from_pixbuf(GdkPixdata* pixdata, const GdkPixbuf* pixbuf, g
 GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixels, GError** error) {
     guint encoding, bpp;
     guint8* data = NULL;
+    gsize image_size;
 
     g_return_val_if_fail(pixdata != NULL, NULL);
     g_return_val_if_fail(pixdata->width > 0, NULL);
@@ -458,88 +457,73 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
         copy_pixels = TRUE;
 
     /* Sanity check the length and dimensions */
-    if (SIZE_OVERFLOWS(pixdata->height, pixdata->rowstride)) {
+    if (pixdata->width > G_MAXINT || pixdata->height > G_MAXINT || pixdata->rowstride > G_MAXINT ||
+        pixdata->width > pixdata->rowstride / bpp || SIZE_OVERFLOWS(pixdata->height, pixdata->rowstride)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
         return NULL;
     }
+    image_size = (gsize)pixdata->height * pixdata->rowstride;
 
     if (pixdata->length >= 1 &&
         (pixdata->length < GDK_PIXDATA_HEADER_LENGTH ||
-         (encoding == GDK_PIXDATA_ENCODING_RAW &&
-          (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH < (gsize)pixdata->height * pixdata->rowstride))) {
+         (encoding == GDK_PIXDATA_ENCODING_RAW && (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH < image_size))) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
         return NULL;
     }
 
     if (copy_pixels) {
-        data = g_try_malloc_n(pixdata->height, pixdata->rowstride);
+        data = g_try_malloc(image_size);
         if (!data) {
-            g_set_error(
-                error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                g_dngettext(GETTEXT_PACKAGE, "failed to allocate image buffer of %u byte",
-                            "failed to allocate image buffer of %u bytes", pixdata->rowstride * pixdata->height),
-                pixdata->rowstride * pixdata->height);
+            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                        g_dngettext(GETTEXT_PACKAGE, "failed to allocate image buffer of %" G_GSIZE_FORMAT " byte",
+                                    "failed to allocate image buffer of %" G_GSIZE_FORMAT " bytes", image_size),
+                        image_size);
             return NULL;
         }
     }
     if (encoding == GDK_PIXDATA_ENCODING_RLE) {
         const guint8* rle_buffer = pixdata->pixel_data;
-        guint8* rle_buffer_limit = NULL;
         guint8* image_buffer = data;
-        guint8* image_limit = data + pixdata->rowstride * pixdata->height;
+        gsize remaining = image_size;
+        gsize encoded_remaining = pixdata->length >= 1 ? (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH : G_MAXSIZE;
         gboolean check_overrun = FALSE;
 
-        if (pixdata->length >= 1)
-            rle_buffer_limit = pixdata->pixel_data + pixdata->length - GDK_PIXDATA_HEADER_LENGTH;
+        while (remaining > 0) {
+            guint packet, count;
+            gsize length, encoded_length;
 
-        while (image_buffer < image_limit && (rle_buffer_limit != NULL || rle_buffer > rle_buffer_limit)) {
-            guint length;
-
-            if (RLE_OVERRUN(1)) {
+            if (encoded_remaining == 0) {
                 check_overrun = TRUE;
                 break;
             }
 
-            length = *(rle_buffer++);
+            packet = *rle_buffer++;
+            count = packet & 127;
+            encoded_remaining--;
+            if (count == 0 || count > remaining / bpp) {
+                check_overrun = TRUE;
+                break;
+            }
+            length = count * bpp;
+            encoded_length = packet & 128 ? bpp : length;
+            if (encoded_length > encoded_remaining) {
+                check_overrun = TRUE;
+                break;
+            }
 
-            if (length & 128) {
-                length = length - 128;
-                check_overrun = image_buffer + length * bpp > image_limit;
-                if (check_overrun)
-                    length = (image_limit - image_buffer) / bpp;
-                if (RLE_OVERRUN(bpp < 4 ? 3 : 4)) {
-                    check_overrun = TRUE;
-                    break;
+            if (packet & 128) {
+                for (guint i = 0; i < count; i++) {
+                    memcpy(image_buffer, rle_buffer, bpp);
+                    image_buffer += bpp;
                 }
-                if (bpp < 4) /* RGB */
-                    do {
-                        memcpy(image_buffer, rle_buffer, 3);
-                        image_buffer += 3;
-                    } while (--length);
-                else /* RGBA */
-                    do {
-                        memcpy(image_buffer, rle_buffer, 4);
-                        image_buffer += 4;
-                    } while (--length);
-                if (RLE_OVERRUN(bpp)) {
-                    check_overrun = TRUE;
-                    break;
-                }
-                rle_buffer += bpp;
             }
             else {
-                length *= bpp;
-                check_overrun = image_buffer + length > image_limit;
-                if (check_overrun)
-                    length = image_limit - image_buffer;
-                if (RLE_OVERRUN(length)) {
-                    check_overrun = TRUE;
-                    break;
-                }
                 memcpy(image_buffer, rle_buffer, length);
                 image_buffer += length;
-                rle_buffer += length;
             }
+            remaining -= length;
+            rle_buffer += encoded_length;
+            encoded_remaining -= encoded_length;
         }
         if (check_overrun) {
             g_free(data);
@@ -548,7 +532,7 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
         }
     }
     else if (copy_pixels)
-        memcpy(data, pixdata->pixel_data, pixdata->rowstride * pixdata->height);
+        memcpy(data, pixdata->pixel_data, image_size);
     else
         data = pixdata->pixel_data;
 
