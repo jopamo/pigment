@@ -42,7 +42,7 @@ static gchar* image_name = "my_pixbuf";
 static gboolean build_list = FALSE;
 
 /* --- functions --- */
-static void print_csource(FILE* f_out, GdkPixbuf* pixbuf) {
+static gboolean print_csource(FILE* f_out, GdkPixbuf* pixbuf, const gchar* filename) {
     G_GNUC_BEGIN_IGNORE_DEPRECATIONS
     GdkPixdata pixdata;
     gpointer free_me;
@@ -51,18 +51,24 @@ static void print_csource(FILE* f_out, GdkPixbuf* pixbuf) {
     free_me = gdk_pixdata_from_pixbuf(&pixdata, pixbuf, use_rle);
     gstring = gdk_pixdata_to_csource(&pixdata, image_name,
                                      gen_type | gen_ctype | (with_decoder ? GDK_PIXDATA_DUMP_RLE_DECODER : 0));
+    g_free(free_me);
+    if (!gstring) {
+        g_fprintf(stderr, "failed to convert \"%s\" to C source\n", filename);
+        return FALSE;
+    }
 
     g_fprintf(f_out, "%s\n", gstring->str);
 
-    g_free(free_me);
     g_string_free(gstring, TRUE);
     G_GNUC_END_IGNORE_DEPRECATIONS
+    return TRUE;
 }
 
 int main(int argc, char* argv[]) {
     GdkPixbuf* pixbuf;
     GError* error = NULL;
     gchar* infilename;
+    gboolean converted;
 
     /* parse args and do fast exits */
     parse_args(&argc, &argv);
@@ -82,8 +88,10 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        print_csource(stdout, pixbuf);
+        converted = print_csource(stdout, pixbuf, infilename);
         g_object_unref(pixbuf);
+        if (!converted)
+            return 1;
     }
     else /* parse name, file pairs */
     {
@@ -105,8 +113,10 @@ int main(int argc, char* argv[]) {
                     g_error_free(error);
                     return 1;
                 }
-                print_csource(stdout, pixbuf);
+                converted = print_csource(stdout, pixbuf, infilename);
                 g_object_unref(pixbuf);
+                if (!converted)
+                    return 1;
                 p++;
             }
             toggle = !toggle;
