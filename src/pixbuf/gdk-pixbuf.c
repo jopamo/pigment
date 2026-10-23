@@ -1374,6 +1374,10 @@ static void gdk_pixbuf_constructed(GObject* object) {
 
     G_OBJECT_CLASS(gdk_pixbuf_parent_class)->constructed(object);
 
+    if (pixbuf->storage != STORAGE_UNINITIALIZED &&
+        (pixbuf->bits_per_sample != 8 || pixbuf->n_channels != (pixbuf->has_alpha ? 4 : 3)))
+        g_error("Unsupported pixel storage format");
+
     switch (pixbuf->storage) {
         case STORAGE_UNINITIALIZED:
             /* This means that neither of the construct properties "pixels" nor "pixel-bytes"
