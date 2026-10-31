@@ -275,7 +275,6 @@ out:
     return animation;
 }
 
-
 /**
  * gdk_pixbuf_animation_new_from_stream:
  * @stream:  a `GInputStream` to load the pixbuf from

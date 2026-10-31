@@ -43,7 +43,6 @@
 #include "gdk-pixbuf-io.h"
 #include "fallback-c89.c"
 
-
 /* Helper macros to convert between density units */
 #define DPCM_TO_DPI(value) ((int)round((value) * 2.54))
 

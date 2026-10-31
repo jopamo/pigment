@@ -187,7 +187,10 @@ static void _set_source_rsvg_solid_color(RsvgDrawingCtx* ctx,
     cairo_set_source_rgba(cr, r, g, b, a);
 }
 
-static gboolean _set_source_rsvg_pattern(RsvgDrawingCtx* ctx, RsvgPattern* rsvg_pattern, guint8 opacity, RsvgBbox bbox) {
+static gboolean _set_source_rsvg_pattern(RsvgDrawingCtx* ctx,
+                                         RsvgPattern* rsvg_pattern,
+                                         guint8 opacity,
+                                         RsvgBbox bbox) {
     RsvgCairoRender* render = RSVG_CAIRO_RENDER(ctx->render);
     RsvgPattern local_pattern = *rsvg_pattern;
     cairo_t *cr_render, *cr_pattern;

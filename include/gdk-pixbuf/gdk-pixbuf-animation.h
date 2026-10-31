@@ -53,7 +53,6 @@ typedef struct _GdkPixbufAnimationIter GdkPixbufAnimationIter;
 GDK_PIXBUF_AVAILABLE_IN_ALL
 GType gdk_pixbuf_animation_get_type(void) G_GNUC_CONST;
 
-
 GDK_PIXBUF_AVAILABLE_IN_ALL
 GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file(const char* filename, GError** error);
 GDK_PIXBUF_AVAILABLE_IN_2_28

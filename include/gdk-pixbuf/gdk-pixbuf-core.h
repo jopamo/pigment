@@ -214,7 +214,6 @@ GdkPixbuf* gdk_pixbuf_new_subpixbuf(GdkPixbuf* src_pixbuf, int src_x, int src_y,
 
 /* Simple loading */
 
-
 GDK_PIXBUF_AVAILABLE_IN_ALL
 GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error);
 GDK_PIXBUF_AVAILABLE_IN_2_4
@@ -279,7 +278,6 @@ gboolean gdk_pixbuf_savev(GdkPixbuf* pixbuf,
                           char** option_keys,
                           char** option_values,
                           GError** error);
-
 
 /* Saving to a callback function */
 

@@ -192,7 +192,7 @@ gchar* gdk_pixbuf_get_toplevel(void) {
 
     G_LOCK(toplevel_lock);
     if (toplevel == NULL) {
-#if   defined(OS_DARWIN)
+#if defined(OS_DARWIN)
         char pathbuf[PATH_MAX + 1];
         uint32_t bufsize = sizeof(pathbuf);
         gchar* bin_dir;
@@ -1078,7 +1078,6 @@ GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error) {
     return pixbuf;
 }
 
-
 /**
  * gdk_pixbuf_new_from_file_at_size: (constructor)
  * @filename: (type filename): Name of file to load, in the GLib file
@@ -1113,7 +1112,6 @@ GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error) {
 GdkPixbuf* gdk_pixbuf_new_from_file_at_size(const char* filename, int width, int height, GError** error) {
     return gdk_pixbuf_new_from_file_at_scale(filename, width, height, TRUE, error);
 }
-
 
 typedef struct {
     gint width;
@@ -1280,7 +1278,6 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
 
     return pixbuf;
 }
-
 
 static GdkPixbuf* load_from_stream(GdkPixbufLoader* loader,
                                    GInputStream* stream,
@@ -2266,7 +2263,6 @@ gboolean gdk_pixbuf_savev(GdkPixbuf* pixbuf,
 
     return TRUE;
 }
-
 
 /**
  * gdk_pixbuf_save_to_callback:

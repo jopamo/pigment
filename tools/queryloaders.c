@@ -42,7 +42,6 @@
 #endif
 #define SOEXT_LEN (strlen(SOEXT))
 
-
 #ifdef OS_DARWIN
 #include <mach-o/dyld.h>
 #endif
@@ -111,7 +110,7 @@ static gchar* get_toplevel(void) {
     static gchar* toplevel = NULL;
 
     if (toplevel == NULL) {
-#if   defined(OS_DARWIN)
+#if defined(OS_DARWIN)
         char pathbuf[PATH_MAX + 1];
         uint32_t bufsize = sizeof(pathbuf);
         gchar* bin_dir;
@@ -236,7 +235,6 @@ static gboolean query_module(GString* contents, const char* dir, const char* fil
     g_free(path);
     return result;
 }
-
 
 static gchar* gdk_pixbuf_get_module_file(void) {
     gchar* result = g_strdup(g_getenv("GDK_PIXBUF_MODULE_FILE"));
