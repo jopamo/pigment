@@ -2,64 +2,79 @@
 
 <img src="assets/piggy.png" alt="Pigment" width="560">
 
-Pigment brings raster image loading and SVG rendering into one C project for
-Linux and Unix. It provides the GdkPixbuf and librsvg interfaces that existing
-applications already use. You shouldn't need a new image API just to put a
-picture on the screen.
+Pigment combines GdkPixbuf and librsvg in a single C source tree with a
+Meson build system for Linux and Unix.
 
-## The name is new. The library names aren't.
+It provides raster image decoding, pixel buffers, scaling, compositing,
+and SVG rendering through Cairo. Existing applications can continue using
+the `gdk-pixbuf-2.0` and `librsvg-2.0` interfaces, including their headers,
+library names, and loader APIs.
 
-Under the hood, Pigment combines code from GdkPixbuf and librsvg into a shared
-source tree and Meson build. It handles pixel buffers, image decoding, scaling
-and compositing, and SVG rendering through Cairo.
+SVG support is optional. Raster-only builds do not require the SVG
+renderer or its dependencies. GTK is not required to build either library.
 
-Applications still use `gdk-pixbuf-2.0` and `librsvg-2.0`, along with their
-existing headers, library names and loader interfaces. SVG support is optional:
-a raster-only build doesn't pull in the SVG renderer's dependencies. GTK is a
-downstream consumer, not a requirement for building the libraries.
+Development focuses on input validation, memory ownership, and rendering
+correctness.
 
-The work is about keeping those familiar interfaces while retiring unchecked
-code paths, untangling ownership and checking what actually gets rendered.
+## Building
 
-## Try a build
+Requirements:
 
-You'll need a C compiler, Meson 0.63 or newer, Ninja, pkg-config and the
-development packages for the enabled libraries. The default build uses
-GLib/GObject/GIO, shared-mime-info, libpng and libjpeg. SVG adds Cairo, Pango,
-HarfBuzz, Fontconfig, libxml2 and liblexa. Meson checks the required versions;
-dependencies come from your system, not a download hidden inside the build.
+- C compiler
+- Meson 0.63 or newer
+- Ninja
+- pkg-config
+- GLib, GObject, and GIO
+- shared-mime-info
+- libpng and libjpeg
+
+SVG support additionally requires Cairo, Pango, HarfBuzz, Fontconfig,
+libxml2, and liblexa.
+
+Meson checks dependency versions. The commands below use system libraries
+and disable dependency fallbacks.
+
+Build with SVG support:
 
 ```sh
 meson setup build --wrap-mode=nofallback
 meson compile -C build
 ```
 
-For just the raster side:
+Build without SVG support:
 
 ```sh
 meson setup build-raster -Dsvg=false --wrap-mode=nofallback
 meson compile -C build-raster
 ```
 
-GObject Introspection is detected automatically when available. Use
-`-Dintrospection=enabled` to require it, or `-Dintrospection=disabled` to leave
-it out. See [meson_options.txt](meson_options.txt) for codec and loader options.
+GObject Introspection is enabled automatically when available. To control
+it explicitly, use `-Dintrospection=enabled` or
+`-Dintrospection=disabled`.
 
-## Before replacing anything
+See [meson_options.txt](meson_options.txt) for codec and loader options.
 
-Pigment is under active development. Compatibility and rendering checks are
-ongoing; it does not claim complete SVG/CSS coverage or parity with the latest
-upstream librsvg. Linux/Unix is the target, not a promise that every Unix
-platform has been tested. Windows is not supported.
+## Compatibility
 
-**Don't install it over your system libraries by hand.** Pigment deliberately
-uses the same installed paths as GdkPixbuf and librsvg. Replacement needs
-coordinated packaging, not two providers writing the same files.
+Pigment is under active development. API compatibility and rendering
+tests are ongoing.
 
-## Roots and licenses
+Current limitations:
 
-Pigment builds on the work of the GdkPixbuf and librsvg contributors. Their
-copyright notices and license terms stay with the code.
-See [COPYING](COPYING), [COPYING.librsvg](COPYING.librsvg) and the individual
-source files; libraries, utilities and artwork do not all share a blanket
-license.
+- SVG and CSS support is incomplete.
+- Feature parity with current upstream librsvg is not guaranteed.
+- Linux and Unix are targeted, but not all Unix platforms have been tested.
+- Windows is not supported.
+
+Pigment installs libraries and headers at the same paths used by GdkPixbuf
+and librsvg. **Do not install it over system libraries manually.**
+Distribution packages must coordinate replacement to avoid file conflicts.
+
+## Licensing
+
+Pigment incorporates code from GdkPixbuf and librsvg. Original copyright
+notices and license terms are retained.
+
+See [COPYING](COPYING), [COPYING.librsvg](COPYING.librsvg), and individual
+source files for applicable terms. Libraries, utilities, and artwork may
+have different licenses.
