@@ -3,7 +3,7 @@
 <img src="assets/piggy.png" alt="Pigment" width="560">
 
 Pigment combines GdkPixbuf and librsvg in a single C source tree with a
-Meson build system for Linux and Unix.
+Meson build system for 64-bit Linux and Unix.
 
 It provides raster image decoding, pixel buffers, scaling, compositing,
 and SVG rendering through Cairo. Existing applications can continue using
