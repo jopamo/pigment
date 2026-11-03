@@ -43,8 +43,18 @@
 #include "gdk-pixbuf-io.h"
 #include "fallback-c89.c"
 
-/* Helper macros to convert between density units */
-#define DPCM_TO_DPI(value) ((int)round((value) * 2.54))
+static void tiff_set_density_option(GdkPixbuf* pixbuf, const gchar* key, double density) {
+    gchar* value;
+
+    if (!isfinite(density))
+        return;
+    density = round(density);
+    if (density == 0)
+        density = 0;
+    value = g_strdup_printf("%.0f", density);
+    gdk_pixbuf_set_option(pixbuf, key, value);
+    g_free(value);
+}
 
 typedef struct _TiffContext TiffContext;
 struct _TiffContext {
@@ -86,7 +96,6 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
     const gchar* icc_profile;
     guint icc_profile_size;
     uint16_t resolution_unit;
-    gchar* density_str;
     gint retval;
 
     /* We're called with the lock held. */
@@ -224,20 +233,12 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
 
         switch (resolution_unit) {
             case RESUNIT_INCH:
-                density_str = g_strdup_printf("%d", (int)round(x_resolution));
-                gdk_pixbuf_set_option(pixbuf, "x-dpi", density_str);
-                g_free(density_str);
-                density_str = g_strdup_printf("%d", (int)round(y_resolution));
-                gdk_pixbuf_set_option(pixbuf, "y-dpi", density_str);
-                g_free(density_str);
+                tiff_set_density_option(pixbuf, "x-dpi", x_resolution);
+                tiff_set_density_option(pixbuf, "y-dpi", y_resolution);
                 break;
             case RESUNIT_CENTIMETER:
-                density_str = g_strdup_printf("%d", DPCM_TO_DPI(x_resolution));
-                gdk_pixbuf_set_option(pixbuf, "x-dpi", density_str);
-                g_free(density_str);
-                density_str = g_strdup_printf("%d", DPCM_TO_DPI(y_resolution));
-                gdk_pixbuf_set_option(pixbuf, "y-dpi", density_str);
-                g_free(density_str);
+                tiff_set_density_option(pixbuf, "x-dpi", x_resolution * 2.54);
+                tiff_set_density_option(pixbuf, "y-dpi", y_resolution * 2.54);
                 break;
         }
     }
