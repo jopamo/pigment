@@ -189,7 +189,14 @@ static gboolean gdk_pixbuf__qtif_image_free_loader(QTIFContext* context, GError*
 
     /* Get GdkPixbuf from GdkPixbufLoader. */
     pixbuf = gdk_pixbuf_loader_get_pixbuf(context->loader);
-    if (pixbuf != NULL) {
+    if (pixbuf == NULL) {
+        if (ret && error != NULL && *error == NULL) {
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("QTIF image does not contain an image"));
+        }
+        ret = FALSE;
+    }
+    else {
         g_object_ref(pixbuf);
     }
 
