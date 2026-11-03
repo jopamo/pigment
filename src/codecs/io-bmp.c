@@ -1020,6 +1020,15 @@ static void OneLine(struct bmp_progressive_state* context) {
 #define END_OF_BITMAP 1
 #define DELTA 2
 
+/* Keep the compressed cursor inside the pixbuf even after END_OF_LINE or a
+ * DELTA advances y to the image height. */
+static guchar* compressed_row_pointer(struct bmp_progressive_state* context) {
+    gint row = MIN(context->compr.y, context->Header.height - 1);
+
+    return gdk_pixbuf_get_pixels(context->pixbuf) +
+           (gdk_pixbuf_get_rowstride(context->pixbuf) * (context->Header.height - row - 1)) + (4 * context->compr.x);
+}
+
 static gboolean DoCompressed(struct bmp_progressive_state* context, GError** error) {
     gint i, j;
     gint y;
@@ -1075,10 +1084,7 @@ static gboolean DoCompressed(struct bmp_progressive_state* context, GError** err
                     case END_OF_LINE:
                         context->compr.x = 0;
                         context->compr.y++;
-                        context->compr.p = gdk_pixbuf_get_pixels(context->pixbuf) +
-                                           (gdk_pixbuf_get_rowstride(context->pixbuf) *
-                                            (context->Header.height - context->compr.y - 1)) +
-                                           (4 * context->compr.x);
+                        context->compr.p = compressed_row_pointer(context);
                         context->compr.phase = NEUTRAL;
                         break;
                     case END_OF_BITMAP:
@@ -1104,10 +1110,7 @@ static gboolean DoCompressed(struct bmp_progressive_state* context, GError** err
                 break;
             case DELTA_Y:
                 context->compr.y = MIN((guint)context->compr.y + c, (guint)context->Header.height);
-                context->compr.p =
-                    gdk_pixbuf_get_pixels(context->pixbuf) +
-                    (gdk_pixbuf_get_rowstride(context->pixbuf) * (context->Header.height - context->compr.y - 1)) +
-                    (4 * context->compr.x);
+                context->compr.p = compressed_row_pointer(context);
                 context->compr.phase = NEUTRAL;
                 break;
             case ABSOLUTE:
