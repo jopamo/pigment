@@ -179,6 +179,8 @@ static void updated_callback(gpointer loader, gint x, gint y, gint width, gint h
 static gboolean ani_load_chunk(AniLoaderContext* context, GError** error) {
     int i;
     gsize chunk_start_cp = 0;
+    guint64 default_delay;
+    guint64 total_time;
 
     if (context->chunk_id == 0x0) {
         if (BYTES_LEFT(context) < 8)
@@ -306,6 +308,20 @@ static gboolean ani_load_chunk(AniLoaderContext* context, GError** error) {
             return FALSE;
         }
 
+        if (context->DisplayRate == 0) {
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("Invalid header in animation"));
+            return FALSE;
+        }
+
+        default_delay = (guint64)context->DisplayRate * 1000 / 60;
+        total_time = (guint64)context->NumSteps * default_delay;
+        if (total_time > G_MAXINT) {
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("Invalid header in animation"));
+            return FALSE;
+        }
+
         context->animation = g_object_new(GDK_TYPE_PIXBUF_ANI_ANIM, NULL);
         if (!context->animation) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
@@ -316,7 +332,7 @@ static gboolean ani_load_chunk(AniLoaderContext* context, GError** error) {
         context->animation->n_pixbufs = context->NumFrames;
         context->animation->n_frames = context->NumSteps;
 
-        context->animation->total_time = context->NumSteps * (context->DisplayRate * 1000 / 60);
+        context->animation->total_time = (gint)total_time;
         context->animation->width = 0;
         context->animation->height = 0;
 
@@ -332,7 +348,7 @@ static gboolean ani_load_chunk(AniLoaderContext* context, GError** error) {
 
         for (i = 0; i < context->NumSteps; i++) {
             /* default values if the corresponding chunks are absent */
-            context->animation->delay[i] = context->DisplayRate * 1000 / 60;
+            context->animation->delay[i] = (gint)default_delay;
             context->animation->sequence[i] = MIN(i, context->NumFrames - 1);
         }
     }
@@ -348,11 +364,25 @@ static gboolean ani_load_chunk(AniLoaderContext* context, GError** error) {
             return FALSE;
         }
 
-        context->animation->total_time = 0;
+        total_time = 0;
         for (i = 0; i < context->NumSteps; i++) {
-            context->animation->delay[i] = read_int32(context) * 1000 / 60;
-            context->animation->total_time += context->animation->delay[i];
+            guint64 delay = (guint64)read_int32(context) * 1000 / 60;
+
+            if (delay > G_MAXINT || total_time > G_MAXINT - delay) {
+                g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                    _("Malformed chunk in animation"));
+                return FALSE;
+            }
+
+            context->animation->delay[i] = (gint)delay;
+            total_time += delay;
         }
+        if (total_time == 0) {
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("Malformed chunk in animation"));
+            return FALSE;
+        }
+        context->animation->total_time = (gint)total_time;
     }
     else if (context->chunk_id == TAG_seq) {
         if (context->chunk_size != 4 * context->NumSteps) {
