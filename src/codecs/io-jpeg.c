@@ -1340,6 +1340,7 @@ static gboolean real_save_jpeg(GdkPixbuf* pixbuf,
             }
             else if (strcmp(*kiter, "icc-profile") == 0) {
                 /* decode from base64 */
+                g_free(icc_profile);
                 icc_profile = (gchar*)g_base64_decode(*viter, &icc_profile_size);
                 if (icc_profile_size < 127 || icc_profile_size > (gsize)255 * 0xffef) {
                     /* This is a user-visible error */

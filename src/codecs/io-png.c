@@ -889,6 +889,7 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
             g_array_append_val((GArray*)text_data, text);
         }
         else if (strcmp(key, "icc-profile") == 0) {
+            g_free(icc_profile);
             icc_profile = g_base64_decode(value, &icc_profile_size);
 
             if (icc_profile_size < 127) {
