@@ -808,7 +808,6 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
                               gpointer user_data) {
     png_structp png_ptr = NULL;
     png_infop info_ptr;
-    guchar* ptr;
     guchar* pixels;
     int y;
     png_bytep row_ptr;
@@ -1034,8 +1033,8 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
     png_write_info(png_ptr, info_ptr);
     png_set_packing(png_ptr);
 
-    for (y = 0, ptr = pixels; y < h; y++, ptr += rowstride) {
-        row_ptr = (png_bytep)ptr;
+    for (y = 0; y < h; y++) {
+        row_ptr = pixels + (gsize)y * rowstride;
         png_write_rows(png_ptr, &row_ptr, 1);
     }
 
