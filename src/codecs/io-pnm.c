@@ -47,6 +47,7 @@ typedef struct {
     guchar buffer[PNM_BUF_SIZE];
     guchar* byte;
     guint nbytes;
+    gboolean in_comment;
 } PnmIOBuffer;
 
 typedef struct {
@@ -165,35 +166,42 @@ static void explode_gray_into_buf(PnmLoaderContext* context) {
 
 /* skip over whitespace and comments in input buffer */
 static gint pnm_skip_whitespace(PnmIOBuffer* inbuf, GError** error) {
-    register guchar* inptr;
+    guchar* inptr;
     guchar* inend;
 
     g_return_val_if_fail(inbuf != NULL, PNM_FATAL_ERR);
     g_return_val_if_fail(inbuf->byte != NULL, PNM_FATAL_ERR);
 
-    inend = inbuf->byte + inbuf->nbytes;
     inptr = inbuf->byte;
+    inend = inptr + inbuf->nbytes;
 
-    for (; inptr < inend; inptr++) {
-        if (*inptr == '#') {
-            /* in comment - skip to the end of this line */
-            for (; *inptr != '\n' && inptr < inend; inptr++)
-                ;
+    while (inptr < inend) {
+        if (inbuf->in_comment) {
+            while (inptr < inend && *inptr != '\n')
+                inptr++;
 
-            if (inptr == inend || *inptr != '\n') {
-                /* couldn't read whole comment */
-                return PNM_SUSPEND;
-            }
+            if (inptr == inend)
+                break;
+
+            inptr++;
+            inbuf->in_comment = FALSE;
+        }
+        else if (*inptr == '#') {
+            inbuf->in_comment = TRUE;
+            inptr++;
         }
         else if (!g_ascii_isspace(*inptr)) {
             inbuf->byte = inptr;
             inbuf->nbytes = (guint)(inend - inptr);
             return PNM_OK;
         }
+        else {
+            inptr++;
+        }
     }
 
-    inbuf->byte = inptr;
-    inbuf->nbytes = (guint)(inend - inptr);
+    inbuf->byte = inend;
+    inbuf->nbytes = 0;
 
     return PNM_SUSPEND;
 }
@@ -642,6 +650,7 @@ static GdkPixbuf* gdk_pixbuf__pnm_image_load(FILE* f, GError** error) {
     context.type = 0;
     context.inbuf.nbytes = 0;
     context.inbuf.byte = NULL;
+    context.inbuf.in_comment = FALSE;
     context.width = 0;
     context.height = 0;
     context.maxval = 0;
