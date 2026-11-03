@@ -315,7 +315,8 @@ static GdkPixbuf* gdk_pixbuf__png_image_load(FILE* f, GError** error) {
 
     if (png_get_text(png_ptr, info_ptr, &text_ptr, &num_texts)) {
         for (int j = 0; j < num_texts; j++) {
-            png_text_to_pixbuf_option(text_ptr[j], &key, &value);
+            if (!png_text_to_pixbuf_option(text_ptr[j], &key, &value))
+                continue;
             gdk_pixbuf_set_option(pixbuf, key, value);
             g_free(key);
             g_free(value);
