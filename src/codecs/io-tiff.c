@@ -250,7 +250,13 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
         uint32_t* pixels32;
         gsize row_bytes = (gsize)width * 4;
 
-        pixels32 = g_new(uint32_t, (gsize)width*(gsize)height);
+        pixels32 = g_try_new(uint32_t, (gsize)width*(gsize)height);
+        if (pixels32 == NULL) {
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                                _("Insufficient memory to open TIFF file"));
+            g_object_unref(pixbuf);
+            return NULL;
+        }
         if (!TIFFReadRGBAImageOriented(tiff, width, height, pixels32, ORIENTATION_TOPLEFT, 1)) {
             g_free(pixels32);
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
