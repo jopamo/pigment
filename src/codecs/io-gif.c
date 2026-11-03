@@ -350,8 +350,21 @@ static gboolean gif_check_size(GifContext* context, guint width, guint height) {
 
 static int gif_get_lzw(GifContext* context) {
     if (context->frame == NULL) {
+        /* Convert hundredths to milliseconds and retain the default and minimum delays. */
+        int delay_time = context->delay_time * 10;
+
         if (!gif_check_size(context, context->frame_len, context->frame_height))
             return -2;
+
+        if (delay_time == 0)
+            delay_time = 100;
+        if (delay_time < 20)
+            delay_time = 20;
+        if (context->animation->total_time > G_MAXINT - delay_time) {
+            g_set_error_literal(context->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("GIF animation duration is too long"));
+            return -2;
+        }
 
         context->frame = g_new0(GdkPixbufFrame, 1);
 
@@ -381,21 +394,7 @@ static int gif_get_lzw(GifContext* context) {
 
         context->frame->transparent_index = context->transparent_index;
 
-        /* GIF delay is in hundredths, we want thousandths */
-        context->frame->delay_time = context->delay_time * 10;
-
-        /* GIFs with delay time 0 are mostly broken, but they
-         * just want a default, "not that fast" delay.
-         */
-        if (context->frame->delay_time == 0)
-            context->frame->delay_time = 100;
-
-        /* No GIFs gets to play faster than 50 fps. They just
-         * lock up poor gtk.
-         */
-        if (context->frame->delay_time < 20)
-            context->frame->delay_time = 20; /* 20 = "fast" */
-
+        context->frame->delay_time = delay_time;
         context->frame->elapsed = context->animation->total_time;
         context->animation->total_time += context->frame->delay_time;
 
