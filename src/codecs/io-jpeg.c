@@ -137,7 +137,7 @@ static void output_message_handler(j_common_ptr cinfo) {
 }
 
 /* explode gray image data from jpeg library into rgb components in pixbuf */
-static void explode_gray_into_buf(struct jpeg_decompress_struct* cinfo, guchar** lines) {
+static void explode_gray_into_buf(struct jpeg_decompress_struct* cinfo, guchar** lines, gint nlines) {
     gint i, j;
     guint w;
 
@@ -149,7 +149,7 @@ static void explode_gray_into_buf(struct jpeg_decompress_struct* cinfo, guchar**
      * memory down, so we can use the same buffer.
      */
     w = cinfo->output_width;
-    for (i = cinfo->rec_outbuf_height - 1; i >= 0; i--) {
+    for (i = nlines - 1; i >= 0; i--) {
         guchar *from, *to;
 
         from = lines[i] + w - 1;
@@ -164,7 +164,7 @@ static void explode_gray_into_buf(struct jpeg_decompress_struct* cinfo, guchar**
     }
 }
 
-static void convert_cmyk_to_rgb(struct jpeg_decompress_struct* cinfo, guchar** lines) {
+static void convert_cmyk_to_rgb(struct jpeg_decompress_struct* cinfo, guchar** lines, gint nlines) {
     gint i;
     JDIMENSION j;
 
@@ -172,7 +172,7 @@ static void convert_cmyk_to_rgb(struct jpeg_decompress_struct* cinfo, guchar** l
     g_return_if_fail(cinfo->output_components == 4);
     g_return_if_fail(cinfo->out_color_space == JCS_CMYK);
 
-    for (i = cinfo->rec_outbuf_height - 1; i >= 0; i--) {
+    for (i = nlines - 1; i >= 0; i--) {
         guchar* p;
 
         p = lines[i];
@@ -520,6 +520,7 @@ static GdkPixbuf* gdk_pixbuf__real_jpeg_image_load(FILE* f, struct jpeg_decompre
                        * at most 4."
                        */
     guchar** lptr;
+    gint nlines;
     struct error_handler_data jerr;
     stdio_src_ptr src;
     gchar* icc_profile_base64;
@@ -648,17 +649,24 @@ static GdkPixbuf* gdk_pixbuf__real_jpeg_image_load(FILE* f, struct jpeg_decompre
             dptr += gdk_pixbuf_get_rowstride(pixbuf);
         }
 
-        jpeg_read_scanlines(cinfo, lines, cinfo->rec_outbuf_height);
+        nlines = (gint)jpeg_read_scanlines(cinfo, lines, cinfo->rec_outbuf_height);
+        if (nlines == 0) {
+            g_object_unref(pixbuf);
+            pixbuf = NULL;
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("Premature end-of-file encountered"));
+            goto out;
+        }
 
         switch (cinfo->out_color_space) {
             case JCS_GRAYSCALE:
-                explode_gray_into_buf(cinfo, lines);
+                explode_gray_into_buf(cinfo, lines, nlines);
                 break;
             case JCS_RGB:
                 /* do nothing */
                 break;
             case JCS_CMYK:
-                convert_cmyk_to_rgb(cinfo, lines);
+                convert_cmyk_to_rgb(cinfo, lines, nlines);
                 break;
             default:
                 if (pixbuf != NULL)
@@ -871,13 +879,13 @@ static gboolean gdk_pixbuf__jpeg_image_load_lines(JpegProgContext* context, GErr
 
         switch (cinfo->out_color_space) {
             case JCS_GRAYSCALE:
-                explode_gray_into_buf(cinfo, lines);
+                explode_gray_into_buf(cinfo, lines, nlines);
                 break;
             case JCS_RGB:
                 /* do nothing */
                 break;
             case JCS_CMYK:
-                convert_cmyk_to_rgb(cinfo, lines);
+                convert_cmyk_to_rgb(cinfo, lines, nlines);
                 break;
             default:
                 g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE,
