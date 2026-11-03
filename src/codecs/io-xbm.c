@@ -253,7 +253,8 @@ static gboolean read_bitmap_file_data(FILE* fstream,
                                       guint* height,
                                       guchar** data,
                                       int* x_hot,
-                                      int* y_hot) {
+                                      int* y_hot,
+                                      GError** error) {
     guchar* bits = NULL;          /* working variable */
     char line[MAX_SIZE];          /* input line from file */
     guint size;                   /* number of bytes of data */
@@ -330,7 +331,12 @@ static gboolean read_bitmap_file_data(FILE* fstream,
         if (!g_uint_checked_mul(&size, bytes_per_line, hh))
             RETURN(FALSE);
 
-        bits = g_malloc(size);
+        bits = g_try_malloc(size);
+        if (bits == NULL) {
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                                _("Insufficient memory to load XBM image file"));
+            return FALSE;
+        }
 
         if (version10p) {
             unsigned char* ptr;
@@ -391,8 +397,9 @@ static GdkPixbuf* gdk_pixbuf__xbm_image_load_real(FILE* f, XBMData* context, GEr
 
     GdkPixbuf* pixbuf;
 
-    if (!read_bitmap_file_data(f, &w, &h, &data, &x_hot, &y_hot)) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid XBM file"));
+    if (!read_bitmap_file_data(f, &w, &h, &data, &x_hot, &y_hot, error)) {
+        if (error != NULL && *error == NULL)
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid XBM file"));
         return NULL;
     }
 
