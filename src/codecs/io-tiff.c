@@ -64,9 +64,9 @@ struct _TiffContext {
     gpointer user_data;
 
     guchar* buffer;
-    guint allocated;
-    guint used;
-    guint pos;
+    gsize allocated;
+    gsize used;
+    gsize pos;
 };
 
 static void tiff_warning_handler(const char* mod, const char* fmt, va_list ap) {
@@ -369,11 +369,11 @@ static gpointer gdk_pixbuf__tiff_image_begin_load(GdkPixbufModuleSizeFunc size_f
 static tsize_t tiff_load_read(thandle_t handle, tdata_t buf, tsize_t size) {
     TiffContext* context = (TiffContext*)handle;
 
-    if (context->pos + size > context->used)
+    if (size < 0 || context->pos > context->used || (gsize)size > context->used - context->pos)
         return 0;
 
     memcpy(buf, context->buffer + context->pos, size);
-    context->pos += size;
+    context->pos += (gsize)size;
     return size;
 }
 
@@ -388,17 +388,17 @@ static toff_t tiff_load_seek(thandle_t handle, toff_t offset, int whence) {
         case SEEK_SET:
             if (offset > context->used)
                 return -1;
-            context->pos = offset;
+            context->pos = (gsize)offset;
             break;
         case SEEK_CUR:
-            if (offset + context->pos >= context->used)
+            if (context->pos > context->used || offset >= context->used - context->pos)
                 return -1;
-            context->pos += offset;
+            context->pos += (gsize)offset;
             break;
         case SEEK_END:
-            if (offset + context->used > context->used)
+            if (offset != 0)
                 return -1;
-            context->pos = context->used + offset;
+            context->pos = context->used;
             break;
         default:
             return -1;
@@ -463,15 +463,17 @@ static gboolean gdk_pixbuf__tiff_image_stop_load(gpointer data, GError** error) 
     return retval;
 }
 
-static gboolean make_available_at_least(TiffContext* context, guint needed) {
+static gboolean make_available_at_least(TiffContext* context, gsize needed) {
     guchar* new_buffer = NULL;
-    guint need_alloc;
+    gsize need_alloc;
 
-    need_alloc = context->used + needed;
+    if (!g_size_checked_add(&need_alloc, context->used, needed))
+        return FALSE;
+
     if (need_alloc > context->allocated) {
-        guint new_size = 1;
+        gsize new_size = 1;
         while (new_size < need_alloc) {
-            if (!g_uint_checked_mul(&new_size, new_size, 2)) {
+            if (!g_size_checked_mul(&new_size, new_size, 2)) {
                 new_size = 0;
                 break;
             }
@@ -511,9 +513,9 @@ static gboolean gdk_pixbuf__tiff_image_load_increment(gpointer data, const gucha
 
 typedef struct {
     gchar* buffer;
-    guint allocated;
-    guint used;
-    guint pos;
+    gsize allocated;
+    gsize used;
+    gsize pos;
 } TiffSaveContext;
 
 static tsize_t tiff_save_read(thandle_t handle, tdata_t buf, tsize_t size) {
@@ -522,14 +524,21 @@ static tsize_t tiff_save_read(thandle_t handle, tdata_t buf, tsize_t size) {
 
 static tsize_t tiff_save_write(thandle_t handle, tdata_t buf, tsize_t size) {
     TiffSaveContext* context = (TiffSaveContext*)handle;
+    gsize end;
+
+    if (size < 0 || !g_size_checked_add(&end, context->pos, (gsize)size))
+        return (tsize_t)-1;
 
     /* Modify buffer length */
-    if (context->pos + size > context->used)
-        context->used = context->pos + size;
+    if (end > context->used)
+        context->used = end;
 
     /* Realloc */
     if (context->used > context->allocated) {
-        context->buffer = g_realloc(context->buffer, context->pos + size);
+        gchar* new_buffer = g_try_realloc(context->buffer, context->used);
+        if (new_buffer == NULL)
+            return (tsize_t)-1;
+        context->buffer = new_buffer;
         context->allocated = context->used;
     }
 
@@ -537,27 +546,31 @@ static tsize_t tiff_save_write(thandle_t handle, tdata_t buf, tsize_t size) {
     memcpy(context->buffer + context->pos, buf, size);
 
     /* Update pos */
-    context->pos += size;
+    context->pos = end;
 
     return size;
 }
 
 static toff_t tiff_save_seek(thandle_t handle, toff_t offset, int whence) {
     TiffSaveContext* context = (TiffSaveContext*)handle;
+    gsize new_pos;
 
     switch (whence) {
         case SEEK_SET:
-            context->pos = offset;
+            new_pos = (gsize)offset;
             break;
         case SEEK_CUR:
-            context->pos += offset;
+            if (!g_size_checked_add(&new_pos, context->pos, (gsize)offset))
+                return -1;
             break;
         case SEEK_END:
-            context->pos = context->used + offset;
+            if (!g_size_checked_add(&new_pos, context->used, (gsize)offset))
+                return -1;
             break;
         default:
             return -1;
     }
+    context->pos = new_pos;
     return context->pos;
 }
 
