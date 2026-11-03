@@ -186,7 +186,7 @@ gsize lzw_decoder_feed(LZWDecoder* self, guint8* input, gsize input_length, guin
                 /* Invalid code received - just stop here */
                 if (self->code >= self->code_table_size) {
                     self->last_code = self->eoi_code;
-                    return output_length;
+                    return n_written;
                 }
 
                 /* Convert codeword into indexes */
