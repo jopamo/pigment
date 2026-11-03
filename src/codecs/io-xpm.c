@@ -504,8 +504,8 @@ static GdkPixbuf* pixbuf_create_from_xpm(const gchar* (*get_buf)(enum buf_op op,
                             _("XPM file has image height <= 0"));
         return NULL;
     }
-    /* Check from libXpm's ParsePixels() */
-    if ((h > 0 && w >= UINT_MAX / h) || w * h >= UINT_MAX / sizeof(unsigned int)) {
+    /* Check from libXpm's ParsePixels(), without overflowing the 32-bit product. */
+    if ((guint64)w * (guint64)h >= (guint64)UINT_MAX / sizeof(unsigned int)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid XPM header"));
         return NULL;
     }
