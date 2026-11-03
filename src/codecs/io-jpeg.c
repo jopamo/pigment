@@ -303,7 +303,7 @@ static gboolean jpeg_parse_exif_app2_segment(JpegExifContext* context, jpeg_save
     if (context->icc_profile_invalid)
         goto out;
 
-    if (marker->data_length < 16)
+    if (marker->data_length < 15)
         goto invalid;
 
     /* get data about this segment */
@@ -1362,10 +1362,10 @@ static gboolean real_save_jpeg(GdkPixbuf* pixbuf,
             else if (strcmp(*kiter, "icc-profile") == 0) {
                 /* decode from base64 */
                 icc_profile = (gchar*)g_base64_decode(*viter, &icc_profile_size);
-                if (icc_profile_size < 127) {
+                if (icc_profile_size < 127 || icc_profile_size > (gsize)255 * 0xffef) {
                     /* This is a user-visible error */
                     g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                                _("Color profile has invalid length “%u”."), (guint)icc_profile_size);
+                                _("Color profile has invalid length “%" G_GSIZE_FORMAT "”."), icc_profile_size);
                     retval = FALSE;
                     goto cleanup;
                 }
@@ -1459,7 +1459,7 @@ static gboolean real_save_jpeg(GdkPixbuf* pixbuf,
     /* write ICC profile data */
     if (icc_profile != NULL) {
         /* optimise for the common case where only one APP2 segment is required */
-        if (icc_profile_size < 0xffef) {
+        if (icc_profile_size <= 0xffef) {
             data = g_new(gchar, icc_profile_size + 14);
             memcpy(data, "ICC_PROFILE\000\001\001", 14);
             memcpy(data + 14, icc_profile, icc_profile_size);
@@ -1468,23 +1468,18 @@ static gboolean real_save_jpeg(GdkPixbuf* pixbuf,
         }
         else {
             guint segments;
-            guint size = 0xffef;
-            guint offset;
+            gsize offset = 0;
 
-            segments = (guint)ceilf((gfloat)icc_profile_size / (gfloat)0xffef);
+            segments = (icc_profile_size + 0xffef - 1) / 0xffef;
             data = g_new(gchar, 0xffff);
             memcpy(data, "ICC_PROFILE\000", 12);
             data[13] = segments;
-            for (guint segment_index = 0; segment_index <= segments; segment_index++) {
+            for (guint segment_index = 1; segment_index <= segments; segment_index++) {
+                gsize size = MIN(icc_profile_size - offset, (gsize)0xffef);
                 data[12] = segment_index;
-                offset = 0xffef * segment_index;
-
-                /* last segment */
-                if (segment_index == segments)
-                    size = icc_profile_size % 0xffef;
-
                 memcpy(data + 14, icc_profile + offset, size);
                 jpeg_write_marker(&cinfo, JPEG_APP0 + 2, (const JOCTET*)data, size + 14);
+                offset += size;
             }
             g_free(data);
         }
