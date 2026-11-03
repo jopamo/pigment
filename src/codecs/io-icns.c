@@ -257,7 +257,8 @@ static GdkPixbuf* load_icon(unsigned size, IN gpointer data, gsize datalen) {
         }
 
         pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
-        g_object_ref(pixbuf);
+        if (pixbuf != NULL)
+            g_object_ref(pixbuf);
         g_object_unref(loader);
 
         return pixbuf;
