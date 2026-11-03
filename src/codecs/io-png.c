@@ -35,8 +35,9 @@
 #include "fallback-c89.c"
 
 /* Helper macros to convert between density units */
-#define DPI_TO_DPM(value) ((int)round((value) * 1000 / 25.4))
+#define DPI_TO_DPM(value) ((png_uint_32)(((guint64)(value) * 10000 + 127) / 254))
 #define DPM_TO_DPI(value) ((int)round((value) * 25.4 / 1000))
+#define PNG_MAX_DPI (((guint64)G_MAXUINT32 * 254 + 126) / 10000)
 
 #define DEFAULT_FILL_COLOR 0x979899ff
 
@@ -905,12 +906,12 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
             gboolean is_horizontal = strcmp(key, "x-dpi") == 0;
             char* endptr = NULL;
 
-            int dpi = strtol(value, &endptr, 10);
+            long dpi = strtol(value, &endptr, 10);
 
-            if (endptr == value || dpi <= 0) {
+            if (endptr == value || dpi <= 0 || (guint64)dpi > PNG_MAX_DPI) {
                 g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("PNG %s must be greater than zero; value “%s” is not allowed"),
-                            is_horizontal ? "x-dpi" : "y-dpi", value);
+                            _("PNG %s must be between 1 and %" G_GUINT64_FORMAT "; value “%s” is not allowed"),
+                            is_horizontal ? "x-dpi" : "y-dpi", PNG_MAX_DPI, value);
                 success = FALSE;
                 goto cleanup;
             }
