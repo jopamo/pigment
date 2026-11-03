@@ -824,7 +824,6 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
 
     if (y < height) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Failed to write TIFF data"));
-        TIFFClose(tiff);
         retval = FALSE;
         goto cleanup;
     }
@@ -859,11 +858,14 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
     }
 
     TIFFClose(tiff);
+    tiff = NULL;
 
     /* Now call the callback */
     retval = save_func(context->buffer, context->used, error, user_data);
 
 cleanup:
+    if (tiff != NULL)
+        TIFFClose(tiff);
     free_save_context(context);
     return retval;
 }
