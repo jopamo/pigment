@@ -89,6 +89,8 @@ typedef struct {
     gchar* icc_profile;
     gsize icc_profile_size;
     gsize icc_profile_size_allocated;
+    guint icc_profile_chunks;
+    gboolean icc_profile_invalid;
 } JpegExifContext;
 
 static GdkPixbuf* gdk_pixbuf__jpeg_image_load(FILE* f, GError** error);
@@ -295,13 +297,14 @@ static gboolean jpeg_parse_exif_app2_segment(JpegExifContext* context, jpeg_save
     guint chunk_size;
     guint offset;
 
-    /* do we have enough data? */
-    if (marker->data_length < 16)
+    if (marker->data_length < 12 || memcmp(marker->data, "ICC_PROFILE\0", 12) != 0)
         goto out;
 
-    /* unique identification string */
-    if (memcmp(marker->data, "ICC_PROFILE\0", 12) != 0)
+    if (context->icc_profile_invalid)
         goto out;
+
+    if (marker->data_length < 16)
+        goto invalid;
 
     /* get data about this segment */
     sequence_number = marker->data[12];
@@ -309,11 +312,14 @@ static gboolean jpeg_parse_exif_app2_segment(JpegExifContext* context, jpeg_save
 
     /* this is invalid, the base offset is 1 */
     if (sequence_number == 0)
-        goto out;
+        goto invalid;
 
     /* this is invalid, the base offset is 1 */
-    if (sequence_number > number_of_chunks)
-        goto out;
+    if (sequence_number > number_of_chunks ||
+        (context->icc_profile_chunks != 0 && context->icc_profile_chunks != number_of_chunks))
+        goto invalid;
+
+    context->icc_profile_chunks = number_of_chunks;
 
     /* size includes the id (12 bytes), length field (1 byte), and sequence field (1 byte) */
     chunk_size = marker->data_length - 14;
@@ -323,12 +329,13 @@ static gboolean jpeg_parse_exif_app2_segment(JpegExifContext* context, jpeg_save
      * 64kb when we might only use a few kb. */
     if (number_of_chunks == 1) {
         if (context->icc_profile_size_allocated > 0)
-            goto out;
+            goto invalid;
         context->icc_profile_size = chunk_size;
         context->icc_profile_size_allocated = chunk_size;
         context->icc_profile = g_new(gchar, chunk_size);
         /* copy the segment data to the profile space */
         memcpy(context->icc_profile, marker->data + 14, chunk_size);
+        ret = TRUE;
         goto out;
     }
 
@@ -345,7 +352,7 @@ static gboolean jpeg_parse_exif_app2_segment(JpegExifContext* context, jpeg_save
 
     /* check the data will fit in our previously allocated buffer */
     if (offset + chunk_size > context->icc_profile_size_allocated)
-        goto out;
+        goto invalid;
 
     /* copy the segment data to the profile space */
     memcpy(context->icc_profile + offset, marker->data + 14, chunk_size);
@@ -356,6 +363,13 @@ static gboolean jpeg_parse_exif_app2_segment(JpegExifContext* context, jpeg_save
     ret = TRUE;
 out:
     return ret;
+
+invalid:
+    g_clear_pointer(&context->icc_profile, g_free);
+    context->icc_profile_size = 0;
+    context->icc_profile_size_allocated = 0;
+    context->icc_profile_invalid = TRUE;
+    return FALSE;
 }
 
 static gboolean jpeg_parse_exif_app1(JpegExifContext* context, jpeg_saved_marker_ptr marker) {
