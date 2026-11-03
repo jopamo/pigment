@@ -298,7 +298,14 @@ static GdkPixbuf* gdk_pixbuf__png_image_load(FILE* f, GError** error) {
 
     gdk_pixbuf_fill(pixbuf, DEFAULT_FILL_COLOR);
 
-    rows = g_new(png_bytep, h);
+    rows = g_try_new(png_bytep, h);
+    if (rows == NULL) {
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                            _("Insufficient memory to load PNG file"));
+        g_object_unref(pixbuf);
+        png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+        return NULL;
+    }
 
     for (i = 0, ptr = gdk_pixbuf_get_pixels(pixbuf); i < h; i++, ptr = (guchar*)ptr + rowstride)
         rows[i] = ptr;
