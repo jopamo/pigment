@@ -775,7 +775,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
             }
 
             if (y < (height - 1))
-                copy_gray_row(dith_row_2, pixels + ((y + 1) * rowstride), width, has_alpha);
+                copy_gray_row(dith_row_2, pixels + (gsize)(y + 1) * rowstride, width, has_alpha);
 
             p = dith_row_1;
             for (x = 0; x < width; x++) {
@@ -816,7 +816,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
     }
     else {
         for (y = 0; y < height; y++) {
-            if (TIFFWriteScanline(tiff, pixels + y * rowstride, y, 0) == -1)
+            if (TIFFWriteScanline(tiff, pixels + (gsize)y * rowstride, y, 0) == -1)
                 break;
         }
     }
