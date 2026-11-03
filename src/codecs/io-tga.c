@@ -334,8 +334,11 @@ static gboolean fill_in_context(TGAContext* ctx, GError** err) {
 
         (*ctx->size_func)(&wi, &hi, ctx->user_data);
 
-        if (wi == 0 || hi == 0)
+        if (wi == 0 || hi == 0) {
+            g_set_error_literal(err, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
+                                _("Transformed TGA has zero width or height."));
             return FALSE;
+        }
     }
 
     ctx->pbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, alpha, 8, w, h);
