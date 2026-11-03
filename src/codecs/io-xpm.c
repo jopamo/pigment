@@ -590,7 +590,7 @@ static GdkPixbuf* pixbuf_create_from_xpm(const gchar* (*get_buf)(enum buf_op op,
     wbytes = w * cpp;
 
     for (ycnt = 0; ycnt < h; ycnt++) {
-        pixtmp = gdk_pixbuf_get_pixels(pixbuf) + ycnt * rowstride;
+        pixtmp = gdk_pixbuf_get_pixels(pixbuf) + (gsize)ycnt * rowstride;
 
         buffer = (*get_buf)(op_body, handle);
         if ((!buffer) || (strlen(buffer) < wbytes)) {
