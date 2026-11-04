@@ -702,17 +702,20 @@ GString* gdk_pixdata_to_csource(GdkPixdata* pixdata, const gchar* name, GdkPixda
         stream = gdk_pixdata_serialize(pixdata, &stream_length);
         if (!stream)
             return NULL;
-        pixel_length = pixdata->length >= 1 ? pixdata->length - GDK_PIXDATA_HEADER_LENGTH
-                                            : stream_length - GDK_PIXDATA_HEADER_LENGTH;
+        pixel_length = stream_length - GDK_PIXDATA_HEADER_LENGTH;
         img_buffer = stream;
         img_buffer_end = stream + stream_length;
     }
     else {
+        gsize available;
+
         pixel_length = pixdata_get_length(pixdata, &padding);
         g_return_val_if_fail(pixel_length != 0, NULL);
         img_buffer = pixdata->pixel_data;
-        img_buffer_end =
-            img_buffer + (pixdata->length >= 1 ? (guint)pixdata->length - GDK_PIXDATA_HEADER_LENGTH : pixel_length);
+        available = pixel_length;
+        if (pixdata->length >= 1)
+            available = MIN(available, (gsize)pixdata->length - GDK_PIXDATA_HEADER_LENGTH);
+        img_buffer_end = img_buffer + available;
     }
 
     bpp = (pixdata->pixdata_type & GDK_PIXDATA_COLOR_TYPE_MASK) == GDK_PIXDATA_COLOR_TYPE_RGB ? 3 : 4;
