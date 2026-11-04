@@ -1142,7 +1142,7 @@ static void process_pixel(int* weights,
                           guchar** src,
                           int src_channels,
                           gboolean src_has_alpha,
-                          int x_start,
+                          gint64 x_start,
                           int src_width,
                           int check_size,
                           guint32 color1,
@@ -1318,7 +1318,7 @@ static void pixops_process(guchar* dest_buf,
     for (i = 0; i < (render_y1 - render_y0); i++) {
         gint64 dest_x;
         int y_start = y >> SCALE_SHIFT;
-        int x_start;
+        gint64 x_start;
         int* run_weights = filter_weights + ((y >> (SCALE_SHIFT - SUBSAMPLE_BITS)) & SUBSAMPLE_MASK) * filter->x.n *
                                                 filter->y.n * SUBSAMPLE;
         guchar* new_outbuf;
