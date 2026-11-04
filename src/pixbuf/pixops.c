@@ -1391,14 +1391,26 @@ static void pixops_process(guchar* dest_buf,
     g_free(filter_weights);
 }
 
+static gboolean filter_count_from_scale(double count, int* n) {
+    if (!(count >= 1.0 && count <= (double)G_MAXINT))
+        return FALSE;
+
+    *n = (int)count;
+    return TRUE;
+}
+
 /* Compute weights for reconstruction by replication followed by
  * sampling with a box filter
  */
 static gboolean tile_make_weights(PixopsFilterDimension* dim, double scale) {
-    int n = ceil(1 / scale + 1);
+    double count = ceil(1 / scale + 1);
+    int n;
     double* pixel_weights;
     int offset;
     int i;
+
+    if (!filter_count_from_scale(count, &n))
+        return FALSE;
 
     pixel_weights = g_try_malloc_n(sizeof(double) * SUBSAMPLE, n);
     if (pixel_weights == NULL)
@@ -1448,7 +1460,10 @@ static gboolean bilinear_magnify_make_weights(PixopsFilterDimension* dim, double
     }
     else /* Tile */
     {
-        n = ceil(1.0 + 1.0 / scale);
+        double count = ceil(1.0 + 1.0 / scale);
+
+        if (!filter_count_from_scale(count, &n))
+            return FALSE;
         dim->offset = 0.0;
     }
 
@@ -1534,12 +1549,16 @@ static double linear_box_half(double b0, double b1) {
  * interpolation, then sampling with a box filter
  */
 static gboolean bilinear_box_make_weights(PixopsFilterDimension* dim, double scale) {
-    int n = ceil(1 / scale + 3.0);
+    double count = ceil(1 / scale + 3.0);
+    int n;
     double* pixel_weights;
     double w;
     int offset, i;
 
-    pixel_weights = g_malloc_n(sizeof(double) * SUBSAMPLE, n);
+    if (!filter_count_from_scale(count, &n))
+        return FALSE;
+
+    pixel_weights = g_try_malloc_n(sizeof(double) * SUBSAMPLE, n);
     if (pixel_weights == NULL)
         return FALSE;
 
