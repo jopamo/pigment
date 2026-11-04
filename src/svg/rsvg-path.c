@@ -290,6 +290,9 @@ void rsvg_path_builder_arc(RsvgPathBuilder* builder,
     else if (!sweep_flag && delta_theta > 0)
         delta_theta -= M_PI * 2;
 
+    if (!isfinite(rx) || !isfinite(ry) || !isfinite(cx) || !isfinite(cy) || !isfinite(theta1) || !isfinite(delta_theta))
+        return;
+
     /* Now draw the arc */
 
     n_segs = ceil(fabs(delta_theta / (M_PI * 0.5 + 0.001)));
