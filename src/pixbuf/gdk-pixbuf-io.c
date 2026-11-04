@@ -1113,37 +1113,58 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_size(const char* filename, int width, int
     return gdk_pixbuf_new_from_file_at_scale(filename, width, height, TRUE, error);
 }
 
+#define AT_SCALE_DATA_KEY "gdk-pixbuf-please-kill-me-later"
+
 typedef struct {
     gint width;
     gint height;
     gboolean preserve_aspect_ratio;
+    gboolean failed;
 } AtScaleData;
 
 static void at_scale_data_async_data_free(AtScaleData* data) {
     g_slice_free(AtScaleData, data);
 }
 
+static gboolean at_scale_fit_dimension(gdouble value, gint* dimension) {
+    if (!(value <= (gdouble)G_MAXINT))
+        return FALSE;
+
+    *dimension = (gint)MAX(value, 1.0);
+    return TRUE;
+}
+
+static void at_scale_set_error(AtScaleData* info, GError** error) {
+    if (!info->failed)
+        return;
+
+    g_clear_error(error);
+    g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
+                        _("Scaled image dimensions are too large"));
+}
+
 static void at_scale_size_prepared_cb(gpointer loader, int width, int height, gpointer data) {
     GdkPixbufLoader* pixbuf_loader = loader;
     AtScaleData* info = data;
+    gboolean valid = TRUE;
 
     g_return_if_fail(width > 0 && height > 0);
 
     if (info->preserve_aspect_ratio && (info->width > 0 || info->height > 0)) {
         if (info->width < 0) {
-            width = width * (double)info->height / (double)height;
+            valid = at_scale_fit_dimension(width * (double)info->height / (double)height, &width);
             height = info->height;
         }
         else if (info->height < 0) {
-            height = height * (double)info->width / (double)width;
+            valid = at_scale_fit_dimension(height * (double)info->width / (double)width, &height);
             width = info->width;
         }
         else if ((double)height * (double)info->width > (double)width * (double)info->height) {
-            width = 0.5 + (double)width * (double)info->height / (double)height;
+            valid = at_scale_fit_dimension(0.5 + (double)width * (double)info->height / (double)height, &width);
             height = info->height;
         }
         else {
-            height = 0.5 + (double)height * (double)info->width / (double)width;
+            valid = at_scale_fit_dimension(0.5 + (double)height * (double)info->width / (double)width, &height);
             width = info->width;
         }
     }
@@ -1154,8 +1175,15 @@ static void at_scale_size_prepared_cb(gpointer loader, int width, int height, gp
             height = info->height;
     }
 
-    width = MAX(width, 1);
-    height = MAX(height, 1);
+    if (!valid) {
+        info->failed = TRUE;
+        width = 0;
+        height = 0;
+    }
+    else {
+        width = MAX(width, 1);
+        height = MAX(height, 1);
+    }
 
     gdk_pixbuf_loader_set_size(pixbuf_loader, width, height);
 }
@@ -1230,6 +1258,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
     info.width = width;
     info.height = height;
     info.preserve_aspect_ratio = preserve_aspect_ratio;
+    info.failed = FALSE;
 
     g_signal_connect(loader, "size-prepared", G_CALLBACK(at_scale_size_prepared_cb), &info);
 
@@ -1238,6 +1267,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
         length = fread(buffer, 1, sizeof(buffer), f);
         if (length > 0)
             if (!gdk_pixbuf_loader_write(loader, buffer, length, error)) {
+                at_scale_set_error(&info, error);
                 gdk_pixbuf_loader_close(loader, NULL);
                 fclose(f);
                 g_object_unref(loader);
@@ -1257,11 +1287,18 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
     fclose(f);
 
     if (!gdk_pixbuf_loader_close(loader, error) && !has_frame) {
+        at_scale_set_error(&info, error);
         g_object_unref(loader);
         return NULL;
     }
 
     pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
+
+    if (info.failed) {
+        g_object_unref(loader);
+        at_scale_set_error(&info, error);
+        return NULL;
+    }
 
     if (!pixbuf) {
         gchar* display_name = g_filename_display_name(filename);
@@ -1362,11 +1399,17 @@ GdkPixbuf* gdk_pixbuf_new_from_stream_at_scale(GInputStream* stream,
     info.width = width;
     info.height = height;
     info.preserve_aspect_ratio = preserve_aspect_ratio;
+    info.failed = FALSE;
 
     g_signal_connect(loader, "size-prepared", G_CALLBACK(at_scale_size_prepared_cb), &info);
 
     pixbuf = load_from_stream(loader, stream, cancellable, error);
     g_object_unref(loader);
+
+    if (info.failed) {
+        g_clear_pointer(&pixbuf, g_object_unref);
+        at_scale_set_error(&info, error);
+    }
 
     return pixbuf;
 }
@@ -1374,11 +1417,13 @@ GdkPixbuf* gdk_pixbuf_new_from_stream_at_scale(GInputStream* stream,
 static void load_from_stream_async_cb(GObject* stream, GAsyncResult* res, gpointer data) {
     GTask* task = data;
     GdkPixbufLoader* loader;
+    AtScaleData* info;
     GdkPixbuf* pixbuf;
     GError* error = NULL;
     GBytes* bytes = NULL;
 
     loader = g_task_get_task_data(task);
+    info = g_object_get_data(G_OBJECT(loader), AT_SCALE_DATA_KEY);
 
     bytes = g_input_stream_read_bytes_finish(G_INPUT_STREAM(stream), res, &error);
 
@@ -1388,6 +1433,8 @@ static void load_from_stream_async_cb(GObject* stream, GAsyncResult* res, gpoint
     }
     else if (g_bytes_get_size(bytes) > 0) {
         if (!gdk_pixbuf_loader_write(loader, g_bytes_get_data(bytes, NULL), g_bytes_get_size(bytes), &error)) {
+            if (info)
+                at_scale_set_error(info, &error);
             gdk_pixbuf_loader_close(loader, NULL);
             g_task_return_error(task, error);
             goto out;
@@ -1397,12 +1444,20 @@ static void load_from_stream_async_cb(GObject* stream, GAsyncResult* res, gpoint
     }
     else {
         if (!gdk_pixbuf_loader_close(loader, &error)) {
+            if (info)
+                at_scale_set_error(info, &error);
             g_task_return_error(task, error);
             goto out;
         }
 
         pixbuf = gdk_pixbuf_loader_get_pixbuf(loader);
-        g_task_return_pointer(task, g_object_ref(pixbuf), g_object_unref);
+        if (info && info->failed) {
+            at_scale_set_error(info, &error);
+            g_task_return_error(task, error);
+        }
+        else {
+            g_task_return_pointer(task, g_object_ref(pixbuf), g_object_unref);
+        }
     }
 
 out:
@@ -1449,11 +1504,11 @@ void gdk_pixbuf_new_from_stream_at_scale_async(GInputStream* stream,
     data->width = width;
     data->height = height;
     data->preserve_aspect_ratio = preserve_aspect_ratio;
+    data->failed = FALSE;
 
     loader = gdk_pixbuf_loader_new();
     g_signal_connect(loader, "size-prepared", G_CALLBACK(at_scale_size_prepared_cb), data);
-    g_object_set_data_full(G_OBJECT(loader), "gdk-pixbuf-please-kill-me-later", data,
-                           (GDestroyNotify)at_scale_data_async_data_free);
+    g_object_set_data_full(G_OBJECT(loader), AT_SCALE_DATA_KEY, data, (GDestroyNotify)at_scale_data_async_data_free);
 
     task = g_task_new(stream, cancellable, callback, user_data);
     g_task_set_source_tag(task, (gpointer)&gdk_pixbuf_new_from_stream_at_scale_async_tag);
