@@ -996,7 +996,8 @@ void gdk_pixbuf_fill(GdkPixbuf* pixbuf, guint32 pixel) {
                 break;
         }
 
-        pixels += pixbuf->rowstride;
+        if (h != 0)
+            pixels += pixbuf->rowstride;
     }
 }
 

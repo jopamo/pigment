@@ -82,11 +82,11 @@ GdkPixbuf* gdk_pixbuf_add_alpha(const GdkPixbuf* pixbuf, gboolean substitute_col
 
     ret_pixels = gdk_pixbuf_get_pixels(new_pixbuf);
 
-    for (y = 0; y < pixbuf->height; y++, src_pixels += pixbuf->rowstride, ret_pixels += new_pixbuf->rowstride) {
+    for (y = 0; y < pixbuf->height; y++) {
         guchar tr, tg, tb;
 
-        src = src_pixels;
-        dest = ret_pixels;
+        src = src_pixels + (gsize)y * pixbuf->rowstride;
+        dest = ret_pixels + (gsize)y * new_pixbuf->rowstride;
 
         if (pixbuf->has_alpha) {
             /* Just subst color, we already copied everything else */
@@ -220,10 +220,8 @@ void gdk_pixbuf_saturate_and_pixelate(const GdkPixbuf* src, GdkPixbuf* dest, gfl
 #define SATURATE(v) ((1.0 - saturation) * intensity + saturation * (v))
 
         for (i = 0; i < height; i++) {
-            src_pixel = src_line;
-            src_line += src_rowstride;
-            dest_pixel = dest_line;
-            dest_line += dest_rowstride;
+            src_pixel = src_line + (gsize)i * src_rowstride;
+            dest_pixel = dest_line + (gsize)i * dest_rowstride;
 
             for (j = 0; j < width; j++) {
                 intensity = INTENSITY(src_pixel[0], src_pixel[1], src_pixel[2]);
