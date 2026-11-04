@@ -434,10 +434,12 @@ GdkPixbuf* gdk_pixbuf_flip(const GdkPixbuf* src, gboolean horizontal) {
 
     if (!horizontal) /* flip vertical */
     {
+        gsize row_bytes = (gsize)dest->width * dest->n_channels;
+
         for (y = 0; y < dest->height; y++) {
             p = src_pixels + OFFSET(src, 0, y);
             q = dest_pixels + OFFSET(dest, 0, dest->height - y - 1);
-            memcpy(q, p, dest->rowstride);
+            memcpy(q, p, row_bytes);
         }
     }
     else /* flip horizontal */
