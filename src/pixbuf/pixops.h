@@ -19,6 +19,9 @@
 
 #include <glib.h>
 
+/* Fractional bits used for pixops source coordinates. */
+#define SCALE_SHIFT 16
+
 /* Interpolation modes; must match GdkInterpType */
 typedef enum {
     PIXOPS_INTERP_NEAREST,

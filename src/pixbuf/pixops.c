@@ -27,7 +27,6 @@
 #define SUBSAMPLE_BITS 4
 #define SUBSAMPLE (1 << SUBSAMPLE_BITS)
 #define SUBSAMPLE_MASK ((1 << SUBSAMPLE_BITS) - 1)
-#define SCALE_SHIFT 16
 
 static void _pixops_scale_real(guchar* dest_buf,
                                int render_x0,
@@ -1694,8 +1693,10 @@ static guchar* prescale(const guchar** src_bufp,
     /* Scale the whole source image into a top-left-aligned temporary pixbuf.
      * render_[xy][01] are done in the final scaling, not here, as they are
      * measured in the coordinate system of the scaled image. */
-    tmp_width = lrint(src_width * prescale_x);
-    tmp_height = lrint(src_height * prescale_y);
+    /* Prescaling reduces the filter size; it must not enlarge an axis whose
+     * factor is already above one. */
+    tmp_width = MAX(1, (int)lrint(MIN((double)src_width, src_width * prescale_x)));
+    tmp_height = MAX(1, (int)lrint(MIN((double)src_height, src_height * prescale_y)));
 
     /* We are below the gdk_ interface, so create the temp image manually.
      * Code copied from gdk_pixbuf_new() */
@@ -1722,6 +1723,29 @@ static guchar* prescale(const guchar** src_bufp,
     *scale_yp /= prescale_y;
 
     return tmp_buf;
+}
+
+/* Repeat the reduction until the filter table is below its limit. */
+static gboolean prescale_to_limit(const guchar** src_bufp,
+                                  int* src_widthp,
+                                  int* src_heightp,
+                                  int* src_rowstridep,
+                                  int src_channels,
+                                  gboolean src_has_alpha,
+                                  double* scale_xp,
+                                  double* scale_yp,
+                                  PixopsInterpType interp_type,
+                                  guchar** tmp_bufp) {
+    *tmp_bufp = NULL;
+    while (need_to_prescale(*scale_xp, *scale_yp, interp_type)) {
+        guchar* next = prescale(src_bufp, src_widthp, src_heightp, src_rowstridep, src_channels, src_has_alpha,
+                                scale_xp, scale_yp, interp_type);
+        if (!next)
+            return FALSE;
+        g_free(*tmp_bufp);
+        *tmp_bufp = next;
+    }
+    return TRUE;
 }
 /* End of two-step scaler */
 
@@ -1766,9 +1790,9 @@ static void _pixops_composite_color_real(guchar* dest_buf,
         return;
     }
 
-    if (need_to_prescale(scale_x, scale_y, interp_type))
-        tmp_buf = prescale(&src_buf, &src_width, &src_height, &src_rowstride, src_channels, src_has_alpha, &scale_x,
-                           &scale_y, interp_type);
+    if (!prescale_to_limit(&src_buf, &src_width, &src_height, &src_rowstride, src_channels, src_has_alpha, &scale_x,
+                           &scale_y, interp_type, &tmp_buf))
+        goto free_tmp;
 
     filter.overall_alpha = overall_alpha / 255.;
     if (!make_weights(&filter, interp_type, scale_x, scale_y))
@@ -1904,9 +1928,9 @@ static void _pixops_composite_real(guchar* dest_buf,
         return;
     }
 
-    if (need_to_prescale(scale_x, scale_y, interp_type))
-        tmp_buf = prescale(&src_buf, &src_width, &src_height, &src_rowstride, src_channels, src_has_alpha, &scale_x,
-                           &scale_y, interp_type);
+    if (!prescale_to_limit(&src_buf, &src_width, &src_height, &src_rowstride, src_channels, src_has_alpha, &scale_x,
+                           &scale_y, interp_type, &tmp_buf))
+        goto free_tmp;
 
     filter.overall_alpha = overall_alpha / 255.;
     if (!make_weights(&filter, interp_type, scale_x, scale_y))
@@ -2227,9 +2251,9 @@ static void _pixops_scale_real(guchar* dest_buf,
         return;
     }
 
-    if (need_to_prescale(scale_x, scale_y, interp_type))
-        tmp_buf = prescale(&src_buf, &src_width, &src_height, &src_rowstride, src_channels, src_has_alpha, &scale_x,
-                           &scale_y, interp_type);
+    if (!prescale_to_limit(&src_buf, &src_width, &src_height, &src_rowstride, src_channels, src_has_alpha, &scale_x,
+                           &scale_y, interp_type, &tmp_buf))
+        goto free_tmp;
 
     filter.overall_alpha = 1.0;
     if (!make_weights(&filter, interp_type, scale_x, scale_y))

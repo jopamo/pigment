@@ -29,9 +29,43 @@ static gboolean check_size_valid(int check_size) {
     return check_size > 0 && (check_size & (check_size - 1)) == 0;
 }
 
-static gboolean transform_parameters_valid(double offset_x, double offset_y, double scale_x, double scale_y) {
-    return isfinite(offset_x) && isfinite(offset_y) && isfinite(scale_x) && isfinite(scale_y) && scale_x >= 0.0 &&
-           scale_y >= 0.0;
+static gboolean transform_parameters_valid(int dest_x,
+                                           int dest_y,
+                                           int dest_width,
+                                           int dest_height,
+                                           double* offset_x,
+                                           double* offset_y,
+                                           double scale_x,
+                                           double scale_y,
+                                           GdkInterpType interp_type) {
+    double render_x0, render_x1, render_y0, render_y1;
+
+    if (!isfinite(*offset_x) || !isfinite(*offset_y) || !isfinite(scale_x) || !isfinite(scale_y) || scale_x < 0.0 ||
+        scale_y < 0.0)
+        return FALSE;
+
+    *offset_x = floor(*offset_x + 0.5);
+    *offset_y = floor(*offset_y + 0.5);
+    render_x0 = (double)dest_x - *offset_x;
+    render_x1 = (double)dest_x + dest_width - *offset_x;
+    render_y0 = (double)dest_y - *offset_y;
+    render_y1 = (double)dest_y + dest_height - *offset_y;
+    if (render_x0 < G_MININT || render_x0 > G_MAXINT || render_x1 < G_MININT || render_x1 > G_MAXINT ||
+        render_y0 < G_MININT || render_y0 > G_MAXINT || render_y1 < G_MININT || render_y1 > G_MAXINT)
+        return FALSE;
+
+    if (interp_type == GDK_INTERP_NEAREST) {
+        double max_x = MAX(fabs(render_x0), fabs(render_x1)) + 1.0;
+        double max_y = MAX(fabs(render_y0), fabs(render_y1)) + 1.0;
+        double x_step = scale_x > 0.0 ? (double)(1 << SCALE_SHIFT) / scale_x : 0.0;
+        double y_step = scale_y > 0.0 ? (double)(1 << SCALE_SHIFT) / scale_y : 0.0;
+
+        if (!isfinite(x_step) || !isfinite(y_step) || x_step > (double)G_MAXINT64 / max_x ||
+            y_step > (double)G_MAXINT64 / max_y)
+            return FALSE;
+    }
+
+    return TRUE;
 }
 
 /**
@@ -82,10 +116,8 @@ void gdk_pixbuf_scale(const GdkPixbuf* src,
     g_return_if_fail(GDK_IS_PIXBUF(dest));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
-    g_return_if_fail(transform_parameters_valid(offset_x, offset_y, scale_x, scale_y));
-
-    offset_x = floor(offset_x + 0.5);
-    offset_y = floor(offset_y + 0.5);
+    g_return_if_fail(transform_parameters_valid(dest_x, dest_y, dest_width, dest_height, &offset_x, &offset_y, scale_x,
+                                                scale_y, interp_type));
 
     /* Force an implicit copy */
     dest_pixels = gdk_pixbuf_get_pixels(dest);
@@ -146,11 +178,9 @@ void gdk_pixbuf_composite(const GdkPixbuf* src,
     g_return_if_fail(GDK_IS_PIXBUF(dest));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
-    g_return_if_fail(transform_parameters_valid(offset_x, offset_y, scale_x, scale_y));
+    g_return_if_fail(transform_parameters_valid(dest_x, dest_y, dest_width, dest_height, &offset_x, &offset_y, scale_x,
+                                                scale_y, interp_type));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
-
-    offset_x = floor(offset_x + 0.5);
-    offset_y = floor(offset_y + 0.5);
 
     /* Force an implicit copy */
     dest_pixels = gdk_pixbuf_get_pixels(dest);
@@ -221,12 +251,10 @@ void gdk_pixbuf_composite_color(const GdkPixbuf* src,
     g_return_if_fail(GDK_IS_PIXBUF(dest));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
-    g_return_if_fail(transform_parameters_valid(offset_x, offset_y, scale_x, scale_y));
+    g_return_if_fail(transform_parameters_valid(dest_x, dest_y, dest_width, dest_height, &offset_x, &offset_y, scale_x,
+                                                scale_y, interp_type));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
     g_return_if_fail(check_size_valid(check_size));
-
-    offset_x = floor(offset_x + 0.5);
-    offset_y = floor(offset_y + 0.5);
 
     /* Force an implicit copy */
     dest_pixels = gdk_pixbuf_get_pixels(dest);
