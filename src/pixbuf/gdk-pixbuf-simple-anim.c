@@ -247,8 +247,11 @@ static void gdk_pixbuf_simple_anim_iter_finalize(GObject* object) {
 
 static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* current_time) {
     GdkPixbufSimpleAnimIter* iter;
-    gint elapsed;
-    gint loop_count;
+    gint64 elapsed;
+    gint64 loop_count;
+    guint64 sec_delta;
+    guint64 sec_usec;
+    gint64 usec_delta;
     GList* tmp;
     GList* old;
 
@@ -259,17 +262,23 @@ static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* curre
 
     iter->current_time = *current_time;
 
-    /* We use milliseconds for all times */
-    elapsed = (((iter->current_time.tv_sec - iter->start_time.tv_sec) * G_USEC_PER_SEC + iter->current_time.tv_usec -
-                iter->start_time.tv_usec)) /
-              1000;
-
-    if (elapsed < 0) {
+    if (iter->current_time.tv_sec < iter->start_time.tv_sec ||
+        (iter->current_time.tv_sec == iter->start_time.tv_sec &&
+         iter->current_time.tv_usec < iter->start_time.tv_usec)) {
         /* Try to compensate; probably the system clock
          * was set backwards
          */
         iter->start_time = iter->current_time;
         elapsed = 0;
+    }
+    else {
+        sec_delta = (guint64)iter->current_time.tv_sec - (guint64)iter->start_time.tv_sec;
+        usec_delta = (gint64)iter->current_time.tv_usec - (gint64)iter->start_time.tv_usec;
+
+        if (!g_uint64_checked_mul(&sec_usec, sec_delta, G_USEC_PER_SEC) || sec_usec > (guint64)G_MAXINT64 - 1000000)
+            elapsed = G_MAXINT64;
+        else
+            elapsed = ((gint64)sec_usec + usec_delta) / 1000;
     }
 
     g_assert(iter->simple_anim->total_time > 0);
@@ -280,7 +289,7 @@ static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* curre
     loop_count = elapsed / iter->simple_anim->total_time;
     elapsed = elapsed % iter->simple_anim->total_time;
 
-    iter->position = elapsed;
+    iter->position = (gint)elapsed;
 
     /* Now move to the proper frame */
     if (loop_count < 1 || iter->simple_anim->loop)
