@@ -25,6 +25,10 @@
 #include "gdk-pixbuf-private.h"
 #include "pixops.h"
 
+static gboolean check_size_valid(int check_size) {
+    return check_size > 0 && (check_size & (check_size - 1)) == 0;
+}
+
 /**
  * gdk_pixbuf_scale:
  * @src: a #GdkPixbuf
@@ -205,6 +209,7 @@ void gdk_pixbuf_composite_color(const GdkPixbuf* src,
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
+    g_return_if_fail(check_size_valid(check_size));
 
     offset_x = floor(offset_x + 0.5);
     offset_y = floor(offset_y + 0.5);
@@ -299,6 +304,7 @@ GdkPixbuf* gdk_pixbuf_composite_color_simple(const GdkPixbuf* src,
     g_return_val_if_fail(dest_width > 0, NULL);
     g_return_val_if_fail(dest_height > 0, NULL);
     g_return_val_if_fail(overall_alpha >= 0 && overall_alpha <= 255, NULL);
+    g_return_val_if_fail(check_size_valid(check_size), NULL);
 
     dest = gdk_pixbuf_new(GDK_COLORSPACE_RGB, src->has_alpha, 8, dest_width, dest_height);
     if (!dest)
