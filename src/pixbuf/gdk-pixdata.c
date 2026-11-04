@@ -244,7 +244,7 @@ gdk_pixdata_serialize(const GdkPixdata* pixdata, guint* stream_length_p) {
     }
 
 static inline const guint8* get_uint32(const guint8* stream, guint* result) {
-    *result = (stream[0] << 24) + (stream[1] << 16) + (stream[2] << 8) + stream[3];
+    *result = ((guint32)stream[0] << 24) | ((guint32)stream[1] << 16) | ((guint32)stream[2] << 8) | stream[3];
     return stream + 4;
 }
 
