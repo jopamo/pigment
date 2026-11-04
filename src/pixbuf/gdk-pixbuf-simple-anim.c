@@ -42,7 +42,7 @@ struct _GdkPixbufSimpleAnim {
 
     gint n_frames;
 
-    gfloat rate;
+    gint delay_time;
     gint total_time;
 
     GList* frames;
@@ -350,21 +350,32 @@ static gboolean on_currently_loading_frame(GdkPixbufAnimationIter* anim_iter) {
  * gdk_pixbuf_simple_anim_new:
  * @width: the width of the animation
  * @height: the height of the animation
- * @rate: the speed of the animation, in frames per second
+ * @rate: the speed of the animation, in frames per second. Must be positive
+ *   and finite.
  *
  * Creates a new, empty animation.
  *
- * Returns: a newly allocated #GdkPixbufSimpleAnim
+ * Frame delays are rounded down to whole milliseconds, with a minimum delay
+ * of one millisecond.
+ *
+ * Returns: (nullable): a newly allocated #GdkPixbufSimpleAnim, or `NULL` if
+ *   @rate cannot be represented in milliseconds
  *
  * Since: 2.8
  */
 GdkPixbufSimpleAnim* gdk_pixbuf_simple_anim_new(gint width, gint height, gfloat rate) {
     GdkPixbufSimpleAnim* anim;
+    double delay;
+
+    g_return_val_if_fail(rate > 0.0f && isfinite(rate), NULL);
+
+    delay = 1000.0 / rate;
+    g_return_val_if_fail(delay <= G_MAXINT, NULL);
 
     anim = g_object_new(GDK_TYPE_PIXBUF_SIMPLE_ANIM, NULL);
     anim->width = width;
     anim->height = height;
-    anim->rate = rate;
+    anim->delay_time = MAX(1, (gint)delay);
 
     return anim;
 }
@@ -382,17 +393,20 @@ GdkPixbufSimpleAnim* gdk_pixbuf_simple_anim_new(gint width, gint height, gfloat 
  */
 void gdk_pixbuf_simple_anim_add_frame(GdkPixbufSimpleAnim* animation, GdkPixbuf* pixbuf) {
     GdkPixbufFrame* frame;
-    int nframe = 0;
+    gint delay_time;
 
     g_return_if_fail(GDK_IS_PIXBUF_SIMPLE_ANIM(animation));
     g_return_if_fail(GDK_IS_PIXBUF(pixbuf));
+    g_return_if_fail(animation->delay_time > 0);
+    g_return_if_fail(animation->total_time <= G_MAXINT - animation->delay_time);
 
-    nframe = g_list_length(animation->frames);
+    delay_time = animation->delay_time;
 
     frame = g_new0(GdkPixbufFrame, 1);
-    frame->delay_time = (gint)(1000 / animation->rate);
-    frame->elapsed = (gint)(frame->delay_time * nframe);
-    animation->total_time += frame->delay_time;
+    frame->delay_time = delay_time;
+    frame->elapsed = animation->total_time;
+    animation->total_time += delay_time;
+    animation->n_frames++;
     frame->pixbuf = g_object_ref(pixbuf);
 
     animation->frames = g_list_append(animation->frames, frame);
