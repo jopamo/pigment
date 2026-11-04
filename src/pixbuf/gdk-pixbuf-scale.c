@@ -29,6 +29,11 @@ static gboolean check_size_valid(int check_size) {
     return check_size > 0 && (check_size & (check_size - 1)) == 0;
 }
 
+static gboolean transform_parameters_valid(double offset_x, double offset_y, double scale_x, double scale_y) {
+    return isfinite(offset_x) && isfinite(offset_y) && isfinite(scale_x) && isfinite(scale_y) && scale_x >= 0.0 &&
+           scale_y >= 0.0;
+}
+
 /**
  * gdk_pixbuf_scale:
  * @src: a #GdkPixbuf
@@ -37,10 +42,12 @@ static gboolean check_size_valid(int check_size) {
  * @dest_y: the top coordinate for region to render
  * @dest_width: the width of the region to render
  * @dest_height: the height of the region to render
- * @offset_x: the offset in the X direction (currently rounded to an integer)
- * @offset_y: the offset in the Y direction (currently rounded to an integer)
- * @scale_x: the scale factor in the X direction
- * @scale_y: the scale factor in the Y direction
+ * @offset_x: the offset in the X direction (currently rounded to an integer).
+ *   Must be finite.
+ * @offset_y: the offset in the Y direction (currently rounded to an integer).
+ *   Must be finite.
+ * @scale_x: the scale factor in the X direction. Must be finite and non-negative.
+ * @scale_y: the scale factor in the Y direction. Must be finite and non-negative.
  * @interp_type: the interpolation type for the transformation.
  *
  * Creates a transformation of the source image @src by scaling by
@@ -75,6 +82,7 @@ void gdk_pixbuf_scale(const GdkPixbuf* src,
     g_return_if_fail(GDK_IS_PIXBUF(dest));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
+    g_return_if_fail(transform_parameters_valid(offset_x, offset_y, scale_x, scale_y));
 
     offset_x = floor(offset_x + 0.5);
     offset_y = floor(offset_y + 0.5);
@@ -96,10 +104,12 @@ void gdk_pixbuf_scale(const GdkPixbuf* src,
  * @dest_y: the top coordinate for region to render
  * @dest_width: the width of the region to render
  * @dest_height: the height of the region to render
- * @offset_x: the offset in the X direction (currently rounded to an integer)
- * @offset_y: the offset in the Y direction (currently rounded to an integer)
- * @scale_x: the scale factor in the X direction
- * @scale_y: the scale factor in the Y direction
+ * @offset_x: the offset in the X direction (currently rounded to an integer).
+ *   Must be finite.
+ * @offset_y: the offset in the Y direction (currently rounded to an integer).
+ *   Must be finite.
+ * @scale_x: the scale factor in the X direction. Must be finite and non-negative.
+ * @scale_y: the scale factor in the Y direction. Must be finite and non-negative.
  * @interp_type: the interpolation type for the transformation.
  * @overall_alpha: overall alpha for source image (0..255)
  *
@@ -136,6 +146,7 @@ void gdk_pixbuf_composite(const GdkPixbuf* src,
     g_return_if_fail(GDK_IS_PIXBUF(dest));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
+    g_return_if_fail(transform_parameters_valid(offset_x, offset_y, scale_x, scale_y));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
 
     offset_x = floor(offset_x + 0.5);
@@ -159,10 +170,12 @@ void gdk_pixbuf_composite(const GdkPixbuf* src,
  * @dest_y: the top coordinate for region to render
  * @dest_width: the width of the region to render
  * @dest_height: the height of the region to render
- * @offset_x: the offset in the X direction (currently rounded to an integer)
- * @offset_y: the offset in the Y direction (currently rounded to an integer)
- * @scale_x: the scale factor in the X direction
- * @scale_y: the scale factor in the Y direction
+ * @offset_x: the offset in the X direction (currently rounded to an integer).
+ *   Must be finite.
+ * @offset_y: the offset in the Y direction (currently rounded to an integer).
+ *   Must be finite.
+ * @scale_x: the scale factor in the X direction. Must be finite and non-negative.
+ * @scale_y: the scale factor in the Y direction. Must be finite and non-negative.
  * @interp_type: the interpolation type for the transformation.
  * @overall_alpha: overall alpha for source image (0..255)
  * @check_x: the X offset for the checkboard (origin of checkboard is at -@check_x, -@check_y)
@@ -208,6 +221,7 @@ void gdk_pixbuf_composite_color(const GdkPixbuf* src,
     g_return_if_fail(GDK_IS_PIXBUF(dest));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
     g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
+    g_return_if_fail(transform_parameters_valid(offset_x, offset_y, scale_x, scale_y));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
     g_return_if_fail(check_size_valid(check_size));
 
