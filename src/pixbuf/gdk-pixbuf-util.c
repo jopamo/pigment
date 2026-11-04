@@ -20,11 +20,20 @@
  */
 
 #include "config.h"
+#include <math.h>
 #include <string.h>
 #include <libintl.h>
 
 #include "gdk-pixbuf-transform.h"
 #include "gdk-pixbuf-private.h"
+
+static inline guchar clamp_pixel_value(gdouble value) {
+    if (!(value > 0.0))
+        return 0;
+    if (value >= 255.0)
+        return 255;
+    return (guchar)value;
+}
 
 /**
  * gdk_pixbuf_add_alpha:
@@ -190,13 +199,14 @@ void gdk_pixbuf_saturate_and_pixelate(const GdkPixbuf* src, GdkPixbuf* dest, gfl
     g_return_if_fail(gdk_pixbuf_get_width(src) == gdk_pixbuf_get_width(dest));
     g_return_if_fail(gdk_pixbuf_get_has_alpha(src) == gdk_pixbuf_get_has_alpha(dest));
     g_return_if_fail(gdk_pixbuf_get_colorspace(src) == gdk_pixbuf_get_colorspace(dest));
+    g_return_if_fail(isfinite(saturation));
 
     if (saturation == 1.0 && !pixelate) {
         if (dest != src)
             gdk_pixbuf_copy_area(src, 0, 0, gdk_pixbuf_get_width(src), gdk_pixbuf_get_height(src), dest, 0, 0);
     }
     else {
-        int i, j, t;
+        int i, j;
         int width, height, has_alpha, src_rowstride, dest_rowstride, bytes_per_pixel;
         const guchar* src_line;
         guchar* dest_line;
@@ -216,7 +226,6 @@ void gdk_pixbuf_saturate_and_pixelate(const GdkPixbuf* src, GdkPixbuf* dest, gfl
 
 #define DARK_FACTOR 0.7
 #define INTENSITY(r, g, b) ((r) * 0.30 + (g) * 0.59 + (b) * 0.11)
-#define CLAMP_UCHAR(v) (t = (v), CLAMP(t, 0, 255))
 #define SATURATE(v) ((1.0 - saturation) * intensity + saturation * (v))
 
         for (i = 0; i < height; i++) {
@@ -231,14 +240,14 @@ void gdk_pixbuf_saturate_and_pixelate(const GdkPixbuf* src, GdkPixbuf* dest, gfl
                     dest_pixel[2] = intensity / 2 + 127;
                 }
                 else if (pixelate) {
-                    dest_pixel[0] = CLAMP_UCHAR((SATURATE(src_pixel[0])) * DARK_FACTOR);
-                    dest_pixel[1] = CLAMP_UCHAR((SATURATE(src_pixel[1])) * DARK_FACTOR);
-                    dest_pixel[2] = CLAMP_UCHAR((SATURATE(src_pixel[2])) * DARK_FACTOR);
+                    dest_pixel[0] = clamp_pixel_value((SATURATE(src_pixel[0])) * DARK_FACTOR);
+                    dest_pixel[1] = clamp_pixel_value((SATURATE(src_pixel[1])) * DARK_FACTOR);
+                    dest_pixel[2] = clamp_pixel_value((SATURATE(src_pixel[2])) * DARK_FACTOR);
                 }
                 else {
-                    dest_pixel[0] = CLAMP_UCHAR(SATURATE(src_pixel[0]));
-                    dest_pixel[1] = CLAMP_UCHAR(SATURATE(src_pixel[1]));
-                    dest_pixel[2] = CLAMP_UCHAR(SATURATE(src_pixel[2]));
+                    dest_pixel[0] = clamp_pixel_value(SATURATE(src_pixel[0]));
+                    dest_pixel[1] = clamp_pixel_value(SATURATE(src_pixel[1]));
+                    dest_pixel[2] = clamp_pixel_value(SATURATE(src_pixel[2]));
                 }
 
                 if (has_alpha)
