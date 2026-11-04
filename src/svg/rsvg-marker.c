@@ -111,7 +111,10 @@ static void rsvg_marker_render(const char* marker_name,
         return; /* to avoid the caller having to check for nonexistent markers on every call */
 
     self = (RsvgMarker*)rsvg_acquire_node(ctx, marker_name);
-    if (self == NULL || RSVG_NODE_TYPE(&self->super) != RSVG_NODE_TYPE_MARKER) {
+    if (self == NULL)
+        return;
+
+    if (RSVG_NODE_TYPE(&self->super) != RSVG_NODE_TYPE_MARKER) {
         rsvg_release_node(ctx, &self->super);
         return;
     }
