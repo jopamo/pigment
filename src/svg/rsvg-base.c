@@ -1788,6 +1788,16 @@ void rsvg_handle_get_intrinsic_dimensions(RsvgHandle* handle,
     }
 }
 
+static int dimension_to_int(double value) {
+    if (isnan(value))
+        return 0;
+    if (value >= (double)G_MAXINT)
+        return G_MAXINT;
+    if (value <= (double)G_MININT)
+        return G_MININT;
+    return (int)value;
+}
+
 /**
  * rsvg_handle_get_dimensions_sub:
  * @handle: A #RsvgHandle
@@ -1883,19 +1893,19 @@ gboolean rsvg_handle_get_dimensions_sub(RsvgHandle* handle, RsvgDimensionData* d
         cairo_destroy(cr);
         cairo_surface_destroy(target);
 
-        dimension_data->width = bbox.rect.width;
-        dimension_data->height = bbox.rect.height;
+        dimension_data->width = dimension_to_int(bbox.rect.width);
+        dimension_data->height = dimension_to_int(bbox.rect.height);
     }
     else {
         bbox.rect.width = root->vbox.rect.width;
         bbox.rect.height = root->vbox.rect.height;
 
-        dimension_data->width = (int)(_rsvg_css_hand_normalize_length(&root->w, handle->priv->dpi_x,
-                                                                      bbox.rect.width + bbox.rect.x * 2, 12) +
-                                      0.5);
-        dimension_data->height = (int)(_rsvg_css_hand_normalize_length(&root->h, handle->priv->dpi_y,
-                                                                       bbox.rect.height + bbox.rect.y * 2, 12) +
-                                       0.5);
+        dimension_data->width = dimension_to_int(
+            _rsvg_css_hand_normalize_length(&root->w, handle->priv->dpi_x, bbox.rect.width + bbox.rect.x * 2, 12) +
+            0.5);
+        dimension_data->height = dimension_to_int(
+            _rsvg_css_hand_normalize_length(&root->h, handle->priv->dpi_y, bbox.rect.height + bbox.rect.y * 2, 12) +
+            0.5);
 
         retval = TRUE;
     }
