@@ -644,7 +644,10 @@ static int rsvg_parse_number(RSVGParsePathCtx* ctx, const char* data) {
             case RSVGN_IN_EXPONENT: /* After E and the sign, if applicable */
                 /* LEGAL: DIGIT */
                 if (c >= '0' && c <= '9') {
-                    exponent = exponent * 10 + (c - '0');
+                    if (exponent > (G_MAXINT - (c - '0')) / 10)
+                        exponent = G_MAXINT;
+                    else
+                        exponent = exponent * 10 + (c - '0');
                 }
                 else {
                     end = TRUE;
