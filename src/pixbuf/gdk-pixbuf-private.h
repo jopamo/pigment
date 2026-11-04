@@ -94,6 +94,10 @@ struct _GdkPixbufClass {
     GObjectClass parent_class;
 };
 
+static inline gboolean _gdk_pixbuf_offset_extent_valid(int offset, int extent, int limit) {
+    return offset >= 0 && extent >= 0 && offset <= limit && extent <= limit - offset;
+}
+
 static inline gboolean _gdk_pixbuf_pixel_data_size(int width,
                                                    int height,
                                                    int rowstride,

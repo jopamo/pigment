@@ -25,10 +25,6 @@
 #include "gdk-pixbuf-private.h"
 #include "pixops.h"
 
-static gboolean destination_axis_valid(int offset, int extent, int limit) {
-    return offset >= 0 && extent >= 0 && offset <= limit && extent <= limit - offset;
-}
-
 /**
  * gdk_pixbuf_scale:
  * @src: a #GdkPixbuf
@@ -73,8 +69,8 @@ void gdk_pixbuf_scale(const GdkPixbuf* src,
 
     g_return_if_fail(GDK_IS_PIXBUF(src));
     g_return_if_fail(GDK_IS_PIXBUF(dest));
-    g_return_if_fail(destination_axis_valid(dest_x, dest_width, dest->width));
-    g_return_if_fail(destination_axis_valid(dest_y, dest_height, dest->height));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
 
     offset_x = floor(offset_x + 0.5);
     offset_y = floor(offset_y + 0.5);
@@ -134,8 +130,8 @@ void gdk_pixbuf_composite(const GdkPixbuf* src,
 
     g_return_if_fail(GDK_IS_PIXBUF(src));
     g_return_if_fail(GDK_IS_PIXBUF(dest));
-    g_return_if_fail(destination_axis_valid(dest_x, dest_width, dest->width));
-    g_return_if_fail(destination_axis_valid(dest_y, dest_height, dest->height));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
 
     offset_x = floor(offset_x + 0.5);
@@ -206,8 +202,8 @@ void gdk_pixbuf_composite_color(const GdkPixbuf* src,
 
     g_return_if_fail(GDK_IS_PIXBUF(src));
     g_return_if_fail(GDK_IS_PIXBUF(dest));
-    g_return_if_fail(destination_axis_valid(dest_x, dest_width, dest->width));
-    g_return_if_fail(destination_axis_valid(dest_y, dest_height, dest->height));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, dest_width, dest->width));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, dest_height, dest->height));
     g_return_if_fail(overall_alpha >= 0 && overall_alpha <= 255);
 
     offset_x = floor(offset_x + 0.5);

@@ -144,11 +144,11 @@ void gdk_pixbuf_copy_area(const GdkPixbuf* src_pixbuf,
     g_return_if_fail(src_pixbuf != NULL);
     g_return_if_fail(dest_pixbuf != NULL);
 
-    g_return_if_fail(src_x >= 0 && src_x + width <= src_pixbuf->width);
-    g_return_if_fail(src_y >= 0 && src_y + height <= src_pixbuf->height);
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(src_x, width, src_pixbuf->width));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(src_y, height, src_pixbuf->height));
 
-    g_return_if_fail(dest_x >= 0 && dest_x + width <= dest_pixbuf->width);
-    g_return_if_fail(dest_y >= 0 && dest_y + height <= dest_pixbuf->height);
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_x, width, dest_pixbuf->width));
+    g_return_if_fail(_gdk_pixbuf_offset_extent_valid(dest_y, height, dest_pixbuf->height));
 
     g_return_if_fail(!(gdk_pixbuf_get_has_alpha(src_pixbuf) && !gdk_pixbuf_get_has_alpha(dest_pixbuf)));
 
