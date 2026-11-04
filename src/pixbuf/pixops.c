@@ -271,28 +271,28 @@ static void pixops_scale_nearest(guchar* dest_buf,
     gint64 xmax, xstart, xstop, x_pos, y_pos;
     const guchar* p;
 
-#define INNER_LOOP(SRC_CHANNELS, DEST_CHANNELS, ASSIGN_PIXEL)          \
-    xmax = x + (render_x1 - render_x0) * x_step;                       \
-    xstart = MIN(0, xmax);                                             \
-    xstop = MIN(src_width << SCALE_SHIFT, xmax);                       \
-    p = src + (CLAMP(x, xstart, xstop) >> SCALE_SHIFT) * SRC_CHANNELS; \
-    while (x < xstart) {                                               \
-        ASSIGN_PIXEL;                                                  \
-        dest += DEST_CHANNELS;                                         \
-        x += x_step;                                                   \
-    }                                                                  \
-    while (x < xstop) {                                                \
-        p = src + (x >> SCALE_SHIFT) * SRC_CHANNELS;                   \
-        ASSIGN_PIXEL;                                                  \
-        dest += DEST_CHANNELS;                                         \
-        x += x_step;                                                   \
-    }                                                                  \
-    x_pos = x >> SCALE_SHIFT;                                          \
-    p = src + CLAMP(x_pos, 0, src_width - 1) * SRC_CHANNELS;           \
-    while (x < xmax) {                                                 \
-        ASSIGN_PIXEL;                                                  \
-        dest += DEST_CHANNELS;                                         \
-        x += x_step;                                                   \
+#define INNER_LOOP(SRC_CHANNELS, DEST_CHANNELS, ASSIGN_PIXEL) \
+    xmax = x + (render_x1 - render_x0) * x_step;              \
+    xstart = MIN(0, xmax);                                    \
+    xstop = MIN((gint64)src_width << SCALE_SHIFT, xmax);      \
+    p = src;                                                  \
+    while (x < xstart) {                                      \
+        ASSIGN_PIXEL;                                         \
+        dest += DEST_CHANNELS;                                \
+        x += x_step;                                          \
+    }                                                         \
+    while (x < xstop) {                                       \
+        p = src + (x >> SCALE_SHIFT) * SRC_CHANNELS;          \
+        ASSIGN_PIXEL;                                         \
+        dest += DEST_CHANNELS;                                \
+        x += x_step;                                          \
+    }                                                         \
+    x_pos = x >> SCALE_SHIFT;                                 \
+    p = src + CLAMP(x_pos, 0, src_width - 1) * SRC_CHANNELS;  \
+    while (x < xmax) {                                        \
+        ASSIGN_PIXEL;                                         \
+        dest += DEST_CHANNELS;                                \
+        x += x_step;                                          \
     }
 
     for (i = 0; i < (render_y1 - render_y0); i++) {
@@ -424,7 +424,7 @@ static void pixops_composite_nearest_noscale(guchar* dest_buf,
     xmax = x + (render_x1 - render_x0);                               \
     xstart = MIN(0, xmax);                                            \
     xstop = MIN(src_width, xmax);                                     \
-    p = src + CLAMP(x, xstart, xstop) * SRC_CHANNELS;                 \
+    p = src;                                                          \
     while (x < xstart) {                                              \
         ASSIGN_PIXEL;                                                 \
         dest += DEST_CHANNELS;                                        \
