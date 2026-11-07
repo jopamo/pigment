@@ -121,6 +121,10 @@ static gint clamp_int64_to_int(gint64 value) {
     return (gint)value;
 }
 
+static guchar clamp_double_to_uchar(double value) {
+    return (guchar)CLAMP(clamp_double_to_int(value), 0, 255);
+}
+
 static void rsvg_filter_primitive_free(RsvgNode* self) {
     RsvgFilterPrimitive* primitive;
 
@@ -212,6 +216,9 @@ static guchar get_interp_pixel(guchar* src, gdouble ox, gdouble oy, guchar ch, R
     double c, c1, c2, c3, c4;
     double fox, foy, cox, coy;
 
+    if (!isfinite(ox) || !isfinite(oy))
+        return 0;
+
     xmod = fmod(ox, 1.0);
     ymod = fmod(oy, 1.0);
 
@@ -247,7 +254,7 @@ static guchar get_interp_pixel(guchar* src, gdouble ox, gdouble oy, guchar ch, R
 
     c = (c1 * dist1 + c2 * dist2 + c3 * dist3 + c4 * dist4) / (dist1 + dist2 + dist3 + dist4);
 
-    return (guchar)c;
+    return clamp_double_to_uchar(c);
 }
 
 static void rsvg_filter_fix_coordinate_system(RsvgFilterContext* ctx, RsvgState* state, RsvgBbox* bbox) {
@@ -3944,6 +3951,13 @@ static vector3 normalise(vector3 A) {
     double divisor;
     divisor = norm(A);
 
+    if (divisor == 0.0 || !isfinite(divisor)) {
+        A.x = 0.0;
+        A.y = 0.0;
+        A.z = 0.0;
+        return A;
+    }
+
     A.x /= divisor;
     A.y /= divisor;
     A.z /= divisor;
@@ -4013,11 +4027,11 @@ static vector3 get_surface_normal(guchar* I,
         mrow = 1;
 
     fnmx = get_light_normal_matrix_x(mrow * 3 + mcol);
-    factorx = fnmx.factor / rawdx;
+    factorx = (rawdx == 0.0 || !isfinite(rawdx)) ? 0.0 : fnmx.factor / rawdx;
     Kx = fnmx.matrix;
 
     fnmy = get_light_normal_matrix_y(mrow * 3 + mcol);
-    factory = fnmy.factor / rawdy;
+    factory = (rawdy == 0.0 || !isfinite(rawdy)) ? 0.0 : fnmy.factor / rawdy;
     Ky = fnmy.matrix;
 
     Nx = -surfaceScale * factorx *
@@ -4131,9 +4145,16 @@ static vector3 get_light_color(RsvgNodeLightSource* source,
 
     base = -dotproduct(L, s);
 
+    if (!isfinite(base) || base < 0.0) {
+        output.x = 0;
+        output.y = 0;
+        output.z = 0;
+        return output;
+    }
+    base = MIN(base, 1.0);
     angle = acos(base);
 
-    if (base < 0 || angle > source->limitingconeAngle) {
+    if (angle > source->limitingconeAngle) {
         output.x = 0;
         output.y = 0;
         output.z = 0;
@@ -4156,12 +4177,18 @@ static void rsvg_node_light_source_set_atts(RsvgNode* self, RsvgHandle* ctx, Rsv
     data = (RsvgNodeLightSource*)self;
 
     if (rsvg_property_bag_size(atts)) {
-        if ((value = rsvg_property_bag_lookup(atts, "azimuth")))
-            data->azimuth = rsvg_css_parse_angle(value) / 180.0 * M_PI;
-        if ((value = rsvg_property_bag_lookup(atts, "elevation")))
-            data->elevation = rsvg_css_parse_angle(value) / 180.0 * M_PI;
-        if ((value = rsvg_property_bag_lookup(atts, "limitingConeAngle")))
-            data->limitingconeAngle = rsvg_css_parse_angle(value) / 180.0 * M_PI;
+        if ((value = rsvg_property_bag_lookup(atts, "azimuth"))) {
+            double azimuth = rsvg_css_parse_angle(value);
+            data->azimuth = isfinite(azimuth) ? azimuth / 180.0 * M_PI : 0.0;
+        }
+        if ((value = rsvg_property_bag_lookup(atts, "elevation"))) {
+            double elevation = rsvg_css_parse_angle(value);
+            data->elevation = isfinite(elevation) ? elevation / 180.0 * M_PI : 0.0;
+        }
+        if ((value = rsvg_property_bag_lookup(atts, "limitingConeAngle"))) {
+            double angle = rsvg_css_parse_angle(value);
+            data->limitingconeAngle = isfinite(angle) ? angle / 180.0 * M_PI : G_PI;
+        }
         if ((value = rsvg_property_bag_lookup(atts, "x")))
             data->x = data->pointsAtX = _rsvg_css_parse_length(value);
         if ((value = rsvg_property_bag_lookup(atts, "y")))
@@ -4174,8 +4201,10 @@ static void rsvg_node_light_source_set_atts(RsvgNode* self, RsvgHandle* ctx, Rsv
             data->pointsAtY = _rsvg_css_parse_length(value);
         if ((value = rsvg_property_bag_lookup(atts, "pointsAtZ")))
             data->pointsAtZ = _rsvg_css_parse_length(value);
-        if ((value = rsvg_property_bag_lookup(atts, "specularExponent")))
-            data->specularExponent = g_ascii_strtod(value, NULL);
+        if ((value = rsvg_property_bag_lookup(atts, "specularExponent"))) {
+            double exponent = g_ascii_strtod(value, NULL);
+            data->specularExponent = isfinite(exponent) ? exponent : 1.0;
+        }
     }
 }
 
@@ -4185,6 +4214,10 @@ RsvgNode* rsvg_new_node_light_source(char type) {
     _rsvg_node_init(&data->super, RSVG_NODE_TYPE_LIGHT_SOURCE);
     data->super.free = _rsvg_node_free;
     data->super.set_atts = rsvg_node_light_source_set_atts;
+    data->azimuth = 0.0;
+    data->elevation = 0.0;
+    data->x = data->y = data->z = _rsvg_css_parse_length("0");
+    data->pointsAtX = data->pointsAtY = data->pointsAtZ = _rsvg_css_parse_length("0");
     data->specularExponent = 1;
     if (type == 's')
         data->type = SPOTLIGHT;
@@ -4192,7 +4225,7 @@ RsvgNode* rsvg_new_node_light_source(char type) {
         data->type = DISTANTLIGHT;
     else
         data->type = POINTLIGHT;
-    data->limitingconeAngle = 180;
+    data->limitingconeAngle = G_PI;
     return &data->super;
 }
 
@@ -4275,7 +4308,7 @@ static void rsvg_filter_primitive_diffuse_lighting_render(RsvgFilterPrimitive* s
 
     surfaceScale = upself->surfaceScale / 255.0;
 
-    if (upself->dy < 0 || upself->dx < 0) {
+    if (!isfinite(upself->dx) || !isfinite(upself->dy) || upself->dx <= 0 || upself->dy <= 0) {
         dx = 1;
         dy = 1;
         rawdx = 1;
@@ -4298,11 +4331,11 @@ static void rsvg_filter_primitive_diffuse_lighting_render(RsvgFilterPrimitive* s
             factor = dotproduct(N, L);
 
             output_pixels[y * rowstride + x * 4 + ctx->channelmap[0]] =
-                MAX(0, MIN(255, upself->diffuseConstant * factor * lightcolor.x * 255.0));
+                clamp_double_to_uchar(upself->diffuseConstant * factor * lightcolor.x * 255.0);
             output_pixels[y * rowstride + x * 4 + ctx->channelmap[1]] =
-                MAX(0, MIN(255, upself->diffuseConstant * factor * lightcolor.y * 255.0));
+                clamp_double_to_uchar(upself->diffuseConstant * factor * lightcolor.y * 255.0);
             output_pixels[y * rowstride + x * 4 + ctx->channelmap[2]] =
-                MAX(0, MIN(255, upself->diffuseConstant * factor * lightcolor.z * 255.0));
+                clamp_double_to_uchar(upself->diffuseConstant * factor * lightcolor.z * 255.0);
             output_pixels[y * rowstride + x * 4 + ctx->channelmap[3]] = 255;
         }
 
@@ -4337,10 +4370,14 @@ static void rsvg_filter_primitive_diffuse_lighting_set_atts(RsvgNode* self, Rsvg
             rsvg_css_parse_number_optional_number(value, &filter->dx, &filter->dy);
         if ((value = rsvg_property_bag_lookup(atts, "lighting-color")))
             filter->lightingcolor = rsvg_css_parse_color(value, 0);
-        if ((value = rsvg_property_bag_lookup(atts, "diffuseConstant")))
-            filter->diffuseConstant = g_ascii_strtod(value, NULL);
-        if ((value = rsvg_property_bag_lookup(atts, "surfaceScale")))
-            filter->surfaceScale = g_ascii_strtod(value, NULL);
+        if ((value = rsvg_property_bag_lookup(atts, "diffuseConstant"))) {
+            double constant = g_ascii_strtod(value, NULL);
+            filter->diffuseConstant = isfinite(constant) ? constant : 1.0;
+        }
+        if ((value = rsvg_property_bag_lookup(atts, "surfaceScale"))) {
+            double scale = g_ascii_strtod(value, NULL);
+            filter->surfaceScale = isfinite(scale) ? scale : 1.0;
+        }
         if ((value = rsvg_property_bag_lookup(atts, "id")))
             rsvg_defs_register_name(ctx->priv->defs, value, &filter->super.super);
     }
@@ -4453,6 +4490,9 @@ static void rsvg_filter_primitive_specular_lighting_render(RsvgFilterPrimitive* 
                 get_surface_normal(in_pixels, boundarys, x, y, 1, 1, 1.0 / ctx->paffine.xx, 1.0 / ctx->paffine.yy,
                                    upself->surfaceScale, rowstride, ctx->channelmap[3]),
                 L);
+            if (!isfinite(base))
+                base = 0.0;
+            base = CLAMP(base, 0.0, 1.0);
 
             factor = upself->specularConstant * pow(base, upself->specularExponent) * 255;
 
@@ -4465,14 +4505,11 @@ static void rsvg_filter_primitive_specular_lighting_render(RsvgFilterPrimitive* 
                 max = lightcolor.z;
 
             max *= factor;
-            if (max > 255)
-                max = 255;
-            if (max < 0)
-                max = 0;
+            max = clamp_double_to_uchar(max);
 
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[0]] = lightcolor.x * max;
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[1]] = lightcolor.y * max;
-            output_pixels[y * rowstride + x * 4 + ctx->channelmap[2]] = lightcolor.z * max;
+            output_pixels[y * rowstride + x * 4 + ctx->channelmap[0]] = clamp_double_to_uchar(lightcolor.x * max);
+            output_pixels[y * rowstride + x * 4 + ctx->channelmap[1]] = clamp_double_to_uchar(lightcolor.y * max);
+            output_pixels[y * rowstride + x * 4 + ctx->channelmap[2]] = clamp_double_to_uchar(lightcolor.z * max);
             output_pixels[y * rowstride + x * 4 + ctx->channelmap[3]] = max;
         }
 
@@ -4505,12 +4542,18 @@ static void rsvg_filter_primitive_specular_lighting_set_atts(RsvgNode* self, Rsv
             filter->super.height = _rsvg_css_parse_length(value);
         if ((value = rsvg_property_bag_lookup(atts, "lighting-color")))
             filter->lightingcolor = rsvg_css_parse_color(value, 0);
-        if ((value = rsvg_property_bag_lookup(atts, "specularConstant")))
-            filter->specularConstant = g_ascii_strtod(value, NULL);
-        if ((value = rsvg_property_bag_lookup(atts, "specularExponent")))
-            filter->specularExponent = g_ascii_strtod(value, NULL);
-        if ((value = rsvg_property_bag_lookup(atts, "surfaceScale")))
-            filter->surfaceScale = g_ascii_strtod(value, NULL);
+        if ((value = rsvg_property_bag_lookup(atts, "specularConstant"))) {
+            double constant = g_ascii_strtod(value, NULL);
+            filter->specularConstant = isfinite(constant) ? constant : 1.0;
+        }
+        if ((value = rsvg_property_bag_lookup(atts, "specularExponent"))) {
+            double exponent = g_ascii_strtod(value, NULL);
+            filter->specularExponent = isfinite(exponent) ? exponent : 1.0;
+        }
+        if ((value = rsvg_property_bag_lookup(atts, "surfaceScale"))) {
+            double scale = g_ascii_strtod(value, NULL);
+            filter->surfaceScale = isfinite(scale) ? scale : 1.0;
+        }
         if ((value = rsvg_property_bag_lookup(atts, "id")))
             rsvg_defs_register_name(ctx->priv->defs, value, &filter->super.super);
     }
