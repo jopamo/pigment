@@ -1179,8 +1179,13 @@ static void rsvg_filter_primitive_convolve_matrix_set_atts(RsvgNode* self, RsvgH
         if ((value = rsvg_property_bag_lookup(atts, "order"))) {
             double tempx, tempy;
             rsvg_css_parse_number_optional_number(value, &tempx, &tempy);
-            filter->orderx = MAX(tempx, G_MAXINT);
-            filter->ordery = MAX(tempy, G_MAXINT);
+            if (tempx < 1.0 || tempx > G_MAXINT || tempy < 1.0 || tempy > G_MAXINT ||
+                floor(tempx) != tempx || floor(tempy) != tempy)
+                filter->orderx = filter->ordery = 0;
+            else {
+                filter->orderx = (gint)tempx;
+                filter->ordery = (gint)tempy;
+            }
         }
         if ((value = rsvg_property_bag_lookup(atts, "kernelUnitLength")))
             rsvg_css_parse_number_optional_number(value, &filter->dx, &filter->dy);
@@ -1228,6 +1233,8 @@ RsvgNode* rsvg_new_filter_primitive_convolve_matrix(void) {
     filter->super.result = g_string_new("none");
     filter->super.x.factor = filter->super.y.factor = filter->super.width.factor = filter->super.height.factor = 'n';
     filter->KernelMatrix = NULL;
+    filter->orderx = 0;
+    filter->ordery = 0;
     filter->divisor = 0;
     filter->bias = 0;
     filter->dx = 0;
