@@ -367,6 +367,8 @@ static double rsvg_css_normalize_component(const char* s, double max) {
     char* end;
 
     value = g_ascii_strtod(s, &end);
+    if (isnan(value))
+        return 0.;
 
     if (*end == '%') {
         value = CLAMP(value, 0, 100) / 100.0;
@@ -400,7 +402,7 @@ guint32 rsvg_css_parse_color(const char* str, gboolean* inherit) {
 }
 
 guint32 rsvg_css_parse_color_with_alpha(const char* str, gboolean* inherit, double* alpha) {
-    gint val = 0;
+    guint32 val = 0;
     double color_alpha = 1.;
 
     SETINHERIT();
