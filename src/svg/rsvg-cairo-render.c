@@ -172,7 +172,14 @@ static RsvgDrawingCtx* rsvg_cairo_new_drawing_ctx_for_viewport(cairo_t* cr,
      * surfaces allocated during drawing. */
     rsvg_cairo_transformed_image_bounding_box(&affine, width, height, &bbx0, &bby0, &bbx1, &bby1);
 
-    render = rsvg_cairo_render_new(cr, bbx1 - bbx0, bby1 - bby0);
+    double render_width = bbx1 - bbx0;
+    double render_height = bby1 - bby0;
+
+    if (!isfinite(render_width) || !isfinite(render_height) || render_width < 0.0 || render_height < 0.0 ||
+        render_width > G_MAXINT || render_height > G_MAXINT)
+        return NULL;
+
+    render = rsvg_cairo_render_new(cr, render_width, render_height);
 
     if (!render)
         return NULL;
