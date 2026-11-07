@@ -239,19 +239,31 @@ static gboolean _set_source_rsvg_pattern(RsvgDrawingCtx* ctx,
     scwscale = sqrt(taffine.xx * taffine.xx + taffine.xy * taffine.xy);
     schscale = sqrt(taffine.yx * taffine.yx + taffine.yy * taffine.yy);
 
-    pw = patternw * bbwscale * scwscale;
-    ph = patternh * bbhscale * schscale;
-
     scaled_width = patternw * bbwscale;
     scaled_height = patternh * bbhscale;
 
-    if (fabs(scaled_width) < DBL_EPSILON || fabs(scaled_height) < DBL_EPSILON)
+    if (!isfinite(scaled_width) || !isfinite(scaled_height) || scaled_width < DBL_EPSILON ||
+        scaled_height < DBL_EPSILON)
         return FALSE;
+
+    double pw_double = scaled_width * scwscale;
+    double ph_double = scaled_height * schscale;
+
+    if (!isfinite(pw_double) || !isfinite(ph_double) || pw_double <= 0.0 || ph_double <= 0.0 || pw_double > G_MAXINT ||
+        ph_double > G_MAXINT)
+        return FALSE;
+
+    pw = (int)pw_double;
+    ph = (int)ph_double;
 
     scwscale = pw / scaled_width;
     schscale = ph / scaled_height;
 
     surface = cairo_surface_create_similar(cairo_get_target(cr_render), CAIRO_CONTENT_COLOR_ALPHA, pw, ph);
+    if (cairo_surface_status(surface) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy(surface);
+        return FALSE;
+    }
     cr_pattern = cairo_create(surface);
 
     /* Create the pattern coordinate system */
