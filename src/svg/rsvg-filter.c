@@ -3481,6 +3481,27 @@ static void feTurbulence_init(RsvgFilterPrimitiveTurbulence* filter) {
 
 #define feTurbulence_s_curve(t) (t * t * (3. - 2. * t))
 #define feTurbulence_lerp(t, a, b) (a + t * (b - a))
+#define feTurbulence_MAX_LATTICE ((double)(1 << 20))
+
+static double feTurbulence_clamp_lattice(double value) {
+    if (isnan(value))
+        return (double)feTurbulence_PerlinN;
+    if (value <= -feTurbulence_MAX_LATTICE)
+        return -feTurbulence_MAX_LATTICE;
+    if (value >= feTurbulence_MAX_LATTICE)
+        return feTurbulence_MAX_LATTICE - 1.0;
+    return value;
+}
+
+static gint feTurbulence_clamp_stitch(double value) {
+    gint result = clamp_double_to_int(value);
+
+    if (result > (gint)feTurbulence_MAX_LATTICE)
+        return (gint)feTurbulence_MAX_LATTICE;
+    if (result < -(gint)feTurbulence_MAX_LATTICE)
+        return -(gint)feTurbulence_MAX_LATTICE;
+    return result;
+}
 
 static double feTurbulence_noise2(RsvgFilterPrimitiveTurbulence* filter,
                                   int nColorChannel,
@@ -3490,12 +3511,12 @@ static double feTurbulence_noise2(RsvgFilterPrimitiveTurbulence* filter,
     double rx0, rx1, ry0, ry1, *q, sx, sy, a, b, t, u, v;
     register int i, j;
 
-    t = vec[0] + feTurbulence_PerlinN;
+    t = feTurbulence_clamp_lattice(vec[0] + feTurbulence_PerlinN);
     bx0 = (int)t;
     bx1 = bx0 + 1;
     rx0 = t - (int)t;
     rx1 = rx0 - 1.0f;
-    t = vec[1] + feTurbulence_PerlinN;
+    t = feTurbulence_clamp_lattice(vec[1] + feTurbulence_PerlinN);
     by0 = (int)t;
     by1 = by0 + 1;
     ry0 = t - (int)t;
@@ -3576,10 +3597,10 @@ static double feTurbulence_turbulence(RsvgFilterPrimitiveTurbulence* filter,
 
         /* Set up initial stitch values. */
         pStitchInfo = &stitch;
-        stitch.nWidth = (int)(fTileWidth * filter->fBaseFreqX + 0.5f);
-        stitch.nWrapX = fTileX * filter->fBaseFreqX + feTurbulence_PerlinN + stitch.nWidth;
-        stitch.nHeight = (int)(fTileHeight * filter->fBaseFreqY + 0.5f);
-        stitch.nWrapY = fTileY * filter->fBaseFreqY + feTurbulence_PerlinN + stitch.nHeight;
+        stitch.nWidth = feTurbulence_clamp_stitch(fTileWidth * filter->fBaseFreqX + 0.5);
+        stitch.nWrapX = feTurbulence_clamp_stitch(fTileX * filter->fBaseFreqX + feTurbulence_PerlinN + stitch.nWidth);
+        stitch.nHeight = feTurbulence_clamp_stitch(fTileHeight * filter->fBaseFreqY + 0.5);
+        stitch.nWrapY = feTurbulence_clamp_stitch(fTileY * filter->fBaseFreqY + feTurbulence_PerlinN + stitch.nHeight);
     }
 
     vec[0] = point[0] * filter->fBaseFreqX;
@@ -3598,10 +3619,10 @@ static double feTurbulence_turbulence(RsvgFilterPrimitiveTurbulence* filter,
         if (pStitchInfo != NULL) {
             /* Update stitch values. Subtracting PerlinN before the multiplication and
                adding it afterward simplifies to subtracting it once. */
-            stitch.nWidth *= 2;
-            stitch.nWrapX = 2 * stitch.nWrapX - feTurbulence_PerlinN;
-            stitch.nHeight *= 2;
-            stitch.nWrapY = 2 * stitch.nWrapY - feTurbulence_PerlinN;
+            stitch.nWidth = feTurbulence_clamp_stitch((double)stitch.nWidth * 2.0);
+            stitch.nWrapX = feTurbulence_clamp_stitch((double)stitch.nWrapX * 2.0 - feTurbulence_PerlinN);
+            stitch.nHeight = feTurbulence_clamp_stitch((double)stitch.nHeight * 2.0);
+            stitch.nWrapY = feTurbulence_clamp_stitch((double)stitch.nWrapY * 2.0 - feTurbulence_PerlinN);
         }
     }
 
