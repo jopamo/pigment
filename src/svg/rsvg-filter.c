@@ -2919,12 +2919,12 @@ static void rsvg_filter_primitive_composite_render(RsvgFilterPrimitive* self, Rs
     if (upself->mode == COMPOSITE_MODE_ARITHMETIC)
         for (y = boundarys.y0; y < boundarys.y1; y++)
             for (x = boundarys.x0; x < boundarys.x1; x++) {
-                int qr, qa, qb;
+                gint qr, qa, qb;
 
                 qa = in_pixels[4 * x + y * rowstride + 3];
                 qb = in2_pixels[4 * x + y * rowstride2 + 3];
-                qr = (upself->k1 * qa * qb / 255 + upself->k2 * qa + upself->k3 * qb) / 255;
-
+                qr = clamp_int64_to_int(
+                    ((gint64)upself->k1 * qa * qb / 255 + (gint64)upself->k2 * qa + (gint64)upself->k3 * qb) / 255);
                 if (qr > 255)
                     qr = 255;
                 if (qr < 0)
@@ -2932,16 +2932,19 @@ static void rsvg_filter_primitive_composite_render(RsvgFilterPrimitive* self, Rs
                 output_pixels[4 * x + y * rowstrideo + 3] = qr;
                 if (qr)
                     for (i = 0; i < 3; i++) {
-                        int ca, cb, cr;
+                        gint ca, cb;
+                        gint64 cr;
                         ca = in_pixels[4 * x + y * rowstride + i];
                         cb = in2_pixels[4 * x + y * rowstride2 + i];
 
-                        cr = (ca * cb * upself->k1 / 255 + ca * upself->k2 + cb * upself->k3 + upself->k4 * qr) / 255;
+                        cr = ((gint64)ca * cb * upself->k1 / 255 + (gint64)ca * upself->k2 + (gint64)cb * upself->k3 +
+                              (gint64)upself->k4 * qr) /
+                             255;
                         if (cr > qr)
                             cr = qr;
                         if (cr < 0)
                             cr = 0;
-                        output_pixels[4 * x + y * rowstrideo + i] = cr;
+                        output_pixels[4 * x + y * rowstrideo + i] = (guchar)cr;
                     }
             }
 
@@ -3053,13 +3056,13 @@ static void rsvg_filter_primitive_composite_set_atts(RsvgNode* self, RsvgHandle*
         if ((value = rsvg_property_bag_lookup(atts, "height")))
             filter->super.height = _rsvg_css_parse_length(value);
         if ((value = rsvg_property_bag_lookup(atts, "k1")))
-            filter->k1 = g_ascii_strtod(value, NULL) * 255.;
+            filter->k1 = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         if ((value = rsvg_property_bag_lookup(atts, "k2")))
-            filter->k2 = g_ascii_strtod(value, NULL) * 255.;
+            filter->k2 = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         if ((value = rsvg_property_bag_lookup(atts, "k3")))
-            filter->k3 = g_ascii_strtod(value, NULL) * 255.;
+            filter->k3 = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         if ((value = rsvg_property_bag_lookup(atts, "k4")))
-            filter->k4 = g_ascii_strtod(value, NULL) * 255.;
+            filter->k4 = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         if ((value = rsvg_property_bag_lookup(atts, "id")))
             rsvg_defs_register_name(ctx->priv->defs, value, &filter->super.super);
     }
