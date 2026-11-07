@@ -2403,44 +2403,62 @@ struct _RsvgFilterPrimitiveComponentTransfer {
     RsvgFilterPrimitive super;
 };
 
+static gint clamp_double_to_int(double value) {
+    if (isnan(value))
+        return 0;
+    if (value >= G_MAXINT)
+        return G_MAXINT;
+    if (value <= G_MININT)
+        return G_MININT;
+    return (gint)value;
+}
+
+static gint clamp_int64_to_int(gint64 value) {
+    if (value > G_MAXINT)
+        return G_MAXINT;
+    if (value < G_MININT)
+        return G_MININT;
+    return (gint)value;
+}
+
 static gint identity_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
     (void)user_data;
     return C;
 }
 
 static gint table_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
-    gint k;
-    gint vk, vk1, distancefromlast;
-    gint num_values;
+    gint64 k;
+    gint64 vk, vk1, distancefromlast;
+    gint64 num_values;
 
     if (!user_data->nbTableValues)
         return C;
 
-    num_values = (gint)user_data->nbTableValues;
+    num_values = (gint64)user_data->nbTableValues;
 
-    k = (C * (num_values - 1)) / 255;
+    k = ((gint64)C * (num_values - 1)) / 255;
 
-    vk = user_data->tableValues[CLAMP(k, 0, num_values - 1)];
-    vk1 = user_data->tableValues[CLAMP(k + 1, 0, num_values - 1)];
+    vk = user_data->tableValues[CLAMP(k, (gint64)0, num_values - 1)];
+    vk1 = user_data->tableValues[CLAMP(k + 1, (gint64)0, num_values - 1)];
 
-    distancefromlast = (C * (user_data->nbTableValues - 1)) - k * 255;
+    distancefromlast = ((gint64)C * (num_values - 1)) - k * 255;
 
-    return vk + distancefromlast * (vk1 - vk) / 255;
+    return clamp_int64_to_int(vk + distancefromlast * (vk1 - vk) / 255);
 }
 
 static gint discrete_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
-    gint k;
+    gint64 k;
 
     if (!user_data->nbTableValues)
         return C;
 
-    k = (C * user_data->nbTableValues) / 255;
+    k = ((gint64)C * user_data->nbTableValues) / 255;
 
-    return user_data->tableValues[CLAMP(k, 0, (gint)user_data->nbTableValues - 1)];
+    return user_data->tableValues[CLAMP(k, (gint64)0, (gint64)user_data->nbTableValues - 1)];
 }
 
 static gint linear_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
-    return (user_data->slope * C) / 255 + user_data->intercept;
+    return clamp_int64_to_int(((gint64)user_data->slope * C) / 255 + user_data->intercept);
 }
 
 static gint fixpow(gint base, gint exp) {
@@ -2451,10 +2469,23 @@ static gint fixpow(gint base, gint exp) {
 }
 
 static gint gamma_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
-    if (floor(user_data->exponent) == user_data->exponent)
-        return user_data->amplitude * fixpow(C, user_data->exponent) / 255 + user_data->offset;
+    double exponent = user_data->exponent;
+
+    if (floor(exponent) == exponent) {
+        gint integral_exponent;
+
+        if (exponent <= 0.0)
+            integral_exponent = 0;
+        else if (exponent >= 255.0)
+            integral_exponent = 255;
+        else
+            integral_exponent = (gint)exponent;
+
+        return clamp_int64_to_int(((gint64)user_data->amplitude * fixpow(C, integral_exponent)) / 255 +
+                                  user_data->offset);
+    }
     else
-        return (double)user_data->amplitude * pow((double)C / 255., user_data->exponent) + user_data->offset;
+        return clamp_double_to_int((double)user_data->amplitude * pow((double)C / 255., exponent) + user_data->offset);
 }
 
 static void rsvg_filter_primitive_component_transfer_render(RsvgFilterPrimitive* self, RsvgFilterContext* ctx) {
@@ -2612,23 +2643,23 @@ static void rsvg_node_component_transfer_function_set_atts(RsvgNode* self, RsvgH
             double* temp = rsvg_css_parse_number_list(value, &data->nbTableValues);
             data->tableValues = g_new(gint, data->nbTableValues);
             for (i = 0; i < data->nbTableValues; i++)
-                data->tableValues[i] = temp[i] * 255.;
+                data->tableValues[i] = clamp_double_to_int(CLAMP(temp[i], 0.0, 1.0) * 255.);
             g_free(temp);
         }
         if ((value = rsvg_property_bag_lookup(atts, "slope"))) {
-            data->slope = g_ascii_strtod(value, NULL) * 255.;
+            data->slope = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         }
         if ((value = rsvg_property_bag_lookup(atts, "intercept"))) {
-            data->intercept = g_ascii_strtod(value, NULL) * 255.;
+            data->intercept = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         }
         if ((value = rsvg_property_bag_lookup(atts, "amplitude"))) {
-            data->amplitude = g_ascii_strtod(value, NULL) * 255.;
+            data->amplitude = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         }
         if ((value = rsvg_property_bag_lookup(atts, "exponent"))) {
             data->exponent = g_ascii_strtod(value, NULL);
         }
         if ((value = rsvg_property_bag_lookup(atts, "offset"))) {
-            data->offset = g_ascii_strtod(value, NULL) * 255.;
+            data->offset = clamp_double_to_int(g_ascii_strtod(value, NULL) * 255.);
         }
     }
 }
