@@ -103,6 +103,24 @@ struct _RsvgFilterPrimitive {
 /*************************************************************/
 /*************************************************************/
 
+static gint clamp_double_to_int(double value) {
+    if (isnan(value))
+        return 0;
+    if (value >= G_MAXINT)
+        return G_MAXINT;
+    if (value <= G_MININT)
+        return G_MININT;
+    return (gint)value;
+}
+
+static gint clamp_int64_to_int(gint64 value) {
+    if (value > G_MAXINT)
+        return G_MAXINT;
+    if (value < G_MININT)
+        return G_MININT;
+    return (gint)value;
+}
+
 static void rsvg_filter_primitive_free(RsvgNode* self) {
     RsvgFilterPrimitive* primitive;
 
@@ -1060,8 +1078,8 @@ static void rsvg_filter_primitive_convolve_matrix_render(RsvgFilterPrimitive* se
                 for (i = 0; i < upself->ordery; i++)
                     for (j = 0; j < upself->orderx; j++) {
                         int alpha;
-                        sx = x - targetx + j * dx;
-                        sy = y - targety + i * dy;
+                        sx = clamp_double_to_int((double)x - targetx + (double)j * dx);
+                        sy = clamp_double_to_int((double)y - targety + (double)i * dy);
                         if (upself->edgemode == 0) {
                             if (sx < boundarys.x0)
                                 sx = boundarys.x0;
@@ -1073,10 +1091,15 @@ static void rsvg_filter_primitive_convolve_matrix_render(RsvgFilterPrimitive* se
                                 sy = boundarys.y1 - 1;
                         }
                         else if (upself->edgemode == 1) {
-                            if (sx < boundarys.x0 || (sx >= boundarys.x1))
-                                sx = boundarys.x0 + (sx - boundarys.x0) % (boundarys.x1 - boundarys.x0);
-                            if (sy < boundarys.y0 || (sy >= boundarys.y1))
-                                sy = boundarys.y0 + (sy - boundarys.y0) % (boundarys.y1 - boundarys.y0);
+                            gint64 span;
+                            if (sx < boundarys.x0 || (sx >= boundarys.x1)) {
+                                span = (gint64)boundarys.x1 - boundarys.x0;
+                                sx = boundarys.x0 + (gint)(((gint64)sx - boundarys.x0) % span);
+                            }
+                            if (sy < boundarys.y0 || (sy >= boundarys.y1)) {
+                                span = (gint64)boundarys.y1 - boundarys.y0;
+                                sy = boundarys.y0 + (gint)(((gint64)sy - boundarys.y0) % span);
+                            }
                         }
                         else if (upself->edgemode == 2)
                             if (sx < boundarys.x0 || (sx >= boundarys.x1) || sy < boundarys.y0 || (sy >= boundarys.y1))
@@ -1084,17 +1107,17 @@ static void rsvg_filter_primitive_convolve_matrix_render(RsvgFilterPrimitive* se
 
                         kx = upself->orderx - j - 1;
                         ky = upself->ordery - i - 1;
-                        alpha = in_pixels[4 * sx + sy * rowstride + 3];
+                        alpha = in_pixels[(gsize)sy * rowstride + (gsize)sx * 4 + 3];
                         if (ch == 3)
                             sval = alpha;
                         else if (alpha)
-                            sval = in_pixels[4 * sx + sy * rowstride + ch] * 255 / alpha;
+                            sval = in_pixels[(gsize)sy * rowstride + (gsize)sx * 4 + ch] * 255 / alpha;
                         else
                             sval = 0;
-                        kval = upself->KernelMatrix[kx + ky * upself->orderx];
+                        kval = upself->KernelMatrix[(gsize)kx + (gsize)ky * (gsize)upself->orderx];
                         sum += (double)sval * kval;
                     }
-                tempresult = sum / upself->divisor + upself->bias;
+                tempresult = clamp_double_to_int(sum / upself->divisor + upself->bias);
 
                 if (tempresult > 255)
 
@@ -1160,22 +1183,26 @@ static void rsvg_filter_primitive_convolve_matrix_set_atts(RsvgNode* self, RsvgH
             filter->super.height = _rsvg_css_parse_length(value);
         if ((value = rsvg_property_bag_lookup(atts, "targetX"))) {
             has_target_x = 1;
-            filter->targetx = atoi(value);
+            filter->targetx = clamp_double_to_int(g_ascii_strtod(value, NULL));
         }
         if ((value = rsvg_property_bag_lookup(atts, "targetY"))) {
             has_target_y = 1;
-            filter->targety = atoi(value);
+            filter->targety = clamp_double_to_int(g_ascii_strtod(value, NULL));
         }
-        if ((value = rsvg_property_bag_lookup(atts, "bias")))
-            filter->bias = atof(value);
+        if ((value = rsvg_property_bag_lookup(atts, "bias"))) {
+            double bias = g_ascii_strtod(value, NULL);
+            filter->bias = isfinite(bias) ? bias : 0.0;
+        }
         if ((value = rsvg_property_bag_lookup(atts, "preserveAlpha"))) {
             if (!strcmp(value, "true"))
                 filter->preservealpha = TRUE;
             else
                 filter->preservealpha = FALSE;
         }
-        if ((value = rsvg_property_bag_lookup(atts, "divisor")))
-            filter->divisor = atof(value);
+        if ((value = rsvg_property_bag_lookup(atts, "divisor"))) {
+            double divisor = g_ascii_strtod(value, NULL);
+            filter->divisor = isfinite(divisor) ? divisor : 0.0;
+        }
         if ((value = rsvg_property_bag_lookup(atts, "order"))) {
             double tempx, tempy;
             rsvg_css_parse_number_optional_number(value, &tempx, &tempy);
@@ -1214,7 +1241,7 @@ static void rsvg_filter_primitive_convolve_matrix_set_atts(RsvgNode* self, RsvgH
                 filter->divisor += filter->KernelMatrix[j + i * filter->orderx];
     }
 
-    if (filter->divisor == 0)
+    if (!isfinite(filter->divisor) || filter->divisor == 0)
         filter->divisor = 1;
 
     if (!has_target_x) {
@@ -2402,24 +2429,6 @@ struct _RsvgNodeComponentTransferFunc {
 struct _RsvgFilterPrimitiveComponentTransfer {
     RsvgFilterPrimitive super;
 };
-
-static gint clamp_double_to_int(double value) {
-    if (isnan(value))
-        return 0;
-    if (value >= G_MAXINT)
-        return G_MAXINT;
-    if (value <= G_MININT)
-        return G_MININT;
-    return (gint)value;
-}
-
-static gint clamp_int64_to_int(gint64 value) {
-    if (value > G_MAXINT)
-        return G_MAXINT;
-    if (value < G_MININT)
-        return G_MININT;
-    return (gint)value;
-}
 
 static gint identity_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
     (void)user_data;
