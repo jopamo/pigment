@@ -2188,7 +2188,7 @@ static void rsvg_filter_primitive_color_matrix_render(RsvgFilterPrimitive* self,
 
     cairo_surface_t *output, *in;
 
-    int sum;
+    gint64 sum;
 
     upself = (RsvgFilterPrimitiveColorMatrix*)self;
     boundarys = rsvg_filter_primitive_get_bounds(self, ctx);
@@ -2235,9 +2235,11 @@ static void rsvg_filter_primitive_color_matrix_render(RsvgFilterPrimitive* self,
                     for (umi = 0; umi < 4; umi++) {
                         i = ctx->channelmap[umi];
                         if (umi != 3)
-                            sum += upself->KernelMatrix[umch * 5 + umi] * in_pixels[4 * x + y * rowstride + i] / alpha;
+                            sum += (gint64)upself->KernelMatrix[umch * 5 + umi] * in_pixels[4 * x + y * rowstride + i] /
+                                   alpha;
                         else
-                            sum += upself->KernelMatrix[umch * 5 + umi] * in_pixels[4 * x + y * rowstride + i] / 255;
+                            sum += (gint64)upself->KernelMatrix[umch * 5 + umi] * in_pixels[4 * x + y * rowstride + i] /
+                                   255;
                     }
                     sum += upself->KernelMatrix[umch * 5 + 4];
 
@@ -2301,7 +2303,7 @@ static void rsvg_filter_primitive_color_matrix_set_atts(RsvgNode* self, RsvgHand
             double* temp = rsvg_css_parse_number_list(value, &listlen);
             filter->KernelMatrix = g_new(int, listlen);
             for (i = 0; i < listlen; i++)
-                filter->KernelMatrix[i] = temp[i] * 255.;
+                filter->KernelMatrix[i] = clamp_double_to_int(temp[i] * 255.);
             g_free(temp);
         }
         if ((value = rsvg_property_bag_lookup(atts, "type"))) {
