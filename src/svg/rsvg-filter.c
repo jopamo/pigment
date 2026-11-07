@@ -1179,8 +1179,8 @@ static void rsvg_filter_primitive_convolve_matrix_set_atts(RsvgNode* self, RsvgH
         if ((value = rsvg_property_bag_lookup(atts, "order"))) {
             double tempx, tempy;
             rsvg_css_parse_number_optional_number(value, &tempx, &tempy);
-            if (tempx < 1.0 || tempx > G_MAXINT || tempy < 1.0 || tempy > G_MAXINT ||
-                floor(tempx) != tempx || floor(tempy) != tempy)
+            if (tempx < 1.0 || tempx > G_MAXINT || tempy < 1.0 || tempy > G_MAXINT || floor(tempx) != tempx ||
+                floor(tempy) != tempy)
                 filter->orderx = filter->ordery = 0;
             else {
                 filter->orderx = (gint)tempx;
