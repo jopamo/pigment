@@ -122,7 +122,7 @@ static double rsvg_css_parse_raw_length(const char* str,
 
     length = g_ascii_strtod(str, &p);
 
-    if ((length == -HUGE_VAL || length == HUGE_VAL) && (ERANGE == errno)) {
+    if (!isfinite(length)) {
         /* todo: error condition - figure out how to best represent it */
         return 0.0;
     }

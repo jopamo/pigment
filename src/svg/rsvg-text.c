@@ -24,6 +24,7 @@
    Author: Raph Levien <raph@artofcode.com>
 */
 
+#include <math.h>
 #include <string.h>
 
 #include "rsvg-private.h"
@@ -457,6 +458,24 @@ static void rsvg_text_layout_free(RsvgTextLayout* layout) {
     g_free(layout);
 }
 
+static double text_font_size(RsvgDrawingCtx* ctx, RsvgState* state) {
+    double size = _rsvg_css_normalize_font_size(state, ctx);
+
+    if (!isfinite(size) || size < 0.0 || size > (double)G_MAXINT / (2 * PANGO_SCALE))
+        return 0.0;
+
+    return size;
+}
+
+static gint text_pango_units(double value) {
+    double units = value * PANGO_SCALE;
+
+    if (!isfinite(units) || units < G_MININT || units > G_MAXINT)
+        return 0;
+
+    return (gint)units;
+}
+
 static PangoFontDescription* rsvg_text_font_description(RsvgDrawingCtx* ctx, RsvgState* state, PangoContext* context) {
     PangoFontDescription* font_desc = pango_font_description_copy(pango_context_get_font_description(context));
     if (state->font_family)
@@ -465,7 +484,7 @@ static PangoFontDescription* rsvg_text_font_description(RsvgDrawingCtx* ctx, Rsv
     pango_font_description_set_variant(font_desc, state->font_variant);
     pango_font_description_set_weight(font_desc, state->font_weight);
     pango_font_description_set_stretch(font_desc, state->font_stretch);
-    pango_font_description_set_absolute_size(font_desc, _rsvg_css_normalize_font_size(state, ctx) * PANGO_SCALE);
+    pango_font_description_set_absolute_size(font_desc, text_font_size(ctx, state) * PANGO_SCALE);
     return font_desc;
 }
 
@@ -540,7 +559,7 @@ static PangoLayout* rsvg_text_create_layout(RsvgDrawingCtx* ctx,
 
     PangoAttrList* attr_list = pango_attr_list_new();
     PangoAttribute* attribute =
-        pango_attr_letter_spacing_new(_rsvg_css_normalize_length(&state->letter_spacing, ctx, 'h') * PANGO_SCALE);
+        pango_attr_letter_spacing_new(text_pango_units(_rsvg_css_normalize_length(&state->letter_spacing, ctx, 'h')));
     attribute->start_index = 0;
     attribute->end_index = G_MAXINT;
     pango_attr_list_insert(attr_list, attribute);
@@ -603,7 +622,7 @@ void rsvg_text_render_text(RsvgDrawingCtx* ctx, const char* text, gdouble* x, gd
     state = rsvg_current_state(ctx);
 
     /* Do not render the text if the font size is zero. See bug #581491. */
-    if (state->font_size.length == 0)
+    if (text_font_size(ctx, state) == 0.0)
         return;
 
     context = ctx->render->create_pango_context(ctx);
