@@ -128,10 +128,15 @@ static gboolean gdk_pixbuf__svg_image_stop_load(gpointer data, GError** error) {
 
     if (!context->handle) {
         rsvg_propagate_error(error, _("Error displaying image"), ERROR_DISPLAYING_IMAGE);
-        return FALSE;
+        result = FALSE;
+        goto out;
     }
 
-    rsvg_handle_close(context->handle, error);
+    if (!rsvg_handle_close(context->handle, error)) {
+        rsvg_propagate_error(error, _("Error displaying image"), ERROR_DISPLAYING_IMAGE);
+        result = FALSE;
+        goto out;
+    }
 
     pixbuf = rsvg_handle_get_pixbuf(context->handle);
 
@@ -145,7 +150,9 @@ static gboolean gdk_pixbuf__svg_image_stop_load(gpointer data, GError** error) {
         result = FALSE;
     }
 
-    g_object_unref(context->handle);
+out:
+    if (context->handle)
+        g_object_unref(context->handle);
     g_free(context);
 
     return result;
