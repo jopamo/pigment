@@ -2418,7 +2418,7 @@ static gint discrete_component_transfer_func(gint C, RsvgNodeComponentTransferFu
 
     k = (C * user_data->nbTableValues) / 255;
 
-    return user_data->tableValues[CLAMP(k, 0, (gint)user_data->nbTableValues)];
+    return user_data->tableValues[CLAMP(k, 0, (gint)user_data->nbTableValues - 1)];
 }
 
 static gint linear_component_transfer_func(gint C, RsvgNodeComponentTransferFunc* user_data) {
