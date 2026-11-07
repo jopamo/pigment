@@ -1902,7 +1902,8 @@ static void rsvg_filter_primitive_offset_render(RsvgFilterPrimitive* self, RsvgF
     cairo_surface_t *output, *in;
 
     double dx, dy;
-    int ox, oy;
+    double ox, oy;
+    gboolean offset_valid;
 
     upself = (RsvgFilterPrimitiveOffset*)self;
     boundarys = rsvg_filter_primitive_get_bounds(self, ctx);
@@ -1933,18 +1934,28 @@ static void rsvg_filter_primitive_offset_render(RsvgFilterPrimitive* self, RsvgF
 
     ox = ctx->paffine.xx * dx + ctx->paffine.xy * dy;
     oy = ctx->paffine.yx * dx + ctx->paffine.yy * dy;
+    offset_valid = isfinite(ox) && isfinite(oy) && ox >= G_MININT && ox <= G_MAXINT && oy >= G_MININT && oy <= G_MAXINT;
 
-    for (y = boundarys.y0; y < boundarys.y1; y++)
-        for (x = boundarys.x0; x < boundarys.x1; x++) {
-            if (x - ox < boundarys.x0 || x - ox >= boundarys.x1)
-                continue;
-            if (y - oy < boundarys.y0 || y - oy >= boundarys.y1)
-                continue;
+    if (offset_valid) {
+        gint iox = (gint)ox;
+        gint ioy = (gint)oy;
 
-            for (ch = 0; ch < 4; ch++) {
-                output_pixels[y * rowstride + x * 4 + ch] = in_pixels[(y - oy) * rowstride + (x - ox) * 4 + ch];
+        for (y = boundarys.y0; y < boundarys.y1; y++)
+            for (x = boundarys.x0; x < boundarys.x1; x++) {
+                gint64 sx = (gint64)x - iox;
+                gint64 sy = (gint64)y - ioy;
+
+                if (sx < boundarys.x0 || sx >= boundarys.x1)
+                    continue;
+                if (sy < boundarys.y0 || sy >= boundarys.y1)
+                    continue;
+
+                for (ch = 0; ch < 4; ch++) {
+                    output_pixels[(gsize)y * rowstride + (gsize)x * 4 + ch] =
+                        in_pixels[(gsize)sy * rowstride + (gsize)sx * 4 + ch];
+                }
             }
-        }
+    }
 
     cairo_surface_mark_dirty(output);
 
