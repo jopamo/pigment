@@ -139,6 +139,14 @@ static void rsvg_filter_primitive_render(RsvgFilterPrimitive* self, RsvgFilterCo
     self->render(self, ctx);
 }
 
+static gint filter_bound_coord(double value, gint limit) {
+    if (isnan(value) || value <= 0.0)
+        return 0;
+    if (value >= limit)
+        return limit;
+    return (gint)value;
+}
+
 static RsvgIRect rsvg_filter_primitive_get_bounds(RsvgFilterPrimitive* self, RsvgFilterContext* ctx) {
     RsvgBbox box, otherbox;
     cairo_matrix_t affine;
@@ -193,7 +201,17 @@ static RsvgIRect rsvg_filter_primitive_get_bounds(RsvgFilterPrimitive* self, Rsv
     otherbox.rect.height = ctx->height;
     rsvg_bbox_clip(&box, &otherbox);
     {
-        RsvgIRect output = {box.rect.x, box.rect.y, box.rect.x + box.rect.width, box.rect.y + box.rect.height};
+        gint x0 = filter_bound_coord(box.rect.x, ctx->width);
+        gint y0 = filter_bound_coord(box.rect.y, ctx->height);
+        gint x1 = filter_bound_coord(box.rect.x + box.rect.width, ctx->width);
+        gint y1 = filter_bound_coord(box.rect.y + box.rect.height, ctx->height);
+
+        if (x1 < x0)
+            x1 = x0;
+        if (y1 < y0)
+            y1 = y0;
+
+        RsvgIRect output = {x0, y0, x1, y1};
         return output;
     }
 }
