@@ -2704,6 +2704,16 @@ struct _RsvgFilterPrimitiveErode {
     int mode;
 };
 
+static gint morphology_radius(double radius, double scale, gint extent) {
+    double scaled = radius * fabs(scale);
+
+    if (!isfinite(scaled) || scaled <= 0.0)
+        return 0;
+    if (scaled >= extent)
+        return extent;
+    return (gint)scaled;
+}
+
 static void rsvg_filter_primitive_erode_render(RsvgFilterPrimitive* self, RsvgFilterContext* ctx) {
     guchar ch, extreme;
     gint x, y;
@@ -2738,8 +2748,8 @@ static void rsvg_filter_primitive_erode_render(RsvgFilterPrimitive* self, RsvgFi
     rowstride = cairo_image_surface_get_stride(in);
 
     /* scale the radius values */
-    kx = upself->rx * ctx->paffine.xx;
-    ky = upself->ry * ctx->paffine.yy;
+    kx = morphology_radius(upself->rx, ctx->paffine.xx, width);
+    ky = morphology_radius(upself->ry, ctx->paffine.yy, height);
 
     output = _rsvg_image_surface_new(width, height);
     if (output == NULL) {
@@ -2756,12 +2766,15 @@ static void rsvg_filter_primitive_erode_render(RsvgFilterPrimitive* self, RsvgFi
                     extreme = 255;
                 else
                     extreme = 0;
-                for (i = -ky; i < ky + 1; i++)
-                    for (j = -kx; j < kx + 1; j++) {
-                        if (y + i >= height || y + i < 0 || x + j >= width || x + j < 0)
+                for (i = -ky; i <= ky; i++)
+                    for (j = -kx; j <= kx; j++) {
+                        gint64 yy = (gint64)y + i;
+                        gint64 xx = (gint64)x + j;
+
+                        if (yy < 0 || yy >= height || xx < 0 || xx >= width)
                             continue;
 
-                        val = in_pixels[(y + i) * rowstride + (x + j) * 4 + ch];
+                        val = in_pixels[(gsize)yy * rowstride + (gsize)xx * 4 + ch];
 
                         if (upself->mode == 0) {
                             if (extreme > val)
@@ -2772,7 +2785,7 @@ static void rsvg_filter_primitive_erode_render(RsvgFilterPrimitive* self, RsvgFi
                                 extreme = val;
                         }
                     }
-                output_pixels[y * rowstride + x * 4 + ch] = extreme;
+                output_pixels[(gsize)y * rowstride + (gsize)x * 4 + ch] = extreme;
             }
 
     cairo_surface_mark_dirty(output);
