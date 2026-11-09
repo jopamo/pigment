@@ -34,35 +34,6 @@
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-io.h"
 
-#define DUMPBIH 0
-
-#if 0
-/* If these structures were unpacked, they would define the two headers of the
- * BMP file.  After them comes the palette, and then the image data.
- *
- * We do not use these structures; we just keep them here for reference.
- */
-struct BitmapFileHeader {
-	guint16 magic;
-	guint32 file_size;
-	guint32 reserved;
-	guint32 data_offset;
-};
-
-struct BitmapInfoHeader {
-	guint32 header_size;
-	guint32 width;
-	guint32 height;
-	guint16 planes;
-	guint16 bpp;
-	guint32 compression;
-	guint32 data_size;
-	guint32 x_ppm;
-	guint32 y_ppm;
-	guint32 n_colors;
-	guint32 n_important_colors;
-};
-#endif
 
 /* Compression values */
 
@@ -81,27 +52,6 @@ typedef enum {
     READ_STATE_DONE      /* Done reading the image; further data will be ignored */
 } ReadState;
 
-/*
-
-DumpBIH printf's the values in a BitmapInfoHeader to the screen, for
-debugging purposes.
-
-*/
-#if DUMPBIH
-static void DumpBIH(unsigned char* BIH) {
-    printf("biSize      = %i \n", (int)(BIH[3] << 24) + (BIH[2] << 16) + (BIH[1] << 8) + (BIH[0]));
-    printf("biWidth     = %i \n", (int)(BIH[7] << 24) + (BIH[6] << 16) + (BIH[5] << 8) + (BIH[4]));
-    printf("biHeight    = %i \n", (int)(BIH[11] << 24) + (BIH[10] << 16) + (BIH[9] << 8) + (BIH[8]));
-    printf("biPlanes    = %i \n", (int)(BIH[13] << 8) + (BIH[12]));
-    printf("biBitCount  = %i \n", (int)(BIH[15] << 8) + (BIH[14]));
-    printf("biCompress  = %i \n", (int)(BIH[19] << 24) + (BIH[18] << 16) + (BIH[17] << 8) + (BIH[16]));
-    printf("biSizeImage = %i \n", (int)(BIH[23] << 24) + (BIH[22] << 16) + (BIH[21] << 8) + (BIH[20]));
-    printf("biXPels     = %i \n", (int)(BIH[27] << 24) + (BIH[26] << 16) + (BIH[25] << 8) + (BIH[24]));
-    printf("biYPels     = %i \n", (int)(BIH[31] << 24) + (BIH[30] << 16) + (BIH[29] << 8) + (BIH[28]));
-    printf("biClrUsed   = %i \n", (int)(BIH[35] << 24) + (BIH[34] << 16) + (BIH[33] << 8) + (BIH[32]));
-    printf("biClrImprtnt= %i \n", (int)(BIH[39] << 24) + (BIH[38] << 16) + (BIH[37] << 8) + (BIH[36]));
-}
-#endif
 /* struct headerpair contains the decoded width/height/depth info for
    the current bitmap */
 
@@ -252,10 +202,6 @@ static gboolean DecodeHeader(unsigned char* BFH,
             return FALSE;
         return TRUE;
     }
-
-#if DUMPBIH
-    DumpBIH(BIH);
-#endif
 
     State->Header.size = header_size;
     if (State->Header.size == 124) {

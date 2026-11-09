@@ -846,23 +846,7 @@ void rsvg_cairo_render_surface(RsvgDrawingCtx* ctx,
 
     cairo_set_operator(render->cr, state->comp_op);
 
-#if 1
     cairo_set_source_surface(render->cr, surface, src_x, src_y);
-#else
-    {
-        cairo_pattern_t* pattern;
-        cairo_matrix_t matrix;
-
-        pattern = cairo_pattern_create_for_surface(surface);
-        cairo_pattern_set_extend(pattern, CAIRO_EXTEND_PAD);
-
-        cairo_matrix_init_translate(&matrix, -src_x, -src_y);
-        cairo_pattern_set_matrix(pattern, &matrix);
-
-        cairo_set_source(render->cr, pattern);
-        cairo_pattern_destroy(pattern);
-    }
-#endif
 
     cairo_paint(render->cr);
 
@@ -1014,13 +998,6 @@ static void rsvg_cairo_push_render_stack(RsvgDrawingCtx* ctx) {
         /* The surface reference is owned by the child_cr created below and put on the cr_stack! */
         render->surfaces_stack = g_list_prepend(render->surfaces_stack, surface);
     }
-
-#if 0
-    if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
-        cairo_surface_destroy (surface);
-        return;
-    }
-#endif
 
     child_cr = cairo_create(surface);
     cairo_surface_destroy(surface);

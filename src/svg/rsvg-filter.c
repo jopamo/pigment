@@ -1367,32 +1367,6 @@ static void box_blur_line(gint box_width, gint even_offset, guchar* src, guchar*
          * handle edge cases. */
         guint coverage = (lead < len ? lead : len - 1) - (trail >= 0 ? trail : -1);
 
-#ifdef READABLE_BOXBLUR_CODE
-        /* The code here does the same as the code below, but the code below
-         * has been optimized by moving the if statements out of the tight for
-         * loop, and is harder to understand.
-         * Don't use both this code and the code below. */
-        for (i = 0; i < bpp; i++) {
-            /* If the leading edge of the kernel is still on the image,
-             * add the value there to the accumulator. */
-            if (lead < len)
-                ac[i] += src[bpp * lead + i];
-
-            /* If the trailing edge of the kernel is on the image,
-             * subtract the value there from the accumulator. */
-            if (trail >= 0)
-                ac[i] -= src[bpp * trail + i];
-
-            /* Take the averaged value in the accumulator and store
-             * that value in the output. The number of pixels currently
-             * stored in the accumulator can be less than the nominal
-             * width of the kernel because the kernel can go "over the edge"
-             * of the image. */
-            if (output >= 0)
-                dest[bpp * output + i] = (ac[i] + (coverage >> 1)) / coverage;
-        }
-#endif
-
         /* If the leading edge of the kernel is still on the image... */
         if (lead < len) {
             if (trail >= 0) {

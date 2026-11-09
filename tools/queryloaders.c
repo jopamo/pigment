@@ -35,11 +35,7 @@
 #include "gdk-pixbuf/gdk-pixbuf.h"
 #include "gdk-pixbuf-private.h"
 
-#ifdef USE_LA_MODULES
-#define SOEXT ".la"
-#else
 #define SOEXT ("." G_MODULE_SUFFIX)
-#endif
 #define SOEXT_LEN (strlen(SOEXT))
 
 #ifdef OS_DARWIN

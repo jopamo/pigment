@@ -260,14 +260,6 @@ int gdk_pixbuf_gif_anim_iter_get_delay_time(GdkPixbufAnimationIter* anim_iter) {
     if (iter->current_frame) {
         frame = iter->current_frame->data;
 
-#if 0
-                g_print ("frame start: %d pos: %d frame len: %d frame remaining: %d\n",
-                         frame->elapsed,
-                         iter->position,
-                         frame->delay_time,
-                         frame->delay_time - (iter->position - frame->elapsed));
-#endif
-
         return frame->delay_time - (iter->position - frame->elapsed);
     }
     else

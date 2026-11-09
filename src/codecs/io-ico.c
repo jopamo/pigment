@@ -737,15 +737,6 @@ static void OneLineTransp(struct ico_progressive_state* context) {
         Bit = Bit & 1;
         /* The joys of having a BGR byteorder */
         Pixels[X * 4 + 3] = 255 - Bit * 255;
-#if 0
-		if (Bit){
-		  Pixels[X*4+0] = 255;
-		  Pixels[X*4+1] = 255;
-		} else {
-		  Pixels[X*4+0] = 0;
-		  Pixels[X*4+1] = 0;
-		}
-#endif
         X++;
     }
 }

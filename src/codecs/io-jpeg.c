@@ -197,16 +197,14 @@ static void convert_cmyk_to_rgb(struct jpeg_decompress_struct* cinfo, guchar** l
 typedef struct {
     struct jpeg_source_mgr pub; /* public fields */
 
-    FILE* infile;          /* source stream */
-    JOCTET* buffer;        /* start of buffer */
-    boolean start_of_file; /* have we gotten any data yet? */
+    FILE* infile;   /* source stream */
+    JOCTET* buffer; /* start of buffer */
 } stdio_source_mgr;
 
 typedef stdio_source_mgr* stdio_src_ptr;
 
 static void stdio_init_source(j_decompress_ptr cinfo) {
-    stdio_src_ptr src = (stdio_src_ptr)cinfo->src;
-    src->start_of_file = FALSE;
+    (void)cinfo;
 }
 
 static boolean stdio_fill_input_buffer(j_decompress_ptr cinfo) {
@@ -216,11 +214,6 @@ static boolean stdio_fill_input_buffer(j_decompress_ptr cinfo) {
     nbytes = fread(src->buffer, 1, JPEG_PROG_BUF_SIZE, src->infile);
 
     if (nbytes <= 0) {
-#if 0
-    if (src->start_of_file)	/* Treat empty input file as fatal error */
-      ERREXIT(cinfo, JERR_INPUT_EMPTY);
-    WARNMS(cinfo, JWRN_JPEG_EOF);
-#endif
         /* Insert a fake EOI marker */
         src->buffer[0] = (JOCTET)0xFF;
         src->buffer[1] = (JOCTET)JPEG_EOI;
@@ -229,7 +222,6 @@ static boolean stdio_fill_input_buffer(j_decompress_ptr cinfo) {
 
     src->pub.next_input_byte = src->buffer;
     src->pub.bytes_in_buffer = nbytes;
-    src->start_of_file = FALSE;
 
     return TRUE;
 }
