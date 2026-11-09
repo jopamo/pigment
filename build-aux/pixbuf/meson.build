@@ -225,21 +225,11 @@ if not gif_opt.disabled()
   enabled_loaders += 'gif'
 endif
 
-others_opt = get_option('others')
-if not others_opt.disabled()
-  # Keep sorted alphabetically
-  enabled_loaders += [
-    'ani',
-    'bmp',
-    'icns',
-    'ico',
-    'pnm',
-    'qtif',
-    'tga',
-    'xbm',
-    'xpm',
-  ]
-endif
+foreach loader: ['bmp', 'ico']
+  if not get_option(loader).disabled()
+    enabled_loaders += loader
+  endif
+endforeach
 
 jpeg_opt = get_option('jpeg')
 if not jpeg_opt.disabled()

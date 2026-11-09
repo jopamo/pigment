@@ -513,8 +513,8 @@ GdkPixbufLoader* gdk_pixbuf_loader_new(void) {
  * a specific type.
  *
  * The list of supported image formats depends on what image loaders
- * are installed, but typically "png", "jpeg", "gif", "tiff" and
- * "xpm" are among the supported formats. To obtain the full list of
+ * are installed, but typically "png", "jpeg", "gif", and
+ * "tiff" are among the supported formats. To obtain the full list of
  * supported image formats, call gdk_pixbuf_format_get_name() on each
  * of the #GdkPixbufFormat structs returned by gdk_pixbuf_get_formats().
  *
@@ -555,7 +555,7 @@ GdkPixbufLoader* gdk_pixbuf_loader_new_with_type(const char* image_type, GError*
  *
  * The list of supported mime types depends on what image loaders
  * are installed, but typically "image/png", "image/jpeg", "image/gif",
- * "image/tiff" and "image/x-xpixmap" are among the supported mime types.
+ * and "image/tiff" are among the supported mime types.
  * To obtain the full list of supported mime types, call
  * gdk_pixbuf_format_get_mime_types() on each of the #GdkPixbufFormat
  * structs returned by gdk_pixbuf_get_formats().

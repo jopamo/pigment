@@ -53,7 +53,8 @@
  * performed with an efficient algorithm.
  *
  * As a special case, you can use the [`ctor@GdkPixbuf.Pixbuf.new_from_xpm_data`]
- * function to create a pixbuf from inline XPM image data.
+ * function to create a pixbuf from inline XPM image data if an external
+ * XPM loader module is installed.
  *
  * You can also copy an existing pixbuf with the [method@Pixbuf.copy]
  * function. This is not the same as just acquiring a reference to
@@ -1010,8 +1011,7 @@ void gdk_pixbuf_fill(GdkPixbuf* pixbuf, guint32 pixel) {
  * @pixbuf when it was loaded, or that may have been attached by another
  * function using gdk_pixbuf_set_option().
  *
- * For instance, the ANI loader provides "Title" and "Artist" options.
- * The ICO, XBM, and XPM loaders provide "x_hot" and "y_hot" hot-spot
+ * For instance, the ICO loader provides "x_hot" and "y_hot" hot-spot
  * options for cursor definitions. The PNG loader provides the tEXt ancillary
  * chunk key/value pairs as options. Since 2.12, the TIFF and JPEG loaders
  * return an "orientation" option string that corresponds to the embedded

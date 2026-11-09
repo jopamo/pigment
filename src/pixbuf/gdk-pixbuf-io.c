@@ -50,7 +50,7 @@ static const guint8 gdk_pixbuf_save_to_streamv_async_tag = 0;
 /**
  * GdkPixbufModule:
  * @module_name: the name of the module, usually the same as the
- *  usual file extension for images of this type, eg. "xpm", "jpeg" or "png".
+ *  usual file extension for images of this type, eg. "gif", "jpeg" or "png".
  * @module_path: the path from which the module is loaded.
  * @module: the loaded `GModule`.
  * @info: a `GdkPixbufFormat` holding information about the module.
@@ -603,9 +603,6 @@ static void gdk_pixbuf_io_init_builtin(void) {
     }                                                                       \
     G_STMT_END
 
-#ifdef INCLUDE_ani
-    load_one_builtin_module(ani);
-#endif
 #ifdef INCLUDE_png
     load_one_builtin_module(png);
 #endif
@@ -621,26 +618,8 @@ static void gdk_pixbuf_io_init_builtin(void) {
 #ifdef INCLUDE_jpeg
     load_one_builtin_module(jpeg);
 #endif
-#ifdef INCLUDE_pnm
-    load_one_builtin_module(pnm);
-#endif
 #ifdef INCLUDE_tiff
     load_one_builtin_module(tiff);
-#endif
-#ifdef INCLUDE_xpm
-    load_one_builtin_module(xpm);
-#endif
-#ifdef INCLUDE_xbm
-    load_one_builtin_module(xbm);
-#endif
-#ifdef INCLUDE_tga
-    load_one_builtin_module(tga);
-#endif
-#ifdef INCLUDE_icns
-    load_one_builtin_module(icns);
-#endif
-#ifdef INCLUDE_qtif
-    load_one_builtin_module(qtif);
 #endif
 #undef load_one_builtin_module
 }
@@ -665,15 +644,8 @@ module(png);
 module(jpeg);
 module(gif);
 module(ico);
-module(ani);
-module(xpm);
 module(tiff);
-module(pnm);
 module(bmp);
-module(xbm);
-module(tga);
-module(icns);
-module(qtif);
 
 #undef module
 
@@ -705,32 +677,11 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
 #ifdef INCLUDE_ico
     try_module(ico, ico);
 #endif
-#ifdef INCLUDE_ani
-    try_module(ani, ani);
-#endif
 #ifdef INCLUDE_jpeg
     try_module(jpeg, jpeg);
 #endif
-#ifdef INCLUDE_pnm
-    try_module(pnm, pnm);
-#endif
 #ifdef INCLUDE_tiff
     try_module(tiff, tiff);
-#endif
-#ifdef INCLUDE_xpm
-    try_module(xpm, xpm);
-#endif
-#ifdef INCLUDE_xbm
-    try_module(xbm, xbm);
-#endif
-#ifdef INCLUDE_tga
-    try_module(tga, tga);
-#endif
-#ifdef INCLUDE_icns
-    try_module(icns, icns);
-#endif
-#ifdef INCLUDE_qtif
-    try_module(qtif, qtif);
 #endif
 
 #undef try_module
@@ -1917,6 +1868,8 @@ GdkPixbufFormat* gdk_pixbuf_get_file_info_finish(GAsyncResult* async_result,
  *
  * This data is commonly the result of including an XPM file into a
  * program's C source.
+ *
+ * Requires an external XPM loader module. Pigment does not bundle one.
  *
  * Returns: (nullable): A newly-created pixbuf
  **/

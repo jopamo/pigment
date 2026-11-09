@@ -36,41 +36,13 @@ loaders = {
     'sources': [ codec_dir / 'io-ico.c' ],
     'enabled': enabled_loaders.contains('ico'),
   },
-  'ani': {
-    'sources': [ codec_dir / 'io-ani.c', codec_dir / 'io-ani-animation.c' ],
-    'enabled': enabled_loaders.contains('ani'),
-  },
   'jpeg': {
     'sources': [ codec_dir / 'io-jpeg.c' ],
     'enabled': enabled_loaders.contains('jpeg'),
   },
-  'pnm': {
-    'sources': [ codec_dir / 'io-pnm.c' ],
-    'enabled': enabled_loaders.contains('pnm'),
-  },
   'tiff': {
     'sources': [ codec_dir / 'io-tiff.c' ],
     'enabled': enabled_loaders.contains('tiff'),
-  },
-  'xpm': {
-    'sources': [ codec_dir / 'io-xpm.c' ],
-    'enabled': enabled_loaders.contains('xpm'),
-  },
-  'xbm': {
-    'sources': [ codec_dir / 'io-xbm.c' ],
-    'enabled': enabled_loaders.contains('xbm'),
-  },
-  'tga': {
-    'sources': [ codec_dir / 'io-tga.c', codec_dir / 'gdk-pixbuf-buffer-queue.c' ],
-    'enabled': enabled_loaders.contains('tga'),
-  },
-  'icns': {
-    'sources': [ codec_dir / 'io-icns.c' ],
-    'enabled': enabled_loaders.contains('icns'),
-  },
-  'qtif': {
-    'sources': [ codec_dir / 'io-qtif.c' ],
-    'enabled': enabled_loaders.contains('qtif'),
   },
 }
 

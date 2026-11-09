@@ -14,14 +14,18 @@ option('gif',
        description: 'Enable GIF loader',
        type: 'feature',
        value: 'enabled')
-option('others',
-       description: 'Enable other loaders, which are weakly maintained',
+option('bmp',
+       description: 'Enable BMP loader',
+       type: 'feature',
+       value: 'disabled')
+option('ico',
+       description: 'Enable ICO and CUR loader',
        type: 'feature',
        value: 'disabled')
 option('builtin_loaders',
        description: 'Comma-separated list of loaders to build into gdk-pixbuf',
        type: 'array',
-       choices: ['all', 'none', 'png', 'bmp', 'gif', 'ico', 'ani', 'jpeg', 'pnm', 'tiff', 'xpm', 'xbm', 'tga', 'icns', 'qtif'],
+       choices: ['all', 'none', 'png', 'bmp', 'gif', 'ico', 'jpeg', 'tiff'],
        value: ['png', 'jpeg'])
 option('introspection',
        description: 'Whether to generate the API introspection data (requires GObject-Introspection)',

@@ -54,6 +54,12 @@ it explicitly, use `-Dintrospection=enabled` or
 
 See [meson_options.txt](meson_options.txt) for codec and loader options.
 
+Bundled raster loaders support PNG, JPEG, GIF, TIFF, BMP, and ICO/CUR.
+BMP and ICO/CUR are disabled by default; enable them with
+`-Dbmp=enabled -Dico=enabled`. These options replace `-Dothers=enabled`.
+ANI, ICNS, PNM, QTIF, TGA, XBM, and XPM loaders are no longer included.
+The public XPM data API remains available for external loader modules.
+
 ## Compatibility
 
 Pigment is under active development. API compatibility and rendering
