@@ -32,7 +32,6 @@
 
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-io.h"
-#include "fallback-c89.c"
 
 /* Helper macros to convert between density units */
 #define DPI_TO_DPM(value) ((png_uint_32)(((guint64)(value) * 10000 + 127) / 254))

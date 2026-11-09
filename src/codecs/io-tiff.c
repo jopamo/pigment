@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
+#include <math.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -41,7 +42,6 @@
 
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-io.h"
-#include "fallback-c89.c"
 
 static void tiff_set_density_option(GdkPixbuf* pixbuf, const gchar* key, double density) {
     gchar* value;

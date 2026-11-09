@@ -9,7 +9,6 @@ if host_machine.system() in ['windows', 'cygwin']
   error('Pigment supports Linux/Unix only')
 endif
 
-subdir('src/internal')
 subdir('build-aux/pixbuf')
 subdir('include/gdk-pixbuf')
 subdir('src/pixbuf')

@@ -63,17 +63,7 @@ if cc.has_header('unistd.h')
   gdk_pixbuf_conf.set('HAVE_UNISTD_H', 1)
 endif
 
-# Look for the math library first, since we use it to test for round() and lrint()
 mathlib_dep = cc.find_library('m', required: false)
-
-# XXX: Remove the checks for round() and lrint() once GDK-Pixbuf is declared C99
-if cc.has_function('round', dependencies: mathlib_dep)
-  gdk_pixbuf_conf.set('HAVE_ROUND', 1)
-endif
-
-if cc.has_function('lrint', dependencies: mathlib_dep)
-  gdk_pixbuf_conf.set('HAVE_LRINT', 1)
-endif
 
 intl_dep = cc.find_library('intl', required: false)
 if cc.has_function('bind_textdomain_codeset', prefix: '#include <libintl.h>', dependencies: intl_dep)
