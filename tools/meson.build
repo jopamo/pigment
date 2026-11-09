@@ -40,10 +40,7 @@ endif
 if not meson.is_cross_build()
   bin = executable('gdk-pixbuf-thumbnailer',
              thumbnailer_sources,
-             c_args: common_cflags + [
-               '-DTHUMBNAILER_RETURNS_PIXBUF',
-               '-DTHUMBNAILER_USAGE="Thumbnail images"',
-             ],
+             c_args: common_cflags,
              dependencies: gdk_pixbuf_deps + [ gdkpixbuf_dep ],
              install: true)
 

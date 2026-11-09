@@ -26,158 +26,11 @@
 
 #include <locale.h>
 #include <math.h>
-#include <stdlib.h>
 
 #include "gnome-thumbnailer-skeleton.h"
 
-#ifndef THUMBNAILER_USAGE
-#error "THUMBNAILER_USAGE must be set"
-#endif
-
 static int output_size = 256;
 static gboolean g_fatal_warnings = FALSE;
-
-#if !GDK_PIXBUF_CHECK_VERSION(2, 36, 5)
-/**
- * gnome_desktop_thumbnail_scale_down_pixbuf:
- * @pixbuf: a #GdkPixbuf
- * @dest_width: the desired new width
- * @dest_height: the desired new height
- *
- * Scales the pixbuf to the desired size. This function
- * is a lot faster than gdk-pixbuf when scaling down by
- * large amounts.
- *
- * Return value: (transfer full): a scaled pixbuf
- *
- * Since: 2.2
- **/
-GdkPixbuf* gnome_desktop_thumbnail_scale_down_pixbuf(GdkPixbuf* pixbuf, int dest_width, int dest_height) {
-    int source_width, source_height;
-    int s_x1, s_y1, s_x2, s_y2;
-    int s_xfrac, s_yfrac;
-    int dx, dx_frac, dy, dy_frac;
-    div_t ddx, ddy;
-    int x, y;
-    int r, g, b, a;
-    int n_pixels;
-    gboolean has_alpha;
-    guchar *dest, *src, *xsrc, *src_pixels;
-    GdkPixbuf* dest_pixbuf;
-    int pixel_stride;
-    int source_rowstride, dest_rowstride;
-
-    if (dest_width == 0 || dest_height == 0) {
-        return NULL;
-    }
-
-    source_width = gdk_pixbuf_get_width(pixbuf);
-    source_height = gdk_pixbuf_get_height(pixbuf);
-
-    g_assert(source_width >= dest_width);
-    g_assert(source_height >= dest_height);
-
-    ddx = div(source_width, dest_width);
-    dx = ddx.quot;
-    dx_frac = ddx.rem;
-
-    ddy = div(source_height, dest_height);
-    dy = ddy.quot;
-    dy_frac = ddy.rem;
-
-    g_assert(dx >= 1);
-    g_assert(dy >= 1);
-
-    has_alpha = gdk_pixbuf_get_has_alpha(pixbuf);
-    source_rowstride = gdk_pixbuf_get_rowstride(pixbuf);
-    src_pixels = gdk_pixbuf_get_pixels(pixbuf);
-
-    dest_pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, has_alpha, 8, dest_width, dest_height);
-    dest = gdk_pixbuf_get_pixels(dest_pixbuf);
-    dest_rowstride = gdk_pixbuf_get_rowstride(dest_pixbuf);
-
-    pixel_stride = (has_alpha) ? 4 : 3;
-
-    s_y1 = 0;
-    s_yfrac = -dest_height / 2;
-    while (s_y1 < source_height) {
-        s_y2 = s_y1 + dy;
-        s_yfrac += dy_frac;
-        if (s_yfrac > 0) {
-            s_y2++;
-            s_yfrac -= dest_height;
-        }
-
-        s_x1 = 0;
-        s_xfrac = -dest_width / 2;
-        while (s_x1 < source_width) {
-            s_x2 = s_x1 + dx;
-            s_xfrac += dx_frac;
-            if (s_xfrac > 0) {
-                s_x2++;
-                s_xfrac -= dest_width;
-            }
-
-            /* Average block of [x1,x2[ x [y1,y2[ and store in dest */
-            r = g = b = a = 0;
-            n_pixels = 0;
-
-            src = src_pixels + s_y1 * source_rowstride + s_x1 * pixel_stride;
-            for (y = s_y1; y < s_y2; y++) {
-                xsrc = src;
-                if (has_alpha) {
-                    for (x = 0; x < s_x2 - s_x1; x++) {
-                        n_pixels++;
-
-                        r += xsrc[3] * xsrc[0];
-                        g += xsrc[3] * xsrc[1];
-                        b += xsrc[3] * xsrc[2];
-                        a += xsrc[3];
-                        xsrc += 4;
-                    }
-                }
-                else {
-                    for (x = 0; x < s_x2 - s_x1; x++) {
-                        n_pixels++;
-                        r += *xsrc++;
-                        g += *xsrc++;
-                        b += *xsrc++;
-                    }
-                }
-                src += source_rowstride;
-            }
-
-            g_assert(n_pixels > 0);
-
-            if (has_alpha) {
-                if (a != 0) {
-                    *dest++ = r / a;
-                    *dest++ = g / a;
-                    *dest++ = b / a;
-                    *dest++ = a / n_pixels;
-                }
-                else {
-                    *dest++ = 0;
-                    *dest++ = 0;
-                    *dest++ = 0;
-                    *dest++ = 0;
-                }
-            }
-            else {
-                *dest++ = r / n_pixels;
-                *dest++ = g / n_pixels;
-                *dest++ = b / n_pixels;
-            }
-
-            s_x1 = s_x2;
-        }
-        s_y1 = s_y2;
-        dest += dest_rowstride - dest_width * pixel_stride;
-    }
-
-    return dest_pixbuf;
-}
-#endif
 
 static char* get_target_uri(GFile* file, GError** error) {
     GFileInfo* info;
@@ -234,21 +87,10 @@ int main(int argc, char** argv) {
         {G_OPTION_REMAINING, '\0', 0, G_OPTION_ARG_FILENAME_ARRAY, &filenames, NULL, "[INPUT FILE] [OUTPUT FILE]"},
         {NULL, 0, 0, 0, NULL, NULL, NULL}};
 
-#ifdef THUMBNAILER_RETURNS_PIXBUF
-    /* Nothing */
-#elif THUMBNAILER_RETURNS_DATA
-    char* data = NULL;
-    gsize length;
-#endif
-
     setlocale(LC_ALL, "");
 
-#if !GLIB_CHECK_VERSION(2, 36, 0)
-    g_type_init();
-#endif
-
     /* Options parsing */
-    context = g_option_context_new(THUMBNAILER_USAGE);
+    context = g_option_context_new("Thumbnail images");
     g_option_context_add_main_entries(context, entries, NULL);
 
     if (g_option_context_parse(context, &argc, &argv, &error) == FALSE) {
@@ -286,7 +128,6 @@ int main(int argc, char** argv) {
 
     output = filenames[1];
 
-#ifdef THUMBNAILER_RETURNS_PIXBUF
     pixbuf = file_to_pixbuf(input_filename, output_size, &error);
     if (pixbuf != NULL) {
         int width, height;
@@ -301,33 +142,13 @@ int main(int argc, char** argv) {
 
             scale = (double)output_size / MAX(width, height);
 
-#if !GDK_PIXBUF_CHECK_VERSION(2, 36, 5)
-            scaled = gnome_desktop_thumbnail_scale_down_pixbuf(pixbuf, floor(width * scale + 0.5),
-                                                               floor(height * scale + 0.5));
-#else
             scaled = gdk_pixbuf_scale_simple(pixbuf, floor(width * scale + 0.5), floor(height * scale + 0.5),
                                              GDK_INTERP_BILINEAR);
-#endif
             gdk_pixbuf_copy_options(pixbuf, scaled);
             g_object_unref(pixbuf);
             pixbuf = scaled;
         }
     }
-#elif THUMBNAILER_RETURNS_DATA
-    data = file_to_data(input_filename, &length, &error);
-    if (data) {
-        GInputStream* mem_stream;
-
-        mem_stream = g_memory_input_stream_new_from_data(data, length, g_free);
-        pixbuf = gdk_pixbuf_new_from_stream_at_scale(mem_stream, output_size, -1, TRUE, NULL, &error);
-        g_object_unref(mem_stream);
-    }
-    else {
-        pixbuf = NULL;
-    }
-#else
-#error "One of THUMBNAILER_RETURNS_PIXBUF or THUMBNAILER_RETURNS_DATA must be set"
-#endif
     g_free(input_filename);
 
     if (!pixbuf) {
