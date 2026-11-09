@@ -39,7 +39,6 @@ summary('Builtin loaders', builtin_loaders, section: 'Loaders')
 summary('Debugging', get_option('debug'), section: 'Build')
 summary('Optimization', get_option('optimization'), section: 'Build')
 summary('GIO MIME sniffing', use_gio_mime, section: 'Build')
-summary('MediaLib', use_medialib, section: 'Build')
 summary('Introspection', build_gir, section: 'Build')
 summary('Relocatable', relocatable, section: 'Build')
 
