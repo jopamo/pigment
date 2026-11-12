@@ -313,7 +313,7 @@ static void gdk_pixbuf_loader_prepare(GdkPixbuf* pixbuf, GdkPixbufAnimation* ani
 
     if (priv->needs_scale && width != 0 && height != 0) {
         priv->animation = GDK_PIXBUF_ANIMATION(
-            _gdk_pixbuf_scaled_anim_new(anim, (double)priv->width / width, (double)priv->height / height, 1.0));
+            _gdk_pixbuf_scaled_anim_new(anim, (double)priv->width / width, (double)priv->height / height));
         g_object_unref(anim);
     }
     else

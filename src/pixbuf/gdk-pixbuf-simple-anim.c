@@ -70,18 +70,9 @@ struct _GdkPixbufSimpleAnimIter {
     GdkPixbufSimpleAnim* simple_anim;
 
     GTimeVal start_time;
-    GTimeVal current_time;
-
     gint position;
 
     GList* current_frame;
-};
-
-typedef struct _GdkPixbufFrame GdkPixbufFrame;
-struct _GdkPixbufFrame {
-    GdkPixbuf* pixbuf;
-    gint delay_time;
-    gint elapsed;
 };
 
 static void gdk_pixbuf_simple_anim_finalize(GObject* object);
@@ -132,18 +123,10 @@ static void gdk_pixbuf_simple_anim_class_init(GdkPixbufSimpleAnimClass* klass) {
 
 static void gdk_pixbuf_simple_anim_finalize(GObject* object) {
     GdkPixbufSimpleAnim* anim;
-    GList* l;
-    GdkPixbufFrame* frame;
 
     anim = GDK_PIXBUF_SIMPLE_ANIM(object);
 
-    for (l = anim->frames; l; l = l->next) {
-        frame = l->data;
-        g_object_unref(frame->pixbuf);
-        g_free(frame);
-    }
-
-    g_list_free(anim->frames);
+    g_list_free_full(anim->frames, g_object_unref);
 
     G_OBJECT_CLASS(gdk_pixbuf_simple_anim_parent_class)->finalize(object);
 }
@@ -164,7 +147,7 @@ static GdkPixbuf* get_static_image(GdkPixbufAnimation* animation) {
     if (anim->frames == NULL)
         return NULL;
     else
-        return ((GdkPixbufFrame*)anim->frames->data)->pixbuf;
+        return anim->frames->data;
 }
 
 static void get_size(GdkPixbufAnimation* animation, gint* width, gint* height) {
@@ -179,16 +162,6 @@ static void get_size(GdkPixbufAnimation* animation, gint* width, gint* height) {
         *height = anim->height;
 }
 
-static void iter_clear(GdkPixbufSimpleAnimIter* iter) {
-    iter->current_frame = NULL;
-}
-
-static void iter_restart(GdkPixbufSimpleAnimIter* iter) {
-    iter_clear(iter);
-
-    iter->current_frame = iter->simple_anim->frames;
-}
-
 static GdkPixbufAnimationIter* get_iter(GdkPixbufAnimation* anim, const GTimeVal* start_time) {
     GdkPixbufSimpleAnimIter* iter;
 
@@ -198,10 +171,9 @@ static GdkPixbufAnimationIter* get_iter(GdkPixbufAnimation* anim, const GTimeVal
 
     g_object_ref(iter->simple_anim);
 
-    iter_restart(iter);
+    iter->current_frame = iter->simple_anim->frames;
 
     iter->start_time = *start_time;
-    iter->current_time = *start_time;
 
     return GDK_PIXBUF_ANIMATION_ITER(iter);
 }
@@ -236,7 +208,7 @@ static void gdk_pixbuf_simple_anim_iter_finalize(GObject* object) {
     GdkPixbufSimpleAnimIter* iter;
 
     iter = GDK_PIXBUF_SIMPLE_ANIM_ITER(object);
-    iter_clear(iter);
+    iter->current_frame = NULL;
 
     g_object_unref(iter->simple_anim);
 
@@ -258,20 +230,17 @@ static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* curre
     if (iter->simple_anim->frames == NULL)
         return FALSE;
 
-    iter->current_time = *current_time;
-
-    if (iter->current_time.tv_sec < iter->start_time.tv_sec ||
-        (iter->current_time.tv_sec == iter->start_time.tv_sec &&
-         iter->current_time.tv_usec < iter->start_time.tv_usec)) {
+    if (current_time->tv_sec < iter->start_time.tv_sec ||
+        (current_time->tv_sec == iter->start_time.tv_sec && current_time->tv_usec < iter->start_time.tv_usec)) {
         /* Try to compensate; probably the system clock
          * was set backwards
          */
-        iter->start_time = iter->current_time;
+        iter->start_time = *current_time;
         elapsed = 0;
     }
     else {
-        sec_delta = (guint64)iter->current_time.tv_sec - (guint64)iter->start_time.tv_sec;
-        usec_delta = (gint64)iter->current_time.tv_usec - (gint64)iter->start_time.tv_usec;
+        sec_delta = (guint64)current_time->tv_sec - (guint64)iter->start_time.tv_sec;
+        usec_delta = (gint64)current_time->tv_usec - (gint64)iter->start_time.tv_usec;
 
         if (!g_uint64_checked_mul(&sec_usec, sec_delta, G_USEC_PER_SEC) || sec_usec > (guint64)G_MAXINT64 - 1000000)
             elapsed = G_MAXINT64;
@@ -291,18 +260,9 @@ static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* curre
 
     /* Now move to the proper frame */
     if (loop_count < 1 || iter->simple_anim->loop)
-        tmp = iter->simple_anim->frames;
+        tmp = g_list_nth(iter->simple_anim->frames, iter->position / iter->simple_anim->delay_time);
     else
         tmp = NULL;
-
-    while (tmp != NULL) {
-        GdkPixbufFrame* frame = tmp->data;
-
-        if (iter->position >= frame->elapsed && iter->position < (frame->elapsed + frame->delay_time))
-            break;
-
-        tmp = tmp->next;
-    }
 
     old = iter->current_frame;
 
@@ -312,14 +272,12 @@ static gboolean advance(GdkPixbufAnimationIter* anim_iter, const GTimeVal* curre
 }
 
 static gint get_delay_time(GdkPixbufAnimationIter* anim_iter) {
-    GdkPixbufFrame* frame;
     GdkPixbufSimpleAnimIter* iter;
 
     iter = GDK_PIXBUF_SIMPLE_ANIM_ITER(anim_iter);
 
     if (iter->current_frame) {
-        frame = iter->current_frame->data;
-        return frame->delay_time - (iter->position - frame->elapsed);
+        return iter->simple_anim->delay_time - iter->position % iter->simple_anim->delay_time;
     }
     else {
         return -1; /* show last frame forever */
@@ -328,21 +286,16 @@ static gint get_delay_time(GdkPixbufAnimationIter* anim_iter) {
 
 static GdkPixbuf* get_pixbuf(GdkPixbufAnimationIter* anim_iter) {
     GdkPixbufSimpleAnimIter* iter;
-    GdkPixbufFrame* frame;
+    GList* frame;
 
     iter = GDK_PIXBUF_SIMPLE_ANIM_ITER(anim_iter);
 
     if (iter->current_frame)
-        frame = iter->current_frame->data;
-    else if (g_list_length(iter->simple_anim->frames) > 0)
-        frame = g_list_last(iter->simple_anim->frames)->data;
+        frame = iter->current_frame;
     else
-        frame = NULL;
+        frame = g_list_last(iter->simple_anim->frames);
 
-    if (frame == NULL)
-        return NULL;
-
-    return frame->pixbuf;
+    return frame ? frame->data : NULL;
 }
 
 static gboolean on_currently_loading_frame(GdkPixbufAnimationIter* anim_iter) {
@@ -399,23 +352,13 @@ GdkPixbufSimpleAnim* gdk_pixbuf_simple_anim_new(gint width, gint height, gfloat 
  * Since: 2.8
  */
 void gdk_pixbuf_simple_anim_add_frame(GdkPixbufSimpleAnim* animation, GdkPixbuf* pixbuf) {
-    GdkPixbufFrame* frame;
-    gint delay_time;
-
     g_return_if_fail(GDK_IS_PIXBUF_SIMPLE_ANIM(animation));
     g_return_if_fail(GDK_IS_PIXBUF(pixbuf));
     g_return_if_fail(animation->delay_time > 0);
     g_return_if_fail(animation->total_time <= G_MAXINT - animation->delay_time);
 
-    delay_time = animation->delay_time;
-
-    frame = g_new0(GdkPixbufFrame, 1);
-    frame->delay_time = delay_time;
-    frame->elapsed = animation->total_time;
-    animation->total_time += delay_time;
-    frame->pixbuf = g_object_ref(pixbuf);
-
-    animation->frames = g_list_append(animation->frames, frame);
+    animation->total_time += animation->delay_time;
+    animation->frames = g_list_append(animation->frames, g_object_ref(pixbuf));
 }
 
 static void gdk_pixbuf_simple_anim_get_property(GObject* object, guint prop_id, GValue* value, GParamSpec* pspec) {

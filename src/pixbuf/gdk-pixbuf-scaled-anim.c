@@ -36,7 +36,6 @@ struct _GdkPixbufScaledAnim {
     GdkPixbufAnimation* anim;
     gdouble xscale;
     gdouble yscale;
-    gdouble tscale;
 
     GdkPixbuf* current;
 };
@@ -55,10 +54,7 @@ struct _GdkPixbufScaledAnimIter {
 typedef struct _GdkPixbufScaledAnimIter GdkPixbufScaledAnimIter;
 typedef struct _GdkPixbufScaledAnimIterClass GdkPixbufScaledAnimIterClass;
 
-GdkPixbufScaledAnim* _gdk_pixbuf_scaled_anim_new(GdkPixbufAnimation* anim,
-                                                 gdouble xscale,
-                                                 gdouble yscale,
-                                                 gdouble tscale) {
+GdkPixbufScaledAnim* _gdk_pixbuf_scaled_anim_new(GdkPixbufAnimation* anim, gdouble xscale, gdouble yscale) {
     GdkPixbufScaledAnim* scaled;
 
     scaled = g_object_new(GDK_TYPE_PIXBUF_SCALED_ANIM, NULL);
@@ -66,7 +62,6 @@ GdkPixbufScaledAnim* _gdk_pixbuf_scaled_anim_new(GdkPixbufAnimation* anim,
     scaled->anim = g_object_ref(anim);
     scaled->xscale = xscale;
     scaled->yscale = yscale;
-    scaled->tscale = tscale;
 
     return scaled;
 }
@@ -76,7 +71,6 @@ G_DEFINE_TYPE(GdkPixbufScaledAnim, gdk_pixbuf_scaled_anim, GDK_TYPE_PIXBUF_ANIMA
 static void gdk_pixbuf_scaled_anim_init(GdkPixbufScaledAnim* scaled) {
     scaled->xscale = 1.0;
     scaled->yscale = 1.0;
-    scaled->tscale = 1.0;
 }
 
 static void gdk_pixbuf_scaled_anim_finalize(GObject* object) {
@@ -183,12 +177,7 @@ static void gdk_pixbuf_scaled_anim_iter_init(GdkPixbufScaledAnimIter* iter) {}
 
 static int get_delay_time(GdkPixbufAnimationIter* iter) {
     GdkPixbufScaledAnimIter* scaled = (GdkPixbufScaledAnimIter*)iter;
-    int delay;
-
-    delay = gdk_pixbuf_animation_iter_get_delay_time(scaled->iter);
-    delay = (int)(delay * scaled->scaled->tscale);
-
-    return delay;
+    return gdk_pixbuf_animation_iter_get_delay_time(scaled->iter);
 }
 
 static GdkPixbuf* get_pixbuf(GdkPixbufAnimationIter* iter) {
