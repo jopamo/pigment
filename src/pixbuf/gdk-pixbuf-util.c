@@ -356,7 +356,3 @@ void _gdk_pixbuf_init_gettext(void) {
         g_once_init_leave(&gettext_initialized, TRUE);
     }
 }
-
-const gchar* gdk_pixbuf_gettext(const gchar* msgid) {
-    return g_dgettext(GETTEXT_PACKAGE, msgid);
-}

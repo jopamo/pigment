@@ -40,8 +40,6 @@ struct _GdkPixbufSimpleAnimClass {
 struct _GdkPixbufSimpleAnim {
     GdkPixbufAnimation parent_instance;
 
-    gint n_frames;
-
     gint delay_time;
     gint total_time;
 
@@ -415,7 +413,6 @@ void gdk_pixbuf_simple_anim_add_frame(GdkPixbufSimpleAnim* animation, GdkPixbuf*
     frame->delay_time = delay_time;
     frame->elapsed = animation->total_time;
     animation->total_time += delay_time;
-    animation->n_frames++;
     frame->pixbuf = g_object_ref(pixbuf);
 
     animation->frames = g_list_append(animation->frames, frame);

@@ -134,8 +134,6 @@ struct _RsvgState {
     RsvgLength letter_spacing;
     gboolean has_letter_spacing;
 
-    guint text_offset;
-
     guint32 stop_color; /* rgb */
     gboolean has_stop_color;
     gint stop_opacity; /* 0..255 */

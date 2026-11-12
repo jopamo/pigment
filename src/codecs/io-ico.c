@@ -22,9 +22,6 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#undef DUMPBIH
-#define DEBUG(s)
-
 #define INFOHEADER_SIZE 40
 
 /*
@@ -48,58 +45,6 @@ Known bugs:
 static guint32 read_le32(const guchar* src) {
     return (guint32)src[0] | ((guint32)src[1] << 8) | ((guint32)src[2] << 16) | ((guint32)src[3] << 24);
 }
-
-/*
-
-These structures are actually dummies. These are according to
-the "Windows API reference guide volume II" as written by
-Borland International, but GCC fiddles with the alignment of
-the internal members.
-
-*/
-
-struct BitmapFileHeader {
-    gushort bfType;
-    guint bfSize;
-    guint reserverd;
-    guint bfOffbits;
-};
-
-struct BitmapInfoHeader {
-    guint biSize;
-    guint biWidth;
-    guint biHeight;
-    gushort biPlanes;
-    gushort biBitCount;
-    guint biCompression;
-    guint biSizeImage;
-    guint biXPelsPerMeter;
-    guint biYPelsPerMeter;
-    guint biClrUsed;
-    guint biClrImportant;
-};
-
-#ifdef DUMPBIH
-/*
-
-DumpBIH printf's the values in a BitmapInfoHeader to the screen, for
-debugging purposes.
-
-*/
-static void DumpBIH(unsigned char* BIH) {
-    printf("biSize      = %i \n", (gint32)read_le32(&BIH[0]));
-    printf("biWidth     = %i \n", (gint32)read_le32(&BIH[4]));
-    printf("biHeight    = %i \n", (gint32)read_le32(&BIH[8]));
-    printf("biPlanes    = %i \n", (int)(BIH[13] << 8) + (BIH[12]));
-    printf("biBitCount  = %i \n", (int)(BIH[15] << 8) + (BIH[14]));
-    printf("biCompress  = %i \n", (gint32)read_le32(&BIH[16]));
-    printf("biSizeImage = %i \n", (gint32)read_le32(&BIH[20]));
-    printf("biXPels     = %i \n", (gint32)read_le32(&BIH[24]));
-    printf("biYPels     = %i \n", (gint32)read_le32(&BIH[28]));
-    printf("biClrUsed   = %i \n", (gint32)read_le32(&BIH[32]));
-    printf("biClrImprtnt= %i \n", (gint32)read_le32(&BIH[36]));
-}
-#endif
 
 /* Progressive loading */
 struct headerpair {
@@ -225,8 +170,6 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
 
     State->HeaderSize = 6 + IconCount * 16;
 
-    DEBUG(g_print("Image type: %d (%s)\nImage count: %d\n", imgtype, imgtype == 2 ? "cursor" : "icon", IconCount));
-
     if (State->HeaderSize > State->BytesInHeaderBuf) {
         guchar* tmp = g_try_realloc(State->HeaderBuf, State->HeaderSize);
         if (!tmp) {
@@ -252,7 +195,6 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         int depth;
         int x_hot;
         int y_hot;
-        guint data_size G_GNUC_UNUSED;
         guint data_offset;
 
         width = Ptr[0];
@@ -260,12 +202,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         depth = Ptr[2];
         x_hot = (Ptr[5] << 8) + Ptr[4];
         y_hot = (Ptr[7] << 8) + Ptr[6];
-        data_size = read_le32(&Ptr[8]);
         data_offset = read_le32(&Ptr[12]);
-        DEBUG(g_print("Image %d: %d x %d\n\tDepth: %d\n", I, width, height, depth);
-              if (imgtype == 2) g_print("\tHotspot: %d x %d\n", x_hot, y_hot);
-              else g_print("\tColor planes: %d\n\tBits per pixel: %d\n", x_hot, y_hot);
-              g_print("\tSize: %d\n\tOffset: %d\n", data_size, data_offset);)
 
         if (depth == 0)
             depth = 32;
@@ -325,11 +262,8 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
 
         /* A compressed icon, try the next one */
         if ((BIH[16] != 0) || (BIH[17] != 0) || (BIH[18] != 0) || (BIH[19] != 0)) {
-            DEBUG(g_print("Skipping icon with score %d, as it is compressed\n", entry->ImageScore));
             continue;
         }
-
-        DEBUG(g_print("Selecting icon with score %d\n", entry->ImageScore));
 
         /* If we made it to here then we have selected a BIH structure
          * in a format that we can parse */
@@ -348,9 +282,6 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
     State->x_hot = entry->x_hot;
     State->y_hot = entry->y_hot;
 
-#ifdef DUMPBIH
-    DumpBIH(BIH);
-#endif
     /* Add the palette to the headersize */
 
     State->Header.width = (gint32)read_le32(&BIH[4]);
