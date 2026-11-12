@@ -36,7 +36,6 @@
 #include <tiffio.h>
 #include <errno.h>
 #include <glib-object.h>
-#include <glib/gi18n-lib.h>
 
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-io.h"
@@ -100,25 +99,25 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
 
     if (!TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &width)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                            _("Could not get image width (bad TIFF file)"));
+                            "Could not get image width (bad TIFF file)");
         return NULL;
     }
 
     if (!TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &height)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                            _("Could not get image height (bad TIFF file)"));
+                            "Could not get image height (bad TIFF file)");
         return NULL;
     }
 
     if (width <= 0 || height <= 0) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Width or height of TIFF image is zero"));
+                            "Width or height of TIFF image is zero");
         return NULL;
     }
 
     if (width > G_MAXINT / 4) { /* overflow */
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Dimensions of TIFF image too large"));
+                            "Dimensions of TIFF image too large");
         return NULL;
     }
 
@@ -126,7 +125,7 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
 
     if (height > G_MAXINT / rowstride) { /* overflow */
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Dimensions of TIFF image too large"));
+                            "Dimensions of TIFF image too large");
         return NULL;
     }
 
@@ -150,7 +149,7 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
 
     if (!pixels) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to open TIFF file"));
+                            "Insufficient memory to open TIFF file");
         return NULL;
     }
 
@@ -158,7 +157,7 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
     if (!pixbuf) {
         g_free(pixels);
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to open TIFF file"));
+                            "Insufficient memory to open TIFF file");
         return NULL;
     }
 
@@ -251,14 +250,14 @@ static GdkPixbuf* tiff_image_parse(TIFF* tiff, TiffContext* context, GError** er
         pixels32 = g_try_new(uint32_t, (gsize)width*(gsize)height);
         if (pixels32 == NULL) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Insufficient memory to open TIFF file"));
+                                "Insufficient memory to open TIFF file");
             g_object_unref(pixbuf);
             return NULL;
         }
         if (!TIFFReadRGBAImageOriented(tiff, width, height, pixels32, ORIENTATION_TOPLEFT, 1)) {
             g_free(pixels32);
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                                _("Failed to load RGB data from TIFF file"));
+                                "Failed to load RGB data from TIFF file");
             g_object_unref(pixbuf);
             return NULL;
         }
@@ -326,7 +325,7 @@ static GdkPixbuf* gdk_pixbuf__tiff_image_load(FILE* f, GError** error) {
     tiff = TIFFFdOpen(fd, "libpixbuf-tiff", "r");
 
     if (!tiff) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Failed to open TIFF image"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Failed to open TIFF image");
         return NULL;
     }
 
@@ -437,7 +436,7 @@ static gboolean gdk_pixbuf__tiff_image_stop_load(gpointer data, GError** error) 
     tiff = TIFFClientOpen("libtiff-pixbuf", "r", data, tiff_load_read, tiff_load_write, tiff_load_seek, tiff_load_close,
                           tiff_load_size, tiff_load_map_file, tiff_load_unmap_file);
     if (!tiff) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Failed to load TIFF image"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Failed to load TIFF image");
     }
     else {
         GdkPixbuf* pixbuf;
@@ -448,7 +447,7 @@ static gboolean gdk_pixbuf__tiff_image_stop_load(gpointer data, GError** error) 
             g_object_unref(pixbuf);
         /* tiff_image_parse() can return NULL on success in a particular case */
         if (!retval && error && !*error) {
-            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Failed to load TIFF image"));
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Failed to load TIFF image");
         }
     }
 
@@ -500,7 +499,7 @@ static gboolean gdk_pixbuf__tiff_image_load_increment(gpointer data, const gucha
 
     if (!make_available_at_least(context, size)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to open TIFF file"));
+                            "Insufficient memory to open TIFF file");
         return FALSE;
     }
 
@@ -660,7 +659,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
                           tiff_save_close, tiff_save_size, NULL, NULL);
 
     if (!tiff) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Failed to save TIFF image"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Failed to save TIFF image");
         free_save_context(context);
         return FALSE;
     }
@@ -719,7 +718,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
         TIFFSetField(tiff, TIFFTAG_COMPRESSION, codec);
     else {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                            _("TIFF compression doesn’t refer to a valid codec."));
+                            "TIFF compression doesn’t refer to a valid codec.");
         retval = FALSE;
         goto cleanup;
     }
@@ -748,7 +747,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
             icc_profile_buf = g_base64_decode(icc_profile, &icc_profile_size);
             if (icc_profile_size < 127) {
                 g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("Color profile has invalid length %d."), (gint)icc_profile_size);
+                            "Color profile has invalid length %d.", (gint)icc_profile_size);
                 retval = FALSE;
                 g_free(icc_profile_buf);
                 goto cleanup;
@@ -761,7 +760,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
     else {
         /* The passed bits-per-sample is not supported. */
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                            _("TIFF bits-per-sample doesn’t contain a supported value."));
+                            "TIFF bits-per-sample doesn’t contain a supported value.");
         retval = FALSE;
         goto cleanup;
     }
@@ -840,7 +839,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
     }
 
     if (y < height) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Failed to write TIFF data"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Failed to write TIFF data");
         retval = FALSE;
         goto cleanup;
     }
@@ -855,7 +854,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
             x_dpi_value = -1;
         if (x_dpi_value <= 0) {
             g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                        _("TIFF x-dpi must be greater than zero; value “%s” is not allowed."), x_dpi);
+                        "TIFF x-dpi must be greater than zero; value “%s” is not allowed.", x_dpi);
             retval = FALSE;
             goto cleanup;
         }
@@ -864,7 +863,7 @@ static gboolean gdk_pixbuf__tiff_image_save_to_callback(GdkPixbufSaveFunc save_f
             y_dpi_value = -1;
         if (y_dpi_value <= 0) {
             g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                        _("TIFF y-dpi must be greater than zero; value “%s” is not allowed."), y_dpi);
+                        "TIFF y-dpi must be greater than zero; value “%s” is not allowed.", y_dpi);
             retval = FALSE;
             goto cleanup;
         }
@@ -899,7 +898,7 @@ static gboolean save_to_file_cb(const gchar* buf, gsize count, GError** error, g
     }
 
     if (count) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Couldn’t write to TIFF file"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Couldn’t write to TIFF file");
         return FALSE;
     }
 
@@ -943,7 +942,7 @@ MODULE_ENTRY(fill_info)(GdkPixbufFormat* info) {
 
     info->name = "tiff";
     info->signature = (GdkPixbufModulePattern*)signature;
-    info->description = NC_("image format", "TIFF");
+    info->description = "TIFF";
     info->mime_types = (gchar**)mime_types;
     info->extensions = (gchar**)extensions;
     info->flags = GDK_PIXBUF_FORMAT_WRITABLE | GDK_PIXBUF_FORMAT_THREADSAFE;

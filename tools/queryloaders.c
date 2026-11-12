@@ -166,7 +166,7 @@ static void write_loader_info(GString* contents, const char* path, GdkPixbufForm
     g_free(escaped_path);
 
     g_string_append_printf(contents, "\"%s\" %u \"%s\" \"%s\" \"%s\"\n", info->name, info->flags,
-                           info->domain ? info->domain : GETTEXT_PACKAGE, info->description,
+                           info->domain ? info->domain : "gdk-pixbuf", info->description,
                            info->license ? info->license : "");
     for (mime = info->mime_types; *mime; mime++) {
         g_string_append_printf(contents, "\"%s\" ", *mime);

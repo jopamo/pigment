@@ -414,7 +414,7 @@ typedef enum /*< skip >*/
  * GdkPixbufFormat:
  * @name: the name of the image format
  * @signature: the signature of the module
- * @domain: the message domain for the `description`
+ * @domain: message domain retained for module ABI compatibility; descriptions are not translated
  * @description: a description of the image format
  * @mime_types: (array zero-terminated=1): the MIME types for the image format
  * @extensions: (array zero-terminated=1): typical filename extensions for the

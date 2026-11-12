@@ -27,7 +27,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <glib-object.h>
-#include <glib/gi18n-lib.h>
 
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-io.h"
@@ -144,8 +143,7 @@ static gboolean grow_buffer(struct bmp_progressive_state* State, GError** error)
     guchar* tmp;
 
     if (State->BufferSize == 0) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has bogus header data"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has bogus header data");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -154,7 +152,7 @@ static gboolean grow_buffer(struct bmp_progressive_state* State, GError** error)
 
     if (!tmp) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Not enough memory to load bitmap image"));
+                            "Not enough memory to load bitmap image");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -176,8 +174,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
     /* First check for the two first bytes content. A sane
        BMP file must start with bytes 0x42 0x4D.  */
     if (*BFH != 0x42 || *(BFH + 1) != 0x4D) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has bogus header data"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has bogus header data");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -189,7 +186,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
        allocation before it is rejected below. */
     if (header_size > 124) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has unsupported header size"));
+                            "BMP image has unsupported header size");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -253,14 +250,13 @@ static gboolean DecodeHeader(unsigned char* BFH,
     }
     else {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has unsupported header size"));
+                            "BMP image has unsupported header size");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
 
     if (State->Header.depth > 32) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has unsupported depth"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has unsupported depth");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -271,8 +267,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
         clrUsed = (guint32)lsb_32(&BIH[32]);
 
     if (clrUsed > (G_GUINT64_CONSTANT(1) << State->Header.depth)) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has oversize palette"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has oversize palette");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -290,7 +285,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
     if (State->Header.height < 0) {
         if (State->Header.height == INT_MIN) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                _("BMP image has bogus header data"));
+                                "BMP image has bogus header data");
             State->read_state = READ_STATE_ERROR;
             return FALSE;
         }
@@ -300,7 +295,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
 
     if (State->Header.Negative && (State->Compressed != BI_RGB && State->Compressed != BI_BITFIELDS)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Topdown BMP images cannot be compressed"));
+                            "Topdown BMP images cannot be compressed");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -309,8 +304,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
         (State->Compressed == BI_RLE8 && State->Type != 8) ||
         (State->Compressed == BI_BITFIELDS && !(State->Type == 16 || State->Type == 32)) ||
         (State->Compressed > BI_BITFIELDS)) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has bogus header data"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has bogus header data");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -319,8 +313,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
         bytesPerPixel = State->Type / 8;
         State->LineWidth = State->Header.width * bytesPerPixel;
         if (State->Header.width != State->LineWidth / bytesPerPixel) {
-            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                _("BMP image width too large"));
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image width too large");
             return FALSE;
         }
     }
@@ -332,8 +325,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
             State->LineWidth++;
     }
     else {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has bogus header data"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has bogus header data");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -363,7 +355,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
         if (State->Header.width <= 0 || State->Header.height <= 0 ||
             !g_uint64_checked_mul(&len, State->Header.width, State->Header.height) || len > G_MAXINT) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                _("BMP image has bogus header data"));
+                                "BMP image has bogus header data");
             State->read_state = READ_STATE_ERROR;
             return FALSE;
         }
@@ -378,7 +370,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
 
         if (rowstride <= 0 || !g_uint64_checked_mul(&len, rowstride, State->Header.height) || len > G_MAXINT) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                _("BMP image has bogus header data"));
+                                "BMP image has bogus header data");
             State->read_state = READ_STATE_ERROR;
             return FALSE;
         }
@@ -388,7 +380,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
 
         if (State->pixbuf == NULL) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Not enough memory to load bitmap image"));
+                                "Not enough memory to load bitmap image");
             State->read_state = READ_STATE_ERROR;
             return FALSE;
         }
@@ -448,8 +440,7 @@ static gboolean DecodeHeader(unsigned char* BFH,
         }
     }
     else {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("BMP image has bogus header data"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "BMP image has bogus header data");
         State->read_state = READ_STATE_ERROR;
         return FALSE;
     }
@@ -660,7 +651,7 @@ static gboolean gdk_pixbuf__bmp_image_stop_load(gpointer data, GError** error) {
     if (context->read_state == READ_STATE_HEADERS ||
         (context->read_state != READ_STATE_ERROR && context->BufferPadding != 0)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Premature end-of-file encountered"));
+                            "Premature end-of-file encountered");
         retval = FALSE;
     }
 
@@ -1174,7 +1165,7 @@ static gboolean gdk_pixbuf__bmp_image_load_increment(gpointer data, const guchar
             case READ_STATE_PALETTE:
                 if (!DecodeColormap(context->buff, context, error)) {
                     g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                                        _("Error while decoding colormap"));
+                                        "Error while decoding colormap");
                     return FALSE;
                 }
                 break;
@@ -1238,7 +1229,7 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
 
     /* stride = (width * 3 + 3) & ~3 */
     if (!g_uint_checked_mul(&stride, width, 3) || !g_uint_checked_add(&stride, stride, 3)) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Image is too wide for BMP format."));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Image is too wide for BMP format.");
         return FALSE;
     }
 
@@ -1247,7 +1238,7 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
     /* size = stride * height
      * bf_size = size + 14 + 40 */
     if (!g_uint_checked_mul(&size, stride, height) || !g_uint_checked_add(&bf_size, size, 14 + 40)) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Image is too wide for BMP format."));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Image is too wide for BMP format.");
         return FALSE;
     }
 
@@ -1280,7 +1271,7 @@ static gboolean gdk_pixbuf__bmp_image_save_to_callback(GdkPixbufSaveFunc save_fu
     dst_line = buf = g_try_malloc0(buffer_size);
     if (!buf) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Couldn’t allocate memory for saving BMP file"));
+                            "Couldn’t allocate memory for saving BMP file");
         return FALSE;
     }
 
@@ -1319,7 +1310,7 @@ static gboolean save_to_file_cb(const gchar* buf, gsize count, GError** error, g
     }
 
     if (count) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Couldn’t write to BMP file"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Couldn’t write to BMP file");
         return FALSE;
     }
 
@@ -1351,7 +1342,7 @@ MODULE_ENTRY(fill_info)(GdkPixbufFormat* info) {
 
     info->name = "bmp";
     info->signature = (GdkPixbufModulePattern*)signature;
-    info->description = NC_("image format", "BMP");
+    info->description = "BMP";
     info->mime_types = (gchar**)mime_types;
     info->extensions = (gchar**)extensions;
     info->flags = GDK_PIXBUF_FORMAT_WRITABLE | GDK_PIXBUF_FORMAT_THREADSAFE;

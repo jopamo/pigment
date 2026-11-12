@@ -39,7 +39,6 @@ Known bugs:
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <glib/gi18n-lib.h>
 #include "gdk-pixbuf-io.h"
 
 static guint32 read_le32(const guchar* src) {
@@ -150,7 +149,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
 
     /* First word should be 0 according to specs */
     if (((Data[1] << 8) + Data[0]) != 0) {
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Invalid header in icon (%s)",
                     "first word");
         return;
     }
@@ -161,7 +160,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
 
     /* If it is not a cursor make sure it is actually an icon */
     if (!State->cursor && imgtype != 1) {
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Invalid header in icon (%s)",
                     "image type");
         return;
     }
@@ -174,7 +173,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         guchar* tmp = g_try_realloc(State->HeaderBuf, State->HeaderSize);
         if (!tmp) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Not enough memory to load icon"));
+                                "Not enough memory to load icon");
             return;
         }
         State->HeaderBuf = tmp;
@@ -237,7 +236,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
 
         /* Avoid invoking undefined behavior in the State->HeaderSize calculation below */
         if (entry->DIBoffset > G_MAXINT - INFOHEADER_SIZE) {
-            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
+            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Invalid header in icon (%s)",
                         "header size");
             return;
         }
@@ -249,7 +248,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
             guchar* tmp = g_try_realloc(State->HeaderBuf, State->HeaderSize);
             if (!tmp) {
                 g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                    _("Not enough memory to load icon"));
+                                    "Not enough memory to load icon");
                 return;
             }
             State->HeaderBuf = tmp;
@@ -273,7 +272,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
     /* No valid icon found, because all are compressed? */
     if (l == NULL) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            got_broken_header ? _("Invalid header in icon") : _("Compressed icons are not supported"));
+                            got_broken_header ? "Invalid header in icon" : "Compressed icons are not supported");
         return;
     }
 
@@ -300,7 +299,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
     }
     if ((State->Header.width != entry->width && State->Header.width != -entry->width) ||
         State->Header.height != entry->height) {
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Invalid header in icon (%s)",
                     "image size");
         return;
     }
@@ -321,7 +320,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         n_colors = 256;
 
     if (n_colors > (G_MAXINT - State->HeaderSize) / 4) {
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Invalid header in icon (%s)"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Invalid header in icon (%s)",
                     "palette size");
         return;
     }
@@ -331,7 +330,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         guchar* tmp = g_try_realloc(State->HeaderBuf, State->HeaderSize);
         if (!tmp) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Not enough memory to load icon"));
+                                "Not enough memory to load icon");
             return;
         }
         State->HeaderBuf = tmp;
@@ -357,7 +356,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
             State->LineWidth++;
     }
     else {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Unsupported icon type"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Unsupported icon type");
         return;
     }
 
@@ -369,7 +368,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         State->LineBuf = g_try_malloc(State->LineWidth);
         if (!State->LineBuf) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Not enough memory to load icon"));
+                                "Not enough memory to load icon");
             return;
         }
     }
@@ -391,7 +390,7 @@ static void DecodeHeader(guchar* Data, gint Bytes, struct ico_progressive_state*
         State->pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, TRUE, 8, State->Header.width, State->Header.height);
         if (!State->pixbuf) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Not enough memory to load icon"));
+                                "Not enough memory to load icon");
             return;
         }
         if (State->cursor) {
@@ -435,7 +434,7 @@ static gpointer gdk_pixbuf__ico_image_begin_load(GdkPixbufModuleSizeFunc size_fu
     if (!context->HeaderBuf) {
         g_free(context);
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Not enough memory to load ICO file"));
+                            "Not enough memory to load ICO file");
         return NULL;
     }
     /* 4*256 for the colormap */
@@ -473,7 +472,7 @@ static gboolean gdk_pixbuf__ico_image_stop_load(gpointer data, GError** error) {
 
     if (context->HeaderDone < context->HeaderSize) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("ICO image was truncated or incomplete."));
+                            "ICO image was truncated or incomplete.");
         ret = FALSE;
     }
 
@@ -842,8 +841,7 @@ static gboolean fill_entry(IconEntry* icon, GdkPixbuf* pixbuf, gint hot_x, gint 
     gint n_channels, v, x, y;
 
     if (icon->width > 256 || icon->height > 256) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("Image too large to be saved as ICO"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, "Image too large to be saved as ICO");
         return FALSE;
     }
 
@@ -851,8 +849,7 @@ static gboolean fill_entry(IconEntry* icon, GdkPixbuf* pixbuf, gint hot_x, gint 
         icon->hot_x = hot_x;
         icon->hot_y = hot_y;
         if (icon->hot_x >= icon->width || icon->hot_y >= icon->height) {
-            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                                _("Cursor hotspot outside image"));
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, "Cursor hotspot outside image");
             return FALSE;
         }
     }
@@ -872,7 +869,7 @@ static gboolean fill_entry(IconEntry* icon, GdkPixbuf* pixbuf, gint hot_x, gint 
             icon->xor_rowstride = icon->width * 2;
             break;
         default:
-            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, _("Unsupported depth for ICO file: %d"),
+            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, "Unsupported depth for ICO file: %d",
                         icon->depth);
             return FALSE;
     }
@@ -1146,7 +1143,7 @@ MODULE_ENTRY(fill_info)(GdkPixbufFormat* info) {
 
     info->name = "ico";
     info->signature = (GdkPixbufModulePattern*)signature;
-    info->description = NC_("image format", "Windows icon");
+    info->description = "Windows icon";
     info->mime_types = (gchar**)mime_types;
     info->extensions = (gchar**)extensions;
     info->flags = GDK_PIXBUF_FORMAT_WRITABLE | GDK_PIXBUF_FORMAT_THREADSAFE;

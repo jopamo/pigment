@@ -275,7 +275,7 @@ gboolean rsvg_css_engine_parse_into_props(RsvgCssEngine* engine,
     }
     if (length > RSVG_MAX_CSS_SIZE) {
         if (emit_warnings)
-            g_warning(_("CSS buffer too large (%lu bytes), ignoring"), (unsigned long)length);
+            g_warning("CSS buffer too large (%lu bytes), ignoring", (unsigned long)length);
         return FALSE;
     }
     limits.max_input_bytes = RSVG_MAX_CSS_AGGREGATE;

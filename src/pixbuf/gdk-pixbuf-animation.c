@@ -143,7 +143,7 @@ GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file(const gchar* filename, GE
     f = g_fopen(filename, "rb");
     if (!f) {
         gint save_errno = errno;
-        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), _("Failed to open file “%s”: %s"),
+        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), "Failed to open file “%s”: %s",
                     display_name, g_strerror(save_errno));
         g_free(display_name);
         return NULL;
@@ -152,7 +152,7 @@ GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file(const gchar* filename, GE
     size = fread(&buffer, 1, sizeof(buffer), f);
 
     if (size == 0) {
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image file “%s” contains no data"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image file “%s” contains no data",
                     display_name);
         g_free(display_name);
         fclose(f);
@@ -187,7 +187,7 @@ GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file(const gchar* filename, GE
              */
             g_warning("Bug! gdk-pixbuf loader '%s' didn't set an error on failure.", image_module->module_name);
             g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                        _("Failed to load animation “%s”: reason not known, probably a corrupt animation file"),
+                        "Failed to load animation “%s”: reason not known, probably a corrupt animation file",
                         display_name);
         }
 
@@ -255,7 +255,7 @@ GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file(const gchar* filename, GE
 
             g_warning("Bug! gdk-pixbuf loader '%s' didn't set an error on failure.", image_module->module_name);
             g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                        _("Failed to load image “%s”: reason not known, probably a corrupt image file"), display_name);
+                        "Failed to load image “%s”: reason not known, probably a corrupt image file", display_name);
         }
 
         if (pixbuf == NULL) {

@@ -88,7 +88,7 @@ RsvgHandle* rsvg_handle_new_from_file(const gchar* file_name, GError** error) {
     file = g_file_new_for_path(file_name);
     base_uri = g_file_get_uri(file);
     if (!base_uri) {
-        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, _("Cannot obtain URI from '%s'"), file_name);
+        g_set_error(error, G_IO_ERROR, G_IO_ERROR_FAILED, "Cannot obtain URI from '%s'", file_name);
         g_object_unref(file);
         return NULL;
     }

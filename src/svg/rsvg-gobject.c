@@ -241,33 +241,33 @@ static void rsvg_handle_class_init(RsvgHandleClass* klass) {
      */
     g_object_class_install_property(
         gobject_class, PROP_DPI_X,
-        g_param_spec_double("dpi-x", _("Horizontal resolution"), _("Horizontal resolution"), 0., G_MAXDOUBLE,
+        g_param_spec_double("dpi-x", "Horizontal resolution", "Horizontal resolution", 0., G_MAXDOUBLE,
                             rsvg_internal_dpi_x, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
 
     g_object_class_install_property(
         gobject_class, PROP_DPI_Y,
-        g_param_spec_double("dpi-y", _("Vertical resolution"), _("Vertical resolution"), 0., G_MAXDOUBLE,
-                            rsvg_internal_dpi_y, (GParamFlags)(G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
+        g_param_spec_double("dpi-y", "Vertical resolution", "Vertical resolution", 0., G_MAXDOUBLE, rsvg_internal_dpi_y,
+                            (GParamFlags)(G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
 
     g_object_class_install_property(gobject_class, PROP_BASE_URI,
-                                    g_param_spec_string("base-uri", _("Base URI"), _("Base URI"), NULL,
+                                    g_param_spec_string("base-uri", "Base URI", "Base URI", NULL,
                                                         (GParamFlags)(G_PARAM_READWRITE | G_PARAM_CONSTRUCT)));
 
     g_object_class_install_property(
         gobject_class, PROP_WIDTH,
-        g_param_spec_int("width", _("Image width"), _("Image width"), 0, G_MAXINT, 0, (GParamFlags)(G_PARAM_READABLE)));
+        g_param_spec_int("width", "Image width", "Image width", 0, G_MAXINT, 0, (GParamFlags)(G_PARAM_READABLE)));
 
-    g_object_class_install_property(gobject_class, PROP_HEIGHT,
-                                    g_param_spec_int("height", _("Image height"), _("Image height"), 0, G_MAXINT, 0,
-                                                     (GParamFlags)(G_PARAM_READABLE)));
+    g_object_class_install_property(
+        gobject_class, PROP_HEIGHT,
+        g_param_spec_int("height", "Image height", "Image height", 0, G_MAXINT, 0, (GParamFlags)(G_PARAM_READABLE)));
 
     g_object_class_install_property(
         gobject_class, PROP_EM,
-        g_param_spec_double("em", _("em"), _("em"), 0, G_MAXDOUBLE, 0, (GParamFlags)(G_PARAM_READABLE)));
+        g_param_spec_double("em", "em", "em", 0, G_MAXDOUBLE, 0, (GParamFlags)(G_PARAM_READABLE)));
 
     g_object_class_install_property(
         gobject_class, PROP_EX,
-        g_param_spec_double("ex", _("ex"), _("ex"), 0, G_MAXDOUBLE, 0, (GParamFlags)(G_PARAM_READABLE)));
+        g_param_spec_double("ex", "ex", "ex", 0, G_MAXDOUBLE, 0, (GParamFlags)(G_PARAM_READABLE)));
 
     /**
      * RsvgHandle:title:
@@ -278,7 +278,7 @@ static void rsvg_handle_class_init(RsvgHandleClass* klass) {
      */
     g_object_class_install_property(
         gobject_class, PROP_TITLE,
-        g_param_spec_string("title", _("Title"), _("SVG file title"), NULL, (GParamFlags)(G_PARAM_READABLE)));
+        g_param_spec_string("title", "Title", "SVG file title", NULL, (GParamFlags)(G_PARAM_READABLE)));
 
     /**
      * RsvgHandle:desc:
@@ -287,9 +287,9 @@ static void rsvg_handle_class_init(RsvgHandleClass* klass) {
      *
      * Deprecated: 2.36
      */
-    g_object_class_install_property(gobject_class, PROP_DESC,
-                                    g_param_spec_string("desc", _("Description"), _("SVG file description"), NULL,
-                                                        (GParamFlags)(G_PARAM_READABLE)));
+    g_object_class_install_property(
+        gobject_class, PROP_DESC,
+        g_param_spec_string("desc", "Description", "SVG file description", NULL, (GParamFlags)(G_PARAM_READABLE)));
 
     /**
      * RsvgHandle:metadata:
@@ -300,7 +300,7 @@ static void rsvg_handle_class_init(RsvgHandleClass* klass) {
      */
     g_object_class_install_property(
         gobject_class, PROP_METADATA,
-        g_param_spec_string("metadata", _("Metadata"), _("SVG file metadata"), NULL, (GParamFlags)(G_PARAM_READABLE)));
+        g_param_spec_string("metadata", "Metadata", "SVG file metadata", NULL, (GParamFlags)(G_PARAM_READABLE)));
 
     xmlInitParser();
 

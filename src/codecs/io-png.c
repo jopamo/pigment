@@ -28,7 +28,6 @@
 #include <png.h>
 #include <math.h>
 #include <glib-object.h>
-#include <glib/gi18n-lib.h>
 
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-io.h"
@@ -58,7 +57,7 @@ static gboolean setup_png_transformations(png_structp png_read_ptr,
     bit_depth = png_get_bit_depth(png_read_ptr, png_info_ptr);
     if (bit_depth < 1 || bit_depth > 16) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Bits per channel of PNG image is invalid."));
+                            "Bits per channel of PNG image is invalid.");
         return FALSE;
     }
     png_get_IHDR(png_read_ptr, png_info_ptr, &width, &height, &bit_depth, &color_type, &interlace_type,
@@ -118,26 +117,26 @@ static gboolean setup_png_transformations(png_structp png_read_ptr,
 
     if (width == 0 || height == 0) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Transformed PNG has zero width or height."));
+                            "Transformed PNG has zero width or height.");
         return FALSE;
     }
 
     if (bit_depth != 8) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Bits per channel of transformed PNG is not 8."));
+                            "Bits per channel of transformed PNG is not 8.");
         return FALSE;
     }
 
     if (!(color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_RGB_ALPHA)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Transformed PNG not RGB or RGBA."));
+                            "Transformed PNG not RGB or RGBA.");
         return FALSE;
     }
 
     channels = png_get_channels(png_read_ptr, png_info_ptr);
     if (!(channels == 3 || channels == 4)) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Transformed PNG has unsupported number of channels, must be 3 or 4."));
+                            "Transformed PNG has unsupported number of channels, must be 3 or 4.");
         return FALSE;
     }
     return TRUE;
@@ -154,8 +153,7 @@ static void png_simple_error_callback(png_structp png_save_ptr, png_const_charp 
      * so check for already-set error
      */
     if (error && *error == NULL) {
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, _("Fatal error in PNG image file: %s"),
-                    error_msg);
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Fatal error in PNG image file: %s", error_msg);
     }
 
     longjmp(png_jmpbuf(png_save_ptr), 1);
@@ -270,7 +268,7 @@ static GdkPixbuf* gdk_pixbuf__png_image_load(FILE* f, GError** error) {
 
     if (w > G_MAXINT || h > G_MAXINT) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to load PNG file"));
+                            "Insufficient memory to load PNG file");
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return NULL;
     }
@@ -278,7 +276,7 @@ static GdkPixbuf* gdk_pixbuf__png_image_load(FILE* f, GError** error) {
     rowstride = gdk_pixbuf_calculate_rowstride(GDK_COLORSPACE_RGB, ctype & PNG_COLOR_MASK_ALPHA, 8, (gint)w, (gint)h);
     if (rowstride <= 0 || !g_uint64_checked_mul(&len, rowstride, h) || len >= G_MAXINT) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to load PNG file"));
+                            "Insufficient memory to load PNG file");
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return NULL;
     }
@@ -287,7 +285,7 @@ static GdkPixbuf* gdk_pixbuf__png_image_load(FILE* f, GError** error) {
 
     if (!pixbuf) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to load PNG file"));
+                            "Insufficient memory to load PNG file");
 
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return NULL;
@@ -300,7 +298,7 @@ static GdkPixbuf* gdk_pixbuf__png_image_load(FILE* f, GError** error) {
     rows = g_try_new(png_bytep, h);
     if (rows == NULL) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to load PNG file"));
+                            "Insufficient memory to load PNG file");
         g_object_unref(pixbuf);
         png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         return NULL;
@@ -446,7 +444,7 @@ static gpointer gdk_pixbuf__png_image_begin_load(GdkPixbufModuleSizeFunc size_fu
          */
         if (error && *error == NULL) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Couldn’t allocate memory for loading PNG"));
+                                "Couldn’t allocate memory for loading PNG");
         }
 
         return NULL;
@@ -465,7 +463,7 @@ static gpointer gdk_pixbuf__png_image_begin_load(GdkPixbufModuleSizeFunc size_fu
          */
         if (error && *error == NULL) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Couldn’t allocate memory for loading PNG"));
+                                "Couldn’t allocate memory for loading PNG");
         }
 
         return NULL;
@@ -503,7 +501,7 @@ static gboolean gdk_pixbuf__png_image_stop_load(gpointer context, GError** error
         g_object_unref(lc->pixbuf);
     else {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Premature end-of-file encountered"));
+                            "Premature end-of-file encountered");
         retval = FALSE;
     }
 
@@ -620,7 +618,7 @@ static void png_info_callback(png_structp png_read_ptr, png_infop png_info_ptr) 
         if (w == 0 || h == 0) {
             lc->fatal_error_occurred = TRUE;
             g_set_error_literal(lc->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                                _("Transformed PNG has zero width or height."));
+                                "Transformed PNG has zero width or height.");
             return;
         }
     }
@@ -629,7 +627,7 @@ static void png_info_callback(png_structp png_read_ptr, png_infop png_info_ptr) 
         lc->fatal_error_occurred = TRUE;
         g_set_error(
             lc->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-            _("Insufficient memory to store a %lu by %lu image; try exiting some applications to reduce memory usage"),
+            "Insufficient memory to store a %lu by %lu image; try exiting some applications to reduce memory usage",
             (gulong)width, (gulong)height);
         return;
     }
@@ -639,7 +637,7 @@ static void png_info_callback(png_structp png_read_ptr, png_infop png_info_ptr) 
         lc->fatal_error_occurred = TRUE;
         g_set_error(
             lc->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-            _("Insufficient memory to store a %lu by %lu image; try exiting some applications to reduce memory usage"),
+            "Insufficient memory to store a %lu by %lu image; try exiting some applications to reduce memory usage",
             (gulong)width, (gulong)height);
         return;
     }
@@ -651,7 +649,7 @@ static void png_info_callback(png_structp png_read_ptr, png_infop png_info_ptr) 
         lc->fatal_error_occurred = TRUE;
         g_set_error(
             lc->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-            _("Insufficient memory to store a %lu by %lu image; try exiting some applications to reduce memory usage"),
+            "Insufficient memory to store a %lu by %lu image; try exiting some applications to reduce memory usage",
             (gulong)width, (gulong)height);
         return;
     }
@@ -717,7 +715,7 @@ static void png_row_callback(png_structp png_read_ptr, png_bytep new_row, png_ui
     if (row_num >= (png_uint_32)gdk_pixbuf_get_height(lc->pixbuf)) {
         lc->fatal_error_occurred = TRUE;
         g_set_error_literal(lc->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                            _("Fatal error reading PNG image file"));
+                            "Fatal error reading PNG image file");
         return;
     }
 
@@ -760,7 +758,7 @@ static void png_error_callback(png_structp png_read_ptr, png_const_charp error_m
      */
     if (lc->error && *lc->error == NULL) {
         g_set_error(lc->error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE,
-                    _("Fatal error reading PNG image file: %s"), error_msg);
+                    "Fatal error reading PNG image file: %s", error_msg);
     }
 
     longjmp(png_jmpbuf(png_read_ptr), 1);
@@ -843,7 +841,7 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
                  */
                 g_set_error(
                     error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                    _("Invalid key “%s”. Keys for PNG text chunks must have at least 1 and at most 79 characters."),
+                    "Invalid key “%s”. Keys for PNG text chunks must have at least 1 and at most 79 characters.",
                     unprefixed_key);
                 success = FALSE;
                 goto cleanup;
@@ -855,8 +853,7 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
                      * the PNG text key
                      */
                     g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                                _("Invalid key “%s”. Keys for PNG text chunks must be ASCII characters."),
-                                unprefixed_key);
+                                "Invalid key “%s”. Keys for PNG text chunks must be ASCII characters.", unprefixed_key);
                     success = FALSE;
                     goto cleanup;
                 }
@@ -879,7 +876,7 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
 
             if (text.text == NULL) {
                 g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("Value for PNG text chunk '%s' cannot be converted to ISO-8859-1 encoding."),
+                            "Value for PNG text chunk '%s' cannot be converted to ISO-8859-1 encoding.",
                             unprefixed_key);
                 success = FALSE;
                 goto cleanup;
@@ -892,8 +889,8 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
             icc_profile = g_base64_decode(value, &icc_profile_size);
 
             if (icc_profile_size < 127) {
-                g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("Color profile has invalid length %d"), (int)icc_profile_size);
+                g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION, "Color profile has invalid length %d",
+                            (int)icc_profile_size);
                 success = FALSE;
                 goto cleanup;
             }
@@ -904,7 +901,7 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
             compression = strtol(value, &endptr, 10);
             if (endptr == value || (compression < 0 || compression > 9)) {
                 g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("PNG compression level must be a value between 0 and 9; value “%s” is invalid"), value);
+                            "PNG compression level must be a value between 0 and 9; value “%s” is invalid", value);
                 success = FALSE;
                 goto cleanup;
             }
@@ -917,7 +914,7 @@ static gboolean real_save_png(GdkPixbuf* pixbuf,
 
             if (endptr == value || dpi <= 0 || (guint64)dpi > PNG_MAX_DPI) {
                 g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_BAD_OPTION,
-                            _("PNG %s must be between 1 and %" G_GUINT64_FORMAT "; value “%s” is not allowed"),
+                            "PNG %s must be between 1 and %" G_GUINT64_FORMAT "; value “%s” is not allowed",
                             is_horizontal ? "x-dpi" : "y-dpi", PNG_MAX_DPI, value);
                 success = FALSE;
                 goto cleanup;
@@ -1123,7 +1120,7 @@ MODULE_ENTRY(fill_info)(GdkPixbufFormat* info) {
 
     info->name = "png";
     info->signature = (GdkPixbufModulePattern*)signature;
-    info->description = NC_("image format", "PNG");
+    info->description = "PNG";
     info->mime_types = (gchar**)mime_types;
     info->extensions = (gchar**)extensions;
     info->flags = GDK_PIXBUF_FORMAT_WRITABLE | GDK_PIXBUF_FORMAT_THREADSAFE;

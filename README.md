@@ -13,6 +13,9 @@ library names, and loader APIs.
 SVG support is optional. Raster-only builds do not require the SVG
 renderer or its dependencies. GTK is not required to build either library.
 
+Pigment's messages are English-only. No translation catalogs are maintained
+or installed.
+
 Development focuses on input validation, memory ownership, and rendering
 correctness.
 

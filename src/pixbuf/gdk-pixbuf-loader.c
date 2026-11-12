@@ -342,9 +342,9 @@ static void gdk_pixbuf_loader_ensure_error(GdkPixbufLoader* loader, GError** err
 
     g_warning("Bug! loader '%s' didn't set an error on failure", priv->image_module->module_name);
     g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                _("Internal error: Image loader module “%s” failed to"
-                  " complete an operation, but didn’t give a reason for"
-                  " the failure"),
+                "Internal error: Image loader module “%s” failed to"
+                " complete an operation, but didn’t give a reason for"
+                " the failure",
                 priv->image_module->module_name);
 }
 
@@ -370,7 +370,7 @@ static gint gdk_pixbuf_loader_load_module(GdkPixbufLoader* loader, const char* i
     if ((priv->image_module->begin_load == NULL) || (priv->image_module->stop_load == NULL) ||
         (priv->image_module->load_increment == NULL)) {
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNSUPPORTED_OPERATION,
-                    _("Incremental loading of image type “%s” is not supported"), priv->image_module->module_name);
+                    "Incremental loading of image type “%s” is not supported", priv->image_module->module_name);
 
         return 0;
     }

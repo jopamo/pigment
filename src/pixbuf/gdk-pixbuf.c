@@ -232,8 +232,6 @@ static void gdk_pixbuf_init(GdkPixbuf* pixbuf) {
 static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
     GObjectClass* object_class = G_OBJECT_CLASS(klass);
 
-    _gdk_pixbuf_init_gettext();
-
     object_class->finalize = gdk_pixbuf_finalize;
     object_class->set_property = gdk_pixbuf_set_property;
     object_class->get_property = gdk_pixbuf_get_property;
@@ -251,7 +249,7 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      */
     g_object_class_install_property(
         object_class, PROP_N_CHANNELS,
-        g_param_spec_int("n-channels", _("Number of Channels"), _("The number of samples per pixel"), 0, G_MAXINT, 3,
+        g_param_spec_int("n-channels", "Number of Channels", "The number of samples per pixel", 0, G_MAXINT, 3,
                          PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:colorspace:
@@ -262,7 +260,7 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      */
     g_object_class_install_property(
         object_class, PROP_COLORSPACE,
-        g_param_spec_enum("colorspace", _("Colorspace"), _("The colorspace in which the samples are interpreted"),
+        g_param_spec_enum("colorspace", "Colorspace", "The colorspace in which the samples are interpreted",
                           GDK_TYPE_COLORSPACE, GDK_COLORSPACE_RGB, PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:has-alpha:
@@ -271,7 +269,7 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      */
     g_object_class_install_property(
         object_class, PROP_HAS_ALPHA,
-        g_param_spec_boolean("has-alpha", _("Has Alpha"), _("Whether the pixbuf has an alpha channel"), FALSE,
+        g_param_spec_boolean("has-alpha", "Has Alpha", "Whether the pixbuf has an alpha channel", FALSE,
                              PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:bits-per-sample:
@@ -281,24 +279,24 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      * Currently only 8 bit per sample are supported.
      */
     g_object_class_install_property(object_class, PROP_BITS_PER_SAMPLE,
-                                    g_param_spec_int("bits-per-sample", _("Bits per Sample"),
-                                                     _("The number of bits per sample"), 1, 16, 8, PIXBUF_PARAM_FLAGS));
+                                    g_param_spec_int("bits-per-sample", "Bits per Sample",
+                                                     "The number of bits per sample", 1, 16, 8, PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:width:
      *
      * The number of columns of the pixbuf.
      */
-    g_object_class_install_property(object_class, PROP_WIDTH,
-                                    g_param_spec_int("width", _("Width"), _("The number of columns of the pixbuf"), 1,
-                                                     G_MAXINT, 1, PIXBUF_PARAM_FLAGS));
+    g_object_class_install_property(
+        object_class, PROP_WIDTH,
+        g_param_spec_int("width", "Width", "The number of columns of the pixbuf", 1, G_MAXINT, 1, PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:height:
      *
      * The number of rows of the pixbuf.
      */
-    g_object_class_install_property(object_class, PROP_HEIGHT,
-                                    g_param_spec_int("height", _("Height"), _("The number of rows of the pixbuf"), 1,
-                                                     G_MAXINT, 1, PIXBUF_PARAM_FLAGS));
+    g_object_class_install_property(
+        object_class, PROP_HEIGHT,
+        g_param_spec_int("height", "Height", "The number of rows of the pixbuf", 1, G_MAXINT, 1, PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:rowstride:
      *
@@ -310,9 +308,9 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      */
     g_object_class_install_property(
         object_class, PROP_ROWSTRIDE,
-        g_param_spec_int("rowstride", _("Rowstride"),
-                         _("The number of bytes between the start of a row and the start of the next row"), 1, G_MAXINT,
-                         1, PIXBUF_PARAM_FLAGS));
+        g_param_spec_int("rowstride", "Rowstride",
+                         "The number of bytes between the start of a row and the start of the next row", 1, G_MAXINT, 1,
+                         PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf:pixels:
      *
@@ -320,8 +318,7 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      */
     g_object_class_install_property(
         object_class, PROP_PIXELS,
-        g_param_spec_pointer("pixels", _("Pixels"), _("A pointer to the pixel data of the pixbuf"),
-                             PIXBUF_PARAM_FLAGS));
+        g_param_spec_pointer("pixels", "Pixels", "A pointer to the pixel data of the pixbuf", PIXBUF_PARAM_FLAGS));
     /**
      * GdkPixbuf::pixel-bytes:
      *
@@ -331,9 +328,9 @@ static void gdk_pixbuf_class_init(GdkPixbufClass* klass) {
      *
      * Since: 2.32
      */
-    g_object_class_install_property(object_class, PROP_PIXEL_BYTES,
-                                    g_param_spec_boxed("pixel-bytes", _("Pixel Bytes"), _("Readonly pixel data"),
-                                                       G_TYPE_BYTES, PIXBUF_PARAM_FLAGS));
+    g_object_class_install_property(
+        object_class, PROP_PIXEL_BYTES,
+        g_param_spec_boxed("pixel-bytes", "Pixel Bytes", "Readonly pixel data", G_TYPE_BYTES, PIXBUF_PARAM_FLAGS));
 }
 
 static void free_pixels(GdkPixbuf* pixbuf) {

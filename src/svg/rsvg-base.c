@@ -1366,7 +1366,7 @@ gboolean rsvg_handle_set_stylesheet(RsvgHandle* handle, const guint8* css, gsize
         return FALSE;
 
     if (!rsvg_css_engine_set_user_stylesheet(handle->priv->css_engine, (const char*)css, (size_t)css_len)) {
-        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, _("Failed to parse CSS stylesheet"));
+        g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Failed to parse CSS stylesheet");
         return FALSE;
     }
 
@@ -1481,7 +1481,7 @@ out:
         if (real_error != NULL)
             g_propagate_error(error, real_error);
         else if (handle->priv->ctxt == NULL)
-            g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, _("Error creating XML parser"));
+            g_set_error_literal(error, RSVG_ERROR, RSVG_ERROR_FAILED, "Error creating XML parser");
         else
             rsvg_xml_set_error(error, handle->priv->ctxt);
         return FALSE;
@@ -2497,7 +2497,7 @@ gboolean rsvg_handle_read_stream_sync(RsvgHandle* handle,
     if (num_read < 2) {
         priv->state = RSVG_HANDLE_STATE_CLOSED_ERROR;
         if (num_read >= 0) {
-            g_set_error(error, rsvg_error_quark(), RSVG_ERROR_FAILED, _("Input file is too short"));
+            g_set_error(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Input file is too short");
         }
 
         return FALSE;
@@ -3003,7 +3003,7 @@ void _rsvg_pop_view_box(RsvgDrawingCtx* ctx) {
 }
 
 void rsvg_return_if_fail_warning(const char* pretty_function, const char* expression, GError** error) {
-    g_set_error(error, RSVG_ERROR, 0, _("%s: assertion `%s' failed"), pretty_function, expression);
+    g_set_error(error, RSVG_ERROR, 0, "%s: assertion `%s' failed", pretty_function, expression);
 }
 
 #ifdef HAVE_RSVG_ROOTED_FILE_IO

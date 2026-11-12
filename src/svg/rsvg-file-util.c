@@ -55,7 +55,7 @@ GdkPixbuf* rsvg_pixbuf_from_data_with_size_data(const guchar* buff,
     handle = rsvg_handle_new();
 
     if (!handle) {
-        g_set_error(error, rsvg_error_quark(), 0, _("Error creating SVG reader"));
+        g_set_error(error, rsvg_error_quark(), 0, "Error creating SVG reader");
         return NULL;
     }
 
@@ -90,7 +90,7 @@ static GdkPixbuf* rsvg_pixbuf_from_stdio_file_with_size_data(const char* data,
     handle = rsvg_handle_new();
 
     if (!handle) {
-        g_set_error(error, rsvg_error_quark(), 0, _("Error creating SVG reader"));
+        g_set_error(error, rsvg_error_quark(), 0, "Error creating SVG reader");
         return NULL;
     }
 

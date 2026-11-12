@@ -58,15 +58,6 @@ typedef struct _RsvgNode RsvgNode;
 typedef struct _RsvgFilter RsvgFilter;
 typedef struct _RsvgNodeChars RsvgNodeChars;
 
-/* prepare for gettext */
-#ifndef _
-#define _(X) X
-#endif
-
-#ifndef N_
-#define N_(X) X
-#endif
-
 #ifndef M_PI
 #ifdef G_PI
 #define M_PI G_PI

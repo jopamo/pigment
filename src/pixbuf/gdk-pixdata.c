@@ -227,20 +227,20 @@ gdk_pixdata_serialize(const GdkPixdata* pixdata, guint* stream_length_p) {
     return stream;
 }
 
-#define return_header_corrupt(error)                                                                             \
-    {                                                                                                            \
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image header corrupt")); \
-        return FALSE;                                                                                            \
+#define return_header_corrupt(error)                                                                          \
+    {                                                                                                         \
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image header corrupt"); \
+        return FALSE;                                                                                         \
     }
-#define return_invalid_format(error)                                                                            \
-    {                                                                                                           \
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, _("Image format unknown")); \
-        return FALSE;                                                                                           \
+#define return_invalid_format(error)                                                                         \
+    {                                                                                                        \
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, "Image format unknown"); \
+        return FALSE;                                                                                        \
     }
-#define return_pixel_corrupt(error)                                                                                  \
-    {                                                                                                                \
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt")); \
-        return FALSE;                                                                                                \
+#define return_pixel_corrupt(error)                                                                               \
+    {                                                                                                             \
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image pixel data corrupt"); \
+        return FALSE;                                                                                             \
     }
 
 static inline const guint8* get_uint32(const guint8* stream, guint* result) {
@@ -523,13 +523,13 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
 
     /* Sanity check the length and dimensions */
     if (!pixdata_get_image_size(pixdata, bpp, &image_size)) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image pixel data corrupt");
         return NULL;
     }
 
     if ((pixdata->length >= 1 && pixdata->length < GDK_PIXDATA_HEADER_LENGTH) ||
         (encoding == GDK_PIXDATA_ENCODING_RAW && !pixdata_get_raw_size(pixdata, bpp, image_size, &input_size))) {
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image pixel data corrupt");
         return NULL;
     }
 
@@ -537,16 +537,15 @@ GdkPixbuf* gdk_pixbuf_from_pixdata(const GdkPixdata* pixdata, gboolean copy_pixe
         data = g_try_malloc(image_size);
         if (!data) {
             g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                        g_dngettext(GETTEXT_PACKAGE, "failed to allocate image buffer of %" G_GSIZE_FORMAT " byte",
-                                    "failed to allocate image buffer of %" G_GSIZE_FORMAT " bytes", image_size),
-                        image_size);
+                        "failed to allocate image buffer of %" G_GSIZE_FORMAT " byte%s", image_size,
+                        image_size == 1 ? "" : "s");
             return NULL;
         }
     }
     if (encoding == GDK_PIXDATA_ENCODING_RLE) {
         if (!pixdata_walk_rle(pixdata, bpp, image_size, data, NULL)) {
             g_free(data);
-            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image pixel data corrupt"));
+            g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image pixel data corrupt");
             return NULL;
         }
     }

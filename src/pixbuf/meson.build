@@ -51,7 +51,6 @@ gdk_pixbuf_cflags = [
   '-DG_LOG_DOMAIN="GdkPixbuf"',
   '-DGDK_PIXBUF_COMPILATION',
   '-DGDK_PIXBUF_PREFIX="@0@"'.format(gdk_pixbuf_prefix),
-  '-DGDK_PIXBUF_LOCALEDIR="@0@"'.format(gdk_pixbuf_localedir),
   '-DGDK_PIXBUF_LIBDIR="@0@"'.format(gdk_pixbuf_libdir),
   '-DGDK_PIXBUF_BINARY_VERSION="@0@"'.format(gdk_pixbuf_binary_version),
   '-DGDK_PIXBUF_ENABLE_BACKEND',

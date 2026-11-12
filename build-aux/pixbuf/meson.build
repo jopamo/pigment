@@ -41,7 +41,6 @@ gdk_pixbuf_bindir = join_paths(gdk_pixbuf_prefix, get_option('bindir'))
 gdk_pixbuf_includedir = join_paths(gdk_pixbuf_prefix, get_option('includedir'))
 gdk_pixbuf_datadir = join_paths(gdk_pixbuf_prefix, get_option('datadir'))
 gdk_pixbuf_mandir = join_paths(gdk_pixbuf_prefix, get_option('mandir'))
-gdk_pixbuf_localedir = join_paths(gdk_pixbuf_prefix, get_option('localedir'))
 gdk_pixbuf_libexecdir = join_paths(gdk_pixbuf_prefix, get_option('libexecdir'))
 gdk_pixbuf_loaderdir = join_paths(gdk_pixbuf_libdir, 'gdk-pixbuf-@0@/@1@/loaders'.format(gdk_pixbuf_api_version, gdk_pixbuf_binary_version))
 
@@ -60,11 +59,6 @@ gio_dep = dependency('gio-2.0', version: glib_req_version,
 gdk_pixbuf_conf = configuration_data()
 
 mathlib_dep = cc.find_library('m', required: false)
-
-intl_dep = cc.find_library('intl', required: false)
-if cc.has_function('bind_textdomain_codeset', prefix: '#include <libintl.h>', dependencies: intl_dep)
-  gdk_pixbuf_conf.set('HAVE_BIND_TEXTDOMAIN_CODESET', 1)
-endif
 
 # Common compiler and linker flags
 common_cflags = []
@@ -143,7 +137,6 @@ gdk_pixbuf_deps = [
   gmodule_dep,
   gio_dep,
   shared_mime_dep,
-  intl_dep,
 ]
 
 # Check if we can build shared modules
@@ -215,8 +208,6 @@ relocatable = get_option('relocatable')
 if relocatable
   add_project_arguments([ '-DGDK_PIXBUF_RELOCATABLE' ], language: 'c')
 endif
-
-gdk_pixbuf_conf.set_quoted('GETTEXT_PACKAGE', 'gdk-pixbuf')
 
 configure_file(output: 'config.h', configuration: gdk_pixbuf_conf)
 add_project_arguments([ '-DHAVE_CONFIG_H=1' ], language: 'c')

@@ -29,7 +29,6 @@
 #include <math.h>
 
 #include <glib-object.h>
-#include <glib/gi18n-lib.h>
 
 #include "gdk-pixbuf-core.h"
 #include "gdk-pixbuf-loader.h"
@@ -129,8 +128,6 @@ GdkPixbufFormat* _gdk_pixbuf_get_format(GdkPixbufModule* image_module);
 
 GdkPixbuf* _gdk_pixbuf_new_from_resource_try_pixdata(const char* resource_path);
 GdkPixbufLoader* _gdk_pixbuf_loader_new_with_filename(const char* filename);
-
-void _gdk_pixbuf_init_gettext(void);
 
 #endif /* GDK_PIXBUF_PRIVATE_H */
 

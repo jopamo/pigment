@@ -126,7 +126,7 @@ static void gdk_pixbuf_simple_anim_class_init(GdkPixbufSimpleAnimClass* klass) {
      */
     g_object_class_install_property(
         object_class, PROP_LOOP,
-        g_param_spec_boolean("loop", _("Loop"), _("Whether the animation should loop when it reaches the end"), FALSE,
+        g_param_spec_boolean("loop", "Loop", "Whether the animation should loop when it reaches the end", FALSE,
                              G_PARAM_READWRITE));
 }
 

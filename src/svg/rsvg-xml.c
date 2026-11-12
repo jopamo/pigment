@@ -145,7 +145,7 @@ void rsvg_xml_configure_parser(xmlParserCtxtPtr parser, RsvgHandle* handle) {
 
 void rsvg_xml_set_error(GError** error, xmlParserCtxtPtr ctxt) {
     (void)ctxt;
-    g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, _("Error parsing XML data"));
+    g_set_error_literal(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Error parsing XML data");
 }
 
 /* this should use gsize, but libxml2 is borked */
@@ -214,7 +214,7 @@ xmlParserCtxtPtr rsvg_create_xml_parser_from_stream(xmlSAXHandlerPtr sax,
         if (!context_closed)
             context_close(context);
         if (*error == NULL)
-            g_set_error(error, rsvg_error_quark(), RSVG_ERROR_FAILED, _("Error creating XML parser"));
+            g_set_error(error, rsvg_error_quark(), RSVG_ERROR_FAILED, "Error creating XML parser");
     }
     else
         context->construction_closed = NULL;

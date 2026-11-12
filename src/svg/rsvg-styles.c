@@ -672,7 +672,7 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
         else if (g_str_equal(value, "square"))
             state->cap = CAIRO_LINE_CAP_SQUARE;
         else
-            g_warning(_("unknown line cap style %s\n"), value);
+            g_warning("unknown line cap style %s\n", value);
     }
     else if (g_str_equal(name, "stroke-opacity")) {
         state->stroke_opacity = rsvg_css_parse_opacity(value);
@@ -687,7 +687,7 @@ void rsvg_parse_style_pair(RsvgHandle* ctx,
         else if (g_str_equal(value, "bevel"))
             state->join = CAIRO_LINE_JOIN_BEVEL;
         else
-            g_warning(_("unknown line join style %s\n"), value);
+            g_warning("unknown line join style %s\n", value);
     }
     else if (g_str_equal(name, "font-size")) {
         state->font_size = _rsvg_css_parse_length(value);

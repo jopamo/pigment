@@ -705,8 +705,8 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
 
         if (!module) {
             char* path_utf8 = g_filename_display_name(path);
-            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                        _("Unable to load image-loading module: %s: %s"), path_utf8, g_module_error());
+            g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED, "Unable to load image-loading module: %s: %s",
+                        path_utf8, g_module_error());
             g_free(path_utf8);
             return FALSE;
         }
@@ -720,8 +720,8 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
         else {
             char* path_utf8 = g_filename_display_name(path);
             g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                        _("Image-loading module %s does not export the proper interface; perhaps it’s from a different "
-                          "gdk-pixbuf version?"),
+                        "Image-loading module %s does not export the proper interface; perhaps it’s from a different "
+                        "gdk-pixbuf version?",
                         path_utf8);
             g_free(path_utf8);
             g_module_close(module);
@@ -729,7 +729,7 @@ static gboolean gdk_pixbuf_load_module_unlocked(GdkPixbufModule* image_module, G
         }
     }
 #else
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, _("Image type “%s” is not supported"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, "Image type “%s” is not supported",
                     image_module->module_name);
     return FALSE;
 #endif /* !USE_GMODULE */
@@ -760,7 +760,7 @@ GdkPixbufModule* _gdk_pixbuf_get_named_module(const char* name, GError** error) 
             return module;
     }
 
-    g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, _("Image type “%s” is not supported"), name);
+    g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, "Image type “%s” is not supported", name);
 
     return NULL;
 }
@@ -844,12 +844,11 @@ GdkPixbufModule* _gdk_pixbuf_get_module(guchar* buffer, guint size, const gchar*
     if (filename) {
         display_name = g_filename_display_name(filename);
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE,
-                    _("Couldn’t recognize the image file format for file “%s”"), display_name);
+                    "Couldn’t recognize the image file format for file “%s”", display_name);
         g_free(display_name);
     }
     else
-        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE,
-                            _("Unrecognized image file format"));
+        g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE, "Unrecognized image file format");
 
     return NULL;
 }
@@ -862,7 +861,7 @@ static GdkPixbufModule* _gdk_pixbuf_get_module_for_file(FILE* f, const gchar* fi
     if (size == 0) {
         gchar* display_name;
         display_name = g_filename_display_name(filename);
-        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, _("Image file “%s” contains no data"),
+        g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_CORRUPT_IMAGE, "Image file “%s” contains no data",
                     display_name);
         g_free(display_name);
         return NULL;
@@ -976,7 +975,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error) {
         gint save_errno = errno;
         gchar* display_name;
         display_name = g_filename_display_name(filename);
-        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), _("Failed to open file “%s”: %s"),
+        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), "Failed to open file “%s”: %s",
                     display_name, g_strerror(save_errno));
         g_free(display_name);
         return NULL;
@@ -1008,7 +1007,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error) {
         display_name = g_filename_display_name(filename);
         g_warning("Bug! gdk-pixbuf loader '%s' didn't set an error on failure.", image_module->module_name);
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                    _("Failed to load image “%s”: reason not known, probably a corrupt image file"), display_name);
+                    "Failed to load image “%s”: reason not known, probably a corrupt image file", display_name);
         g_free(display_name);
     }
     else if (error != NULL && *error != NULL) {
@@ -1019,7 +1018,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file(const char* filename, GError** error) {
 
         display_name = g_filename_display_name(filename);
         old = e->message;
-        e->message = g_strdup_printf(_("Failed to load image “%s”: %s"), display_name, old);
+        e->message = g_strdup_printf("Failed to load image “%s”: %s", display_name, old);
         g_free(old);
         g_free(display_name);
     }
@@ -1089,7 +1088,7 @@ static void at_scale_set_error(AtScaleData* info, GError** error) {
 
     g_clear_error(error);
     g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                        _("Scaled image dimensions are too large"));
+                        "Scaled image dimensions are too large");
 }
 
 static void at_scale_size_prepared_cb(gpointer loader, int width, int height, gpointer data) {
@@ -1196,7 +1195,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
     if (!f) {
         gint save_errno = errno;
         gchar* display_name = g_filename_display_name(filename);
-        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), _("Failed to open file “%s”: %s"),
+        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), "Failed to open file “%s”: %s",
                     display_name, g_strerror(save_errno));
         g_free(display_name);
         return NULL;
@@ -1253,7 +1252,7 @@ GdkPixbuf* gdk_pixbuf_new_from_file_at_scale(const char* filename,
         gchar* display_name = g_filename_display_name(filename);
         g_object_unref(loader);
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_FAILED,
-                    _("Failed to load image “%s”: reason not known, probably a corrupt image file"), display_name);
+                    "Failed to load image “%s”: reason not known, probably a corrupt image file", display_name);
         g_free(display_name);
         return NULL;
     }
@@ -1942,7 +1941,7 @@ static gboolean save_to_file_callback(const gchar* buf, gsize count, GError** er
     n = fwrite(buf, 1, count, filehandle);
     if (n != count) {
         gint save_errno = errno;
-        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), _("Error writing to image file: %s"),
+        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), "Error writing to image file: %s",
                     g_strerror(save_errno));
         return FALSE;
     }
@@ -1977,7 +1976,7 @@ static gboolean gdk_pixbuf_real_save(GdkPixbuf* pixbuf,
     else {
         /* can't save */
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNSUPPORTED_OPERATION,
-                    _("This build of gdk-pixbuf does not support saving the image format: %s"), type);
+                    "This build of gdk-pixbuf does not support saving the image format: %s", type);
         ret = FALSE;
     }
 
@@ -2003,7 +2002,7 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
     buf = g_try_malloc(TMP_FILE_BUF_SIZE);
     if (buf == NULL) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to save image to callback"));
+                            "Insufficient memory to save image to callback");
         goto end;
     }
 
@@ -2013,8 +2012,7 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
     f = fdopen(fd, "wb+");
     if (f == NULL) {
         gint save_errno = errno;
-        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
-                            _("Failed to open temporary file"));
+        g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), "Failed to open temporary file");
         goto end;
     }
     fd = -1;
@@ -2025,7 +2023,7 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
     if (fseek(f, 0, SEEK_SET) != 0) {
         gint save_errno = errno;
         g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
-                            _("Failed to rewind temporary file"));
+                            "Failed to rewind temporary file");
         goto end;
     }
     for (;;) {
@@ -2033,7 +2031,7 @@ static gboolean save_to_callback_with_tmp_file(GdkPixbufModule* image_module,
         if (ferror(f)) {
             gint save_errno = errno;
             g_set_error_literal(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
-                                _("Failed to read from temporary file"));
+                                "Failed to read from temporary file");
             goto end;
         }
         if (n > 0) {
@@ -2089,7 +2087,7 @@ static gboolean gdk_pixbuf_real_save_to_callback(GdkPixbuf* pixbuf,
     else {
         /* can't save */
         g_set_error(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNSUPPORTED_OPERATION,
-                    _("This build of gdk-pixbuf does not support saving the image format: %s"), type);
+                    "This build of gdk-pixbuf does not support saving the image format: %s", type);
         ret = FALSE;
     }
 
@@ -2242,7 +2240,7 @@ gboolean gdk_pixbuf_savev(GdkPixbuf* pixbuf,
     if (f == NULL) {
         gint save_errno = errno;
         gchar* display_name = g_filename_display_name(filename);
-        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), _("Failed to open “%s” for writing: %s"),
+        g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno), "Failed to open “%s” for writing: %s",
                     display_name, g_strerror(save_errno));
         g_free(display_name);
         return FALSE;
@@ -2261,7 +2259,7 @@ gboolean gdk_pixbuf_savev(GdkPixbuf* pixbuf,
         gint save_errno = errno;
         gchar* display_name = g_filename_display_name(filename);
         g_set_error(error, G_FILE_ERROR, g_file_error_from_errno(save_errno),
-                    _("Failed to close “%s” while writing image, all data may not have been saved: %s"), display_name,
+                    "Failed to close “%s” while writing image, all data may not have been saved: %s", display_name,
                     g_strerror(save_errno));
         g_free(display_name);
         return FALSE;
@@ -2445,7 +2443,7 @@ static gboolean save_to_buffer_callback(const gchar* data, gsize count, GError**
         new_buffer = g_try_realloc(sdata->buffer, new_max);
         if (!new_buffer) {
             g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                                _("Insufficient memory to save image into a buffer"));
+                                "Insufficient memory to save image into a buffer");
             return FALSE;
         }
         sdata->buffer = new_buffer;
@@ -2496,7 +2494,7 @@ gboolean gdk_pixbuf_save_to_bufferv(GdkPixbuf* pixbuf,
     sdata.len = 0;
     if (!sdata.buffer) {
         g_set_error_literal(error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY,
-                            _("Insufficient memory to save image into a buffer"));
+                            "Insufficient memory to save image into a buffer");
         return FALSE;
     }
 
@@ -2525,7 +2523,7 @@ static gboolean save_to_stream(const gchar* buffer, gsize count, GError** error,
     if (my_error)
         g_propagate_error(error, my_error);
     else
-        g_set_error_literal(error, G_IO_ERROR, 0, _("Error writing to image stream"));
+        g_set_error_literal(error, G_IO_ERROR, 0, "Error writing to image stream");
     return FALSE;
 }
 
@@ -2808,24 +2806,16 @@ gchar* gdk_pixbuf_format_get_name(GdkPixbufFormat* format) {
  * gdk_pixbuf_format_get_description:
  * @format: a `GdkPixbufFormat`
  *
- * Returns a description of the format.
+ * Returns an untranslated description of the format.
  *
  * Returns: (transfer full) (nullable): a description of the format.
  *
  * Since: 2.2
  */
 gchar* gdk_pixbuf_format_get_description(GdkPixbufFormat* format) {
-    gchar* domain;
-    const gchar* description;
     g_return_val_if_fail(format != NULL, NULL);
 
-    if (format->domain != NULL)
-        domain = format->domain;
-    else
-        domain = GETTEXT_PACKAGE;
-    description = g_dgettext(domain, format->description);
-
-    return g_strdup(description);
+    return g_strdup(format->description);
 }
 
 /**
