@@ -81,6 +81,14 @@ static GdkPixbuf* rsvg_pixbuf_from_file_with_size_data(const gchar* file_name,
     GdkPixbuf* pixbuf;
     char* data;
     gsize data_len;
+    g_autofree char* scheme = file_name ? g_uri_parse_scheme(file_name) : NULL;
+    g_autofree char* file_uri = NULL;
+
+    if (file_name && *file_name && !scheme) {
+        g_autoptr(GFile) file = g_file_new_for_path(file_name);
+        file_uri = g_file_get_uri(file);
+        file_name = file_uri;
+    }
 
     data = _rsvg_io_acquire_data(file_name, file_name, NULL, &data_len, NULL, error);
 
