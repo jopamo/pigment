@@ -444,20 +444,6 @@ RsvgNode* rsvg_new_tspan(void) {
     return &text->super;
 }
 
-typedef struct _RsvgTextLayout RsvgTextLayout;
-
-struct _RsvgTextLayout {
-    PangoLayout* layout;
-    RsvgDrawingCtx* ctx;
-    TextAnchor anchor;
-    gdouble x, y;
-};
-
-static void rsvg_text_layout_free(RsvgTextLayout* layout) {
-    g_object_unref(layout->layout);
-    g_free(layout);
-}
-
 static double text_font_size(RsvgDrawingCtx* ctx, RsvgState* state) {
     double size = _rsvg_css_normalize_font_size(state, ctx);
 
@@ -592,25 +578,6 @@ static PangoLayout* rsvg_text_create_layout(RsvgDrawingCtx* ctx,
     return layout;
 }
 
-static RsvgTextLayout* rsvg_text_layout_new(RsvgDrawingCtx* ctx,
-                                            RsvgState* state,
-                                            const char* text,
-                                            const RsvgTextChunk* chunk) {
-    RsvgTextLayout* layout;
-
-    if (ctx->pango_context == NULL)
-        ctx->pango_context = ctx->render->create_pango_context(ctx);
-
-    layout = g_new0(RsvgTextLayout, 1);
-
-    layout->layout = rsvg_text_create_layout(ctx, state, text, ctx->pango_context, chunk);
-    layout->ctx = ctx;
-
-    layout->anchor = state->text_anchor;
-
-    return layout;
-}
-
 void rsvg_text_render_text(RsvgDrawingCtx* ctx, const char* text, gdouble* x, gdouble* y, const RsvgTextChunk* chunk) {
     PangoContext* context;
     PangoLayout* layout;
@@ -652,23 +619,15 @@ void rsvg_text_render_text(RsvgDrawingCtx* ctx, const char* text, gdouble* x, gd
     g_object_unref(context);
 }
 
-static gdouble rsvg_text_layout_width(RsvgTextLayout* layout) {
+static gdouble rsvg_text_length_text_as_string(RsvgDrawingCtx* ctx, const char* text, const RsvgTextChunk* chunk) {
+    RsvgState* state = rsvg_current_state(ctx);
     gint width;
 
-    pango_layout_get_size(layout->layout, &width, NULL);
+    if (ctx->pango_context == NULL)
+        ctx->pango_context = ctx->render->create_pango_context(ctx);
 
+    PangoLayout* layout = rsvg_text_create_layout(ctx, state, text, ctx->pango_context, chunk);
+    pango_layout_get_size(layout, &width, NULL);
+    g_object_unref(layout);
     return width / (double)PANGO_SCALE;
-}
-
-static gdouble rsvg_text_length_text_as_string(RsvgDrawingCtx* ctx, const char* text, const RsvgTextChunk* chunk) {
-    RsvgTextLayout* layout;
-    gdouble x;
-
-    layout = rsvg_text_layout_new(ctx, rsvg_current_state(ctx), text, chunk);
-    layout->x = layout->y = 0;
-
-    x = rsvg_text_layout_width(layout);
-
-    rsvg_text_layout_free(layout);
-    return x;
 }
