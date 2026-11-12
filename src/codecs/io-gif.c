@@ -56,8 +56,6 @@
 #include "gdk-pixbuf-io.h"
 #include "io-gif-animation.h"
 
-#undef DUMP_IMAGE_DETAILS
-
 #define MAXCOLORMAPSIZE 256
 
 #define INTERLACE 0x40
@@ -557,10 +555,6 @@ static gint gif_init(GifContext* context) {
         context->state = GIF_GET_NEXT_STEP;
     }
 
-#ifdef DUMP_IMAGE_DETAILS
-    g_print(">Image width: %d height: %d global_cmap: %d\n", context->width, context->height, context->has_global_cmap);
-#endif
-
     return 0;
 }
 
@@ -588,18 +582,8 @@ static gint gif_get_frame_info(GifContext* context) {
 
     context->frame_interlace = BitSet(buf[8], INTERLACE);
 
-#ifdef DUMP_IMAGE_DETAILS
-    g_print(">width: %d height: %d xoffset: %d yoffset: %d disposal: %d delay: %d transparent: %d interlace: %d\n",
-            context->frame_len, context->frame_height, context->x_offset, context->y_offset, context->disposal,
-            context->delay_time, context->transparent_index, context->frame_interlace);
-#endif
-
     context->frame_colormap_size = 0;
     if (BitSet(buf[8], LOCALCOLORMAP)) {
-#ifdef DUMP_IMAGE_DETAILS
-        g_print(">has local colormap\n");
-#endif
-
         /* Does this frame have it's own colormap. */
         /* really only relevant when looking at the first frame
          * of an animated gif. */

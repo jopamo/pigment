@@ -828,8 +828,6 @@ struct _IconEntry {
     gint hot_x;
     gint hot_y;
 
-    guint8 n_colors;
-    guint32* colors;
     guint xor_rowstride;
     guint8* xor;
     guint and_rowstride;
@@ -931,92 +929,75 @@ static gboolean fill_entry(IconEntry* icon, GdkPixbuf* pixbuf, gint hot_x, gint 
 }
 
 static void free_entry(IconEntry* icon) {
-    g_free(icon->colors);
     g_free(icon->and);
     g_free(icon->xor);
     g_free(icon);
 }
 
-static void write_icon(FILE* f, GSList* entries) {
-    IconEntry* icon;
-    GSList* entry;
+static void write_icon(FILE* f, const IconEntry* icon) {
     guint8 bytes[4];
     guint16 words[4];
     guint32 dwords[6];
     gint type;
-    gint n_entries;
-    gint offset;
     gint size;
 
-    if (((IconEntry*)entries->data)->hot_x > -1)
+    if (icon->hot_x > -1)
         type = 2;
     else
         type = 1;
-    n_entries = g_slist_length(entries);
 
     /* header */
     words[0] = 0;
     words[1] = type;
-    words[2] = n_entries;
+    words[2] = 1;
     write16(f, words, 3);
 
-    offset = 6 + 16 * n_entries;
+    size = INFOHEADER_SIZE + icon->height * (icon->and_rowstride + icon->xor_rowstride);
 
-    for (entry = entries; entry; entry = entry->next) {
-        icon = (IconEntry*)entry->data;
-        size = INFOHEADER_SIZE + icon->height * (icon->and_rowstride + icon->xor_rowstride);
-
-        /* directory entry */
-        if (icon->width == 256)
-            bytes[0] = 0;
-        else
-            bytes[0] = icon->width;
-        if (icon->height == 256)
-            bytes[1] = 0;
-        else
-            bytes[1] = icon->height;
-        bytes[2] = icon->n_colors;
-        bytes[3] = 0;
-        write8(f, bytes, 4);
-        if (type == 1) {
-            words[0] = 1;
-            words[1] = icon->depth;
-        }
-        else {
-            words[0] = icon->hot_x;
-            words[1] = icon->hot_y;
-        }
-        write16(f, words, 2);
-        dwords[0] = size;
-        dwords[1] = offset;
-        write32(f, dwords, 2);
-
-        offset += size;
-    }
-
-    for (entry = entries; entry; entry = entry->next) {
-        icon = (IconEntry*)entry->data;
-
-        /* bitmap header */
-        dwords[0] = INFOHEADER_SIZE;
-        dwords[1] = icon->width;
-        dwords[2] = icon->height * 2;
-        write32(f, dwords, 3);
+    /* directory entry */
+    if (icon->width == 256)
+        bytes[0] = 0;
+    else
+        bytes[0] = icon->width;
+    if (icon->height == 256)
+        bytes[1] = 0;
+    else
+        bytes[1] = icon->height;
+    bytes[2] = 0;
+    bytes[3] = 0;
+    write8(f, bytes, 4);
+    if (type == 1) {
         words[0] = 1;
         words[1] = icon->depth;
-        write16(f, words, 2);
-        dwords[0] = 0;
-        dwords[1] = 0;
-        dwords[2] = 0;
-        dwords[3] = 0;
-        dwords[4] = 0;
-        dwords[5] = 0;
-        write32(f, dwords, 6);
-
-        /* image data */
-        write8(f, icon->xor, icon->xor_rowstride * icon->height);
-        write8(f, icon->and, icon->and_rowstride * icon->height);
     }
+    else {
+        words[0] = icon->hot_x;
+        words[1] = icon->hot_y;
+    }
+    write16(f, words, 2);
+    dwords[0] = size;
+    dwords[1] = 6 + 16;
+    write32(f, dwords, 2);
+
+    /* bitmap header */
+    dwords[0] = INFOHEADER_SIZE;
+    dwords[1] = icon->width;
+    dwords[2] = icon->height * 2;
+    write32(f, dwords, 3);
+    words[0] = 1;
+    words[1] = icon->depth;
+    write16(f, words, 2);
+    dwords[0] = 0;
+    dwords[1] = 0;
+    dwords[2] = 0;
+    dwords[3] = 0;
+    dwords[4] = 0;
+    dwords[5] = 0;
+    write32(f, dwords, 6);
+
+    /* image data */
+    write8(f, icon->xor, icon->xor_rowstride * icon->height);
+    write8(f, icon->and, icon->and_rowstride * icon->height);
 }
 
 /* Locale-independent signed integer string parser, base 10.
@@ -1054,7 +1035,6 @@ static gboolean ascii_strtoll(const gchar* str, gint64 minimum, gint64 maximum, 
 static gboolean gdk_pixbuf__ico_image_save(FILE* f, GdkPixbuf* pixbuf, gchar** keys, gchar** values, GError** error) {
     gint hot_x, hot_y;
     IconEntry* icon;
-    GSList* entries = NULL;
 
     /* support only single-image ICOs for now */
     icon = g_new0(IconEntry, 1);
@@ -1092,11 +1072,8 @@ static gboolean gdk_pixbuf__ico_image_save(FILE* f, GdkPixbuf* pixbuf, gchar** k
     if (!fill_entry(icon, pixbuf, hot_x, hot_y, error))
         goto fail;
 
-    entries = g_slist_append(entries, icon);
-    write_icon(f, entries);
-
-    g_slist_foreach(entries, (GFunc)free_entry, NULL);
-    g_slist_free(entries);
+    write_icon(f, icon);
+    free_entry(icon);
 
     return TRUE;
 

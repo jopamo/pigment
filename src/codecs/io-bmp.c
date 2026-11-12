@@ -476,9 +476,6 @@ static gboolean DecodeColormap(guchar* buff, struct bmp_progressive_state* State
         State->Colormap[i][0] = buff[i * samples];
         State->Colormap[i][1] = buff[i * samples + 1];
         State->Colormap[i][2] = buff[i * samples + 2];
-#ifdef DUMPCMAP
-        g_print("color %d %x %x %x\n", i, State->Colormap[i][0], State->Colormap[i][1], State->Colormap[i][2]);
-#endif
     }
 
     State->read_state = READ_STATE_DATA;
