@@ -28,9 +28,7 @@
 
 #include <errno.h>
 #include <string.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 
 #include "gdk-pixbuf/gdk-pixbuf.h"
 #include "gdk-pixbuf-private.h"

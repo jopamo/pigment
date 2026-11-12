@@ -37,8 +37,6 @@ endif
 config_conf.set('HAVE_RSVG_ROOTED_FILE_IO', rooted_file_io)
 config_conf.set('HAVE_XML_PARSE_NO_XXE',
   cc.has_header_symbol('libxml/parser.h', 'XML_PARSE_NO_XXE', dependencies: libxml_dep))
-config_conf.set('HAVE_STRINGS_H', cc.has_header('strings.h'))
-config_conf.set('HAVE_STRTOK_R', cc.has_function('strtok_r'))
 config_conf.set('HAVE_LC_MESSAGES', cc.has_header_symbol('locale.h', 'LC_MESSAGES'))
 
 configure_file(

@@ -35,12 +35,6 @@
 #include <glib/gi18n-lib.h>
 #include "gdk-pixbuf-io.h"
 
-#ifndef HAVE_SIGSETJMP
-#define sigjmp_buf jmp_buf
-#define sigsetjmp(jb, x) setjmp(jb)
-#define siglongjmp longjmp
-#endif
-
 /* Helper macros to convert between density units */
 #define DPCM_TO_DPI(value) ((int)round((value) * 2.54))
 

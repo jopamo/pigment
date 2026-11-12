@@ -59,27 +59,12 @@ gio_dep = dependency('gio-2.0', version: glib_req_version,
 # Configurations
 gdk_pixbuf_conf = configuration_data()
 
-if cc.has_header('unistd.h')
-  gdk_pixbuf_conf.set('HAVE_UNISTD_H', 1)
-endif
-
 mathlib_dep = cc.find_library('m', required: false)
 
 intl_dep = cc.find_library('intl', required: false)
 if cc.has_function('bind_textdomain_codeset', prefix: '#include <libintl.h>', dependencies: intl_dep)
   gdk_pixbuf_conf.set('HAVE_BIND_TEXTDOMAIN_CODESET', 1)
 endif
-
-# We use links() because sigsetjmp() is often a macro hidden behind other macros
-gdk_pixbuf_conf.set('HAVE_SIGSETJMP',
-  cc.links('''#define _POSIX_SOURCE
-              #include <setjmp.h>
-              int main (void) {
-                sigjmp_buf env;
-                sigsetjmp (env, 0);
-                return 0;
-              }''', name: 'sigsetjmp'),
-)
 
 # Common compiler and linker flags
 common_cflags = []

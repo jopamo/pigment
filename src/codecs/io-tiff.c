@@ -32,9 +32,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
 #include <tiffio.h>
 #include <errno.h>
 #include <glib-object.h>
