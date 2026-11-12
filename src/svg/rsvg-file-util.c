@@ -39,10 +39,6 @@
 #include "rsvg-io.h"
 #include "rsvg-size-callback.h"
 
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-
 /* private */
 GdkPixbuf* rsvg_pixbuf_from_data_with_size_data(const guchar* buff,
                                                 size_t len,
@@ -79,60 +75,22 @@ GdkPixbuf* rsvg_pixbuf_from_data_with_size_data(const guchar* buff,
     return retval;
 }
 
-static GdkPixbuf* rsvg_pixbuf_from_stdio_file_with_size_data(const char* data,
-                                                             gsize data_len,
-                                                             struct RsvgSizeCallbackData* cb_data,
-                                                             gchar* base_uri,
-                                                             GError** error) {
-    RsvgHandle* handle;
-    GdkPixbuf* retval;
-
-    handle = rsvg_handle_new();
-
-    if (!handle) {
-        g_set_error(error, rsvg_error_quark(), 0, "Error creating SVG reader");
-        return NULL;
-    }
-
-    rsvg_handle_set_size_callback(handle, _rsvg_size_callback, cb_data, NULL);
-    rsvg_handle_set_base_uri(handle, base_uri);
-
-    if (!rsvg_handle_write(handle, (guchar*)data, data_len, error)) {
-        (void)rsvg_handle_close(handle, NULL);
-        g_object_unref(handle);
-        return NULL;
-    }
-
-    if (!rsvg_handle_close(handle, error)) {
-        g_object_unref(handle);
-        return NULL;
-    }
-
-    retval = rsvg_handle_get_pixbuf(handle);
-    g_object_unref(handle);
-
-    return retval;
-}
-
 static GdkPixbuf* rsvg_pixbuf_from_file_with_size_data(const gchar* file_name,
                                                        struct RsvgSizeCallbackData* cb_data,
                                                        GError** error) {
     GdkPixbuf* pixbuf;
     char* data;
     gsize data_len;
-    GString* base_uri = g_string_new(file_name);
 
-    data = _rsvg_io_acquire_data(file_name, base_uri->str, NULL, &data_len, NULL, error);
+    data = _rsvg_io_acquire_data(file_name, file_name, NULL, &data_len, NULL, error);
 
     if (data) {
-        pixbuf = rsvg_pixbuf_from_stdio_file_with_size_data(data, data_len, cb_data, base_uri->str, error);
+        pixbuf = rsvg_pixbuf_from_data_with_size_data((const guchar*)data, data_len, cb_data, file_name, error);
         g_free(data);
     }
     else {
         pixbuf = NULL;
     }
-
-    g_string_free(base_uri, TRUE);
 
     return pixbuf;
 }
