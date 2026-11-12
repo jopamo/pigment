@@ -158,31 +158,6 @@ msgid_plural "failed to allocate image buffer of %u bytes"
 msgstr[0] "%u ബെറ്റ് ഉള്ള ചിത്ര ബഫര്‍ കരുതിവെയ്ക്കാനാകുന്നില്ല"
 msgstr[1] "%u ബെറ്റുകള്‍ ഉള്ള ചിത്ര ബഫര്‍ കരുതിവെയ്ക്കാനാകുന്നില്ല"
 
-#: ../gdk-pixbuf/io-ani.c:244
-msgid "Unexpected icon chunk in animation"
-msgstr "ചലനചിത്രത്തില്‍ അപ്രതീക്ഷിതമായ പ്രതീരൂപം"
-
-#: ../gdk-pixbuf/io-ani.c:342 ../gdk-pixbuf/io-ani.c:400
-#: ../gdk-pixbuf/io-ani.c:426 ../gdk-pixbuf/io-ani.c:449
-#: ../gdk-pixbuf/io-ani.c:476 ../gdk-pixbuf/io-ani.c:563
-msgid "Invalid header in animation"
-msgstr "ആനിമേഷനില്‍ തെറ്റായ ഹെഡറ്‍"
-
-#: ../gdk-pixbuf/io-ani.c:352 ../gdk-pixbuf/io-ani.c:374
-#: ../gdk-pixbuf/io-ani.c:458 ../gdk-pixbuf/io-ani.c:485
-#: ../gdk-pixbuf/io-ani.c:536 ../gdk-pixbuf/io-ani.c:608
-msgid "Not enough memory to load animation"
-msgstr "ആനിമേഷന്‍ ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറി ലഭ്യമല്ല"
-
-#: ../gdk-pixbuf/io-ani.c:392 ../gdk-pixbuf/io-ani.c:418
-#: ../gdk-pixbuf/io-ani.c:437
-msgid "Malformed chunk in animation"
-msgstr "ചലനചിത്രത്തില്‍ പിശക്"
-
-#: ../gdk-pixbuf/io-ani.c:660
-msgid "The ANI image format"
-msgstr "ANI ഇമേജ് രീതി"
-
 #: ../gdk-pixbuf/io-bmp.c:229 ../gdk-pixbuf/io-bmp.c:266
 #: ../gdk-pixbuf/io-bmp.c:337 ../gdk-pixbuf/io-bmp.c:369
 #: ../gdk-pixbuf/io-bmp.c:392 ../gdk-pixbuf/io-bmp.c:495
@@ -217,10 +192,6 @@ msgstr "BMP ഫയലിലേക്ക് സൂക്ഷിക്കുവാ�
 msgid "The BMP image format"
 msgstr "BMP ഇമേജ് രീതി"
 
-#: ../gdk-pixbuf/io-gdip-emf.c:59
-msgid "The EMF image format"
-msgstr "EMF ഇമേജ് രീതി"
-
 #: ../gdk-pixbuf/io-gdip-gif.c:80 ../gdk-pixbuf/io-gif.c:1720
 msgid "The GIF image format"
 msgstr "GIF ഇമേജ് രീതി"
@@ -247,47 +218,6 @@ msgstr "JPEG തനിമ 0-ത്തിനും 100-നും മദ്ധ്�
 #: ../gdk-pixbuf/io-gdip-jpeg.c:136 ../gdk-pixbuf/io-jpeg.c:1478
 msgid "The JPEG image format"
 msgstr "JPEG ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:154
-#, c-format
-msgid "Could not allocate memory: %s"
-msgstr "മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല :%s"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:179 ../gdk-pixbuf/io-gdip-utils.c:293
-#: ../gdk-pixbuf/io-gdip-utils.c:333
-#, c-format
-msgid "Could not create stream: %s"
-msgstr "സ്റ്റ്രീം ഉണ്ടാക്കാന്‍ കഴിഞ്ഞില്ല : %s"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:193
-#, c-format
-msgid "Could not seek stream: %s"
-msgstr "സ്റ്റ്രീം കണ്ടുപിടിക്കാന്‍/തിരയാന്‍ കഴിഞ്ഞില്ല : %s"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:205
-#, c-format
-msgid "Could not read from stream: %s"
-msgstr "സ്റ്റ്രീം വായിക്കാന്‍ കഴിഞ്ഞില്ല : %s"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:617
-msgid "Couldn't load bitmap"
-msgstr "ബിറ്റ്മാപ് തുരക്കാന്‍ കഴിഞ്ഞില്ല"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:773
-msgid "Couldn't load metafile"
-msgstr "മെറ്റാഫയല്‍ തുരക്കാന്‍ കഴിഞ്ഞില്ല"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:878
-msgid "Unsupported image format for GDI+"
-msgstr "പിന്തുണ ലഭ്യമല്ലാത്ത ചിത്ര രീതി,  GDI+ -ഇനുള്ളതു്‌"
-
-#: ../gdk-pixbuf/io-gdip-utils.c:885
-msgid "Couldn't save"
-msgstr "സൂക്ഷിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-gdip-wmf.c:58
-msgid "The WMF image format"
-msgstr "WMF ഇമേജ് രീതി"
 
 #: ../gdk-pixbuf/io-gif.c:222
 #, c-format
@@ -357,19 +287,6 @@ msgstr ""
 msgid "GIF image was truncated or incomplete."
 msgstr "GIF ഇമേജ് പൂറ്‍ണ്ണമല്ല."
 
-#: ../gdk-pixbuf/io-icns.c:347
-#, c-format
-msgid "Error reading ICNS image: %s"
-msgstr "ICNS ഇമേജ് തുറക്കുന്നതില്‍ പിശക്: %s"
-
-#: ../gdk-pixbuf/io-icns.c:364
-msgid "Could not decode ICNS file"
-msgstr "ICNS ഫയല്‍ ഡീക്കോഡ് ചെയ്യുവാന്‍ കഴിഞ്ഞില്ല"
-
-#: ../gdk-pixbuf/io-icns.c:397
-msgid "The ICNS image format"
-msgstr "ICNS ചിത്ര ഫോര്‍മാറ്റ്"
-
 #: ../gdk-pixbuf/io-ico.c:228 ../gdk-pixbuf/io-ico.c:242
 #: ../gdk-pixbuf/io-ico.c:291 ../gdk-pixbuf/io-ico.c:302
 #: ../gdk-pixbuf/io-ico.c:395
@@ -415,38 +332,6 @@ msgstr "കര്‍സര്‍ ഹോട്ട്സ്പോട്ട് പ�
 msgid "Unsupported depth for ICO file: %d"
 msgstr "ICO ഫയലിനു് പിന്തുണ ലഭ്യമല്ലാത്ത വ്യാപ്തി: %d"
 
-#: ../gdk-pixbuf/io-jasper.c:74
-msgid "Couldn't allocate memory for stream"
-msgstr "സ്റ്റ്രീമിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-jasper.c:104
-msgid "Couldn't decode image"
-msgstr "ചിത്രം ഡീക്കോഡ് ചെയ്യുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-jasper.c:122
-msgid "Transformed JPEG2000 has zero width or height"
-msgstr "മാറ്റം വരുത്തിയ JPEG-യുടെ വീതിയോ ഉയരമോ പൂജ്യം."
-
-#: ../gdk-pixbuf/io-jasper.c:136
-msgid "Image type currently not supported"
-msgstr " ഇമേജ് തരത്തിനുള്ള പിന്തുണ ലഭ്യമല്ല"
-
-#: ../gdk-pixbuf/io-jasper.c:148 ../gdk-pixbuf/io-jasper.c:156
-msgid "Couldn't allocate memory for color profile"
-msgstr "നിറം പ്രൊഫൈലിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-jasper.c:182
-msgid "Insufficient memory to open JPEG 2000 file"
-msgstr "JPEG 2000 ഫയല്‍ തുറക്കുന്നതിന് ആവശ്യമായ മെമ്മറി ലഭ്യമല്ല"
-
-#: ../gdk-pixbuf/io-jasper.c:261
-msgid "Couldn't allocate memory to buffer image data"
-msgstr "ചിത്രം  ഡേറ്റായ്ക്ക് ആവശ്യമുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-jasper.c:305
-msgid "The JPEG 2000 image format"
-msgstr "JPEG 2000 ഇമേജ് രീതി"
-
 #: ../gdk-pixbuf/io-jpeg.c:126
 #, c-format
 msgid "Error interpreting JPEG image file (%s)"
@@ -478,59 +363,6 @@ msgstr "മാറ്റം വരുത്തിയ JPEG-യുടെ വീത�
 #, c-format
 msgid "Color profile has invalid length '%u'."
 msgstr "നിറ പ്രൈഫൈലിനുള്ള അസാധുവായ നീളം '%u'."
-
-#: ../gdk-pixbuf/io-pcx.c:186
-msgid "Couldn't allocate memory for header"
-msgstr "ഹെഡറിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:201 ../gdk-pixbuf/io-pcx.c:559
-msgid "Couldn't allocate memory for context buffer"
-msgstr "കോണ്‍ടെക്സ്റ്റിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:600
-msgid "Image has invalid width and/or height"
-msgstr "ഇമേജിന്റെ വീതി അല്ലെങ്കില്‍ ഉയരം തെറ്റാണ്"
-
-#: ../gdk-pixbuf/io-pcx.c:612 ../gdk-pixbuf/io-pcx.c:673
-msgid "Image has unsupported bpp"
-msgstr "ഇമേജിന്റെ bpp-യ്ക്ക് പിന്തുണ ലഭ്യമല്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:617 ../gdk-pixbuf/io-pcx.c:625
-#, c-format
-msgid "Image has unsupported number of %d-bit planes"
-msgstr "ഇമേജിന് പിന്തുണ ലഭ്യമല്ലാത്ത %d-ബിറ്റ് പ്ളെയിനുകള്‍"
-
-#: ../gdk-pixbuf/io-pcx.c:641
-msgid "Couldn't create new pixbuf"
-msgstr "പുതിയ pixbuf ഉണ്ടാക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:649
-msgid "Couldn't allocate memory for line data"
-msgstr "ലൈന്‍ ഡേറ്റയ്ക്കുള്ള മെമ്മറി ലഭ്യമാക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:656
-msgid "Couldn't allocate memory for PCX image"
-msgstr "PCX ചിത്രതിതിനുള്ള മെമ്മറി ലഭ്യമാക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:703
-msgid "Didn't get all lines of PCX image"
-msgstr "PCX ഇമേജിന്റെ വരികളെല്ലാം ലഭ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:710
-msgid "No palette found at end of PCX data"
-msgstr "PCX ഡേറ്റായുടെ അവസാനം പാലറ്റ് ലഭ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pcx.c:755
-msgid "The PCX image format"
-msgstr "PCX ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-pixdata.c:148
-msgid "Transformed pixbuf has zero width or height."
-msgstr "മാറ്റം വരുത്തിയ pixbuf-ന്റെ വീതിയോ ഉയരമോ പൂജ്യമാണ്."
-
-#: ../gdk-pixbuf/io-pixdata.c:186
-msgid "The GdkPixdata format"
-msgstr "GdkPixdata ഫോര്‍മാറ്റ്"
 
 #: ../gdk-pixbuf/io-png.c:54
 msgid "Bits per channel of PNG image is invalid."
@@ -620,200 +452,6 @@ msgstr ""
 msgid "The PNG image format"
 msgstr "PNG ഇമേജ് രീതി"
 
-#: ../gdk-pixbuf/io-pnm.c:248
-msgid "PNM loader expected to find an integer, but didn't"
-msgstr "PNM ലോഡറിന് ഒരു ഇന്റിജറ്‍ ലഭിക്കും എന്ന് പ്രതീക്ഷിച്ചു, പക്ഷേ ലഭ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pnm.c:280
-msgid "PNM file has an incorrect initial byte"
-msgstr "PNM ഫയലില്‍ ആരംഭത്തില്‍ തെറ്റായ ബൈറ്റ്"
-
-#: ../gdk-pixbuf/io-pnm.c:310
-msgid "PNM file is not in a recognized PNM subformat"
-msgstr "PNM ഫയലിന്റെ PNM സബ്ഫോറ്‍മാറ്റ് അപരിചിതമാണ്"
-
-#: ../gdk-pixbuf/io-pnm.c:335
-msgid "PNM file has an image width of 0"
-msgstr "PNM ഫയലിനുള്ള ഇമേജിന്റെ വീതി 0 ആണ്"
-
-#: ../gdk-pixbuf/io-pnm.c:356
-msgid "PNM file has an image height of 0"
-msgstr "PNM ഫയലിനുള്ള ഇമേജിന്റെ ഉയരം 0 ആണ്"
-
-#: ../gdk-pixbuf/io-pnm.c:379
-msgid "Maximum color value in PNM file is 0"
-msgstr "PNM ഫയലിന്റെ ഏറ്റവും കൂടിയ കളറ്‍ മൂല്ല്യം 0 ആണ്."
-
-#: ../gdk-pixbuf/io-pnm.c:387
-msgid "Maximum color value in PNM file is too large"
-msgstr "PNM ഫയലിന്റെ ഏറ്റവും കൂടിയ കളറ്‍ മൂല്ല്യം വളരെ വലുതാണ്"
-
-#: ../gdk-pixbuf/io-pnm.c:427 ../gdk-pixbuf/io-pnm.c:457
-#: ../gdk-pixbuf/io-pnm.c:502
-msgid "Raw PNM image type is invalid"
-msgstr "റോ PNM ഇമേജ് തരം തെറ്റാണ്"
-
-#: ../gdk-pixbuf/io-pnm.c:652
-msgid "PNM image loader does not support this PNM subformat"
-msgstr "PNM ഇമേജ് ലോഡറ്‍ PNM സബ്ഫോറ്‍മാറ്റ് പിന്തുണയ്ക്കുന്നില്ല"
-
-#: ../gdk-pixbuf/io-pnm.c:739 ../gdk-pixbuf/io-pnm.c:966
-msgid "Raw PNM formats require exactly one whitespace before sample data"
-msgstr "റോ PNM രീതിയിലുള്ളവയ്ക്കു് മാതൃക ഡേറ്റായ്ക്കു് മുമ്പ് ഒരൊറ്റ് വൈറ്റ്സ്പെയിസ് ആവശ്യമുണ്ടു്"
-
-#: ../gdk-pixbuf/io-pnm.c:766
-msgid "Cannot allocate memory for loading PNM image"
-msgstr "PNM ഇമേജ് ലഭ്യമാക്കുന്നതിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-pnm.c:816
-msgid "Insufficient memory to load PNM context struct"
-msgstr "PNM context struct ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറി"
-
-#: ../gdk-pixbuf/io-pnm.c:867
-msgid "Unexpected end of PNM image data"
-msgstr "PNM ഇമേഡ് ഡേറ്റാ അപ്രതീക്ഷിതമായി അവസാനിച്ചിരിക്കുന്നു"
-
-#: ../gdk-pixbuf/io-pnm.c:995
-msgid "Insufficient memory to load PNM file"
-msgstr "PNM ഫയല്‍ ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറിയില്ല"
-
-#: ../gdk-pixbuf/io-pnm.c:1079
-msgid "The PNM/PBM/PGM/PPM image format family"
-msgstr "PNM/PBM/PGM/PPM ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-qtif.c:128
-msgid "Input file descriptor is NULL."
-msgstr "അകത്തോട്ടുള്ള ഫയലിന്റെ ഡിസ്ക്രിപ്റ്റര്‍ NULL ആണ്."
-
-#: ../gdk-pixbuf/io-qtif.c:143
-msgid "Failed to read QTIF header"
-msgstr "QTIF ഹെഡര്‍ വായിക്കുന്നതില്‍ പരാജയം"
-
-#: ../gdk-pixbuf/io-qtif.c:152 ../gdk-pixbuf/io-qtif.c:189
-#: ../gdk-pixbuf/io-qtif.c:459
-#, c-format
-msgid "QTIF atom size too large (%d byte)"
-msgid_plural "QTIF atom size too large (%d bytes)"
-msgstr[0] "വളരെ വലിയ QTIF ആറ്റം വലിപ്പം (%d ബൈറ്റ്)"
-msgstr[1] "വളരെ വലിയ QTIF ആറ്റം വലിപ്പം (%d ബൈറ്റുകള്‍)"
-
-#: ../gdk-pixbuf/io-qtif.c:175
-#, c-format
-msgid "Failed to allocate %d byte for file read buffer"
-msgid_plural "Failed to allocate %d bytes for file read buffer"
-msgstr[0] "ഫയല്‍ വായന ബഫറിനായി %d ബൈറ്റ് മാറ്റിവെയ്ക്കാന്‍ പറ്റിയില്ല"
-msgstr[1] "ഫയല്‍ വായന ബഫറിനായി %d ബൈറ്റുകള്‍ മാറ്റിവെയ്ക്കാന്‍ പറ്റിയില്ല"
-
-#: ../gdk-pixbuf/io-qtif.c:206
-#, c-format
-msgid "File error when reading QTIF atom: %s"
-msgstr "QTIF ആറ്റം വായിക്കുന്നതില്‍ പിശക്: %s"
-
-#: ../gdk-pixbuf/io-qtif.c:243
-#, c-format
-msgid "Failed to skip the next %d byte with seek()."
-msgid_plural "Failed to skip the next %d bytes with seek()."
-msgstr[0] "seek() വെച്ച് അടുത്ത %d ബൈറ്റ് ചാടാന്‍ പറ്റിയില്ല."
-msgstr[1] "seek() വെച്ച് അടുത്ത %d ബൈറ്റുകള്‍ ചാടാന്‍ പറ്റിയില്ല."
-
-#: ../gdk-pixbuf/io-qtif.c:270
-msgid "Failed to allocate QTIF context structure."
-msgstr "QTIF ഉള്ളടക്ക സംവിധാനത്തിനുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല."
-
-#: ../gdk-pixbuf/io-qtif.c:330
-msgid "Failed to create GdkPixbufLoader object."
-msgstr "GdkPixbufLoader ഒബ്ജക്റ്റ് ഉണ്ടാക്കുന്നതില്‍ പരാജയം."
-
-#: ../gdk-pixbuf/io-qtif.c:434
-msgid "Failed to find an image data atom."
-msgstr "ചിത്ര ഡാറ്റ ആറ്റം കണ്ടെത്താന്‍ പറ്റിയില്ല."
-
-#: ../gdk-pixbuf/io-qtif.c:618
-msgid "The QTIF image format"
-msgstr "QTIF ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-ras.c:125
-msgid "RAS image has bogus header data"
-msgstr "RAS ഇമേജില്‍ തെറ്റായ ഹെഡറ്‍ ഡേറ്റാ"
-
-#: ../gdk-pixbuf/io-ras.c:147
-msgid "RAS image has unknown type"
-msgstr "RAS ഇമേജില്‍ അപരിചിമായ തരത്തിലുള്ളത്"
-
-#: ../gdk-pixbuf/io-ras.c:155
-msgid "unsupported RAS image variation"
-msgstr "പിന്തുണ ലഭ്യമല്ലാത്ത RAS ഇമേജ് മാറ്റം"
-
-#: ../gdk-pixbuf/io-ras.c:170 ../gdk-pixbuf/io-ras.c:199
-msgid "Not enough memory to load RAS image"
-msgstr "RAS ഇമേജ് ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറിയില്ല"
-
-#: ../gdk-pixbuf/io-ras.c:544
-msgid "The Sun raster image format"
-msgstr "Sun raster ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-tga.c:153
-msgid "Cannot allocate memory for IOBuffer struct"
-msgstr "IOBuffer struct-ന് ആവശ്യമുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:172
-msgid "Cannot allocate memory for IOBuffer data"
-msgstr "IOBuffer ഡേറ്റായ്ക്ക് ആവശ്യമുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:183
-msgid "Cannot realloc IOBuffer data"
-msgstr "IOBuffer data realloc ചെയ്യുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:213
-msgid "Cannot allocate temporary IOBuffer data"
-msgstr "താല്‍ക്കാലികമായ IOBuffer ഡേറ്റാ  അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:346
-msgid "Cannot allocate new pixbuf"
-msgstr "പുതിയ pixbuf അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:685
-msgid "Image is corrupted or truncated"
-msgstr "ചിത്രം നശിച്ച് പോയി"
-
-#: ../gdk-pixbuf/io-tga.c:692
-msgid "Cannot allocate colormap structure"
-msgstr "കളറ്‍മാപ്പ് രൂപം അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:699
-msgid "Cannot allocate colormap entries"
-msgstr "കളറ്‍മാപ്പ് എന്‍ട്രികള്‍ അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:721
-msgid "Unexpected bitdepth for colormap entries"
-msgstr "colormap എന്‍ട്രികള്‍ക്ക് അപ്രതീക്ഷിതമായ bitdepth"
-
-#: ../gdk-pixbuf/io-tga.c:739
-msgid "Cannot allocate TGA header memory"
-msgstr "TGA ഹെഡര്‍ മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:772
-msgid "TGA image has invalid dimensions"
-msgstr "TGA ഇമേജില്‍ തെറ്റായ അളവുകള്‍"
-
-#: ../gdk-pixbuf/io-tga.c:778 ../gdk-pixbuf/io-tga.c:787
-#: ../gdk-pixbuf/io-tga.c:797 ../gdk-pixbuf/io-tga.c:807
-#: ../gdk-pixbuf/io-tga.c:814
-msgid "TGA image type not supported"
-msgstr "TGA തരത്തിലുള്ള ഇമേജിന് പിന്തുണ ലഭ്യമല്ല"
-
-#: ../gdk-pixbuf/io-tga.c:861
-msgid "Cannot allocate memory for TGA context struct"
-msgstr "TGA context struct-നുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-tga.c:926
-msgid "Excess data in file"
-msgstr "ഫയലില്‍ കൂടുതല്‍ ഡേറ്റാ"
-
-#: ../gdk-pixbuf/io-tga.c:1007
-msgid "The Targa image format"
-msgstr "Targa ഇമേജ് രീതി"
-
 #: ../gdk-pixbuf/io-tiff.c:104
 msgid "Could not get image width (bad TIFF file)"
 msgstr "ഇമേജിന്റെ വീതി ലഭ്യമാക്കുവാന്‍ സാധ്യമായില്ല (തെറ്റായ TIFF ഫയല്‍)"
@@ -866,89 +504,3 @@ msgstr "TIFF ഫയലിലേക്ക് എഴുതുവാന്‍ സ�
 #: ../gdk-pixbuf/io-tiff.c:788
 msgid "The TIFF image format"
 msgstr "TIFF ഇമേഡ് രീതി"
-
-#: ../gdk-pixbuf/io-wbmp.c:245
-msgid "Image has zero width"
-msgstr "ഇമേജിന്റെ വീതി പൂജ്യമാണ്"
-
-#: ../gdk-pixbuf/io-wbmp.c:263
-msgid "Image has zero height"
-msgstr "ഇമേജിന്റെ ഉയരം പൂജ്യമാണ്"
-
-#: ../gdk-pixbuf/io-wbmp.c:274
-msgid "Not enough memory to load image"
-msgstr "ഇമേജ് ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറിയില്ല"
-
-#: ../gdk-pixbuf/io-wbmp.c:333
-msgid "Couldn't save the rest"
-msgstr "ബാക്കിയുള്ളവ സൂക്ഷിക്കുവാന്‍ സാധ്യമായില്ല"
-
-#: ../gdk-pixbuf/io-wbmp.c:374
-msgid "The WBMP image format"
-msgstr "WBMP ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-xbm.c:304
-msgid "Invalid XBM file"
-msgstr "തെറ്റായ XBM ഫയല്‍"
-
-#: ../gdk-pixbuf/io-xbm.c:314
-msgid "Insufficient memory to load XBM image file"
-msgstr "XBM ഇമേജ് ഫയല്‍ ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറിയില്ല"
-
-#: ../gdk-pixbuf/io-xbm.c:462
-msgid "Failed to write to temporary file when loading XBM image"
-msgstr "XBM ഇമേജ് ലഭ്യമാക്കുമ്പോള്‍ താല്‍ക്കാലിക ഫയലിലേക്ക് എഴുതുന്നതില്‍ പരാജയം"
-
-#: ../gdk-pixbuf/io-xbm.c:501
-msgid "The XBM image format"
-msgstr "XBM ഇമേജ് രീതി"
-
-#: ../gdk-pixbuf/io-xpm.c:469
-msgid "No XPM header found"
-msgstr "XPM ഹെഡറ്‍ ലഭ്യമല്ല"
-
-#: ../gdk-pixbuf/io-xpm.c:478
-msgid "Invalid XPM header"
-msgstr "തെറ്റായ XPM ഹെഡറ്‍"
-
-#: ../gdk-pixbuf/io-xpm.c:486
-msgid "XPM file has image width <= 0"
-msgstr "XPM ഫയലിന്റെ ഇമേജ് വീതി <= 0"
-
-#: ../gdk-pixbuf/io-xpm.c:494
-msgid "XPM file has image height <= 0"
-msgstr "XPM ഫയലിന്റെ ഇമേജ് ഉയരം <= 0"
-
-#: ../gdk-pixbuf/io-xpm.c:502
-msgid "XPM has invalid number of chars per pixel"
-msgstr "XPM-ലുള്ള ഓരോ പിക്സലുകളിലേയും അക്ഷരങ്ങളുടെ എണ്ണം തെറ്റാണ്"
-
-#: ../gdk-pixbuf/io-xpm.c:511
-msgid "XPM file has invalid number of colors"
-msgstr "XPM ഫയലിലുള്ള നിറങ്ങളുടെ എണ്ണം തെറ്റാണ്"
-
-#: ../gdk-pixbuf/io-xpm.c:523 ../gdk-pixbuf/io-xpm.c:532
-#: ../gdk-pixbuf/io-xpm.c:584
-msgid "Cannot allocate memory for loading XPM image"
-msgstr "XPM ഇമേജ് ലഭ്യമാക്കുന്നതിന് ആവശ്യമുള്ള മെമ്മറി അനുവദിക്കുവാന്‍ സാധ്യമല്ല"
-
-#: ../gdk-pixbuf/io-xpm.c:546
-msgid "Cannot read XPM colormap"
-msgstr "XPM കളറ്‍മാപ്പ് വായിക്കുവാന്‍ സാധ്യമല്ല"
-
-#: ../gdk-pixbuf/io-xpm.c:778
-msgid "Failed to write to temporary file when loading XPM image"
-msgstr "XPM ഇമേജ് ലഭ്യമാക്കുമ്പോള്‍ താല്‍ക്കാലിക ഫയലിലേക്ക് എഴുതുന്നതില്‍ പരാജയം"
-
-#: ../gdk-pixbuf/io-xpm.c:817
-msgid "The XPM image format"
-msgstr "XPM ഇമേജ് രീതി"
-
-#~ msgid "Unsupported animation type"
-#~ msgstr "പിന്തുണ ലഭ്യമല്ലാത്ത ആനിമേഷന്‍ രീതി"
-
-#~ msgid "TIFFClose operation failed"
-#~ msgstr "TIFFClose പ്രക്രിയ പരാജയപ്പെട്ടു"
-
-#~ msgid "Couldn't allocate memory for paletted data"
-#~ msgstr "പാലറ്റഡ് ഡേറ്റയ്ക്കുള്ള മെമ്മറി ലഭ്യമാക്കുവാന്‍ സാധ്യമായില്ല"

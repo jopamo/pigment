@@ -183,32 +183,6 @@ msgid_plural "failed to allocate image buffer of %u bytes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: gdk-pixbuf/io-ani.c:244
-msgid "Unexpected icon chunk in animation"
-msgstr "એનિમેશનમાં અણધાર્યો ચિહ્નનો કટકો છે"
-
-#: gdk-pixbuf/io-ani.c:337
-msgid "Unsupported animation type"
-msgstr "એનિમેશનનો પ્રકાર આધારિત નથી"
-
-#: gdk-pixbuf/io-ani.c:348 gdk-pixbuf/io-ani.c:406 gdk-pixbuf/io-ani.c:432
-#: gdk-pixbuf/io-ani.c:455 gdk-pixbuf/io-ani.c:482 gdk-pixbuf/io-ani.c:569
-msgid "Invalid header in animation"
-msgstr "એનિમેશનમાં અયોગ્ય હેડર"
-
-#: gdk-pixbuf/io-ani.c:358 gdk-pixbuf/io-ani.c:380 gdk-pixbuf/io-ani.c:464
-#: gdk-pixbuf/io-ani.c:491 gdk-pixbuf/io-ani.c:542 gdk-pixbuf/io-ani.c:614
-msgid "Not enough memory to load animation"
-msgstr "એનિમેશન લાવવા માટે પૂરતી મેમરી નથી"
-
-#: gdk-pixbuf/io-ani.c:398 gdk-pixbuf/io-ani.c:424 gdk-pixbuf/io-ani.c:443
-msgid "Malformed chunk in animation"
-msgstr "એનિમેશનમાં ખરાબ રચના વાળો કટકો"
-
-#: gdk-pixbuf/io-ani.c:711
-msgid "The ANI image format"
-msgstr "ANI ચિત્ર બંધારણ"
-
 #: gdk-pixbuf/io-bmp.c:229 gdk-pixbuf/io-bmp.c:266 gdk-pixbuf/io-bmp.c:337
 #: gdk-pixbuf/io-bmp.c:369 gdk-pixbuf/io-bmp.c:392 gdk-pixbuf/io-bmp.c:495
 msgid "BMP image has bogus header data"
@@ -242,10 +216,6 @@ msgstr "BMP ફાઈલમાં લખી શક્યા નહિં"
 msgid "The BMP image format"
 msgstr "BMP ચિત્ર બંધારણ"
 
-#: gdk-pixbuf/io-gdip-emf.c:59
-msgid "The EMF image format"
-msgstr "EMF ચિત્ર બંધારણ"
-
 #: gdk-pixbuf/io-gdip-gif.c:80 gdk-pixbuf/io-gif.c:1699
 msgid "The GIF image format"
 msgstr "GIF ચિત્ર બંધારણ"
@@ -273,47 +243,6 @@ msgstr ""
 #: gdk-pixbuf/io-gdip-jpeg.c:136 gdk-pixbuf/io-jpeg.c:1316
 msgid "The JPEG image format"
 msgstr "JPEG ચિત્ર બંધારણ"
-
-#: gdk-pixbuf/io-gdip-utils.c:154
-#, c-format
-msgid "Could not allocate memory: %s"
-msgstr "મેમરી ફાળવી શકાતી નથી: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:179 gdk-pixbuf/io-gdip-utils.c:293
-#: gdk-pixbuf/io-gdip-utils.c:333
-#, c-format
-msgid "Could not create stream: %s"
-msgstr "સ્ટ્રીમને બનાવી શકાયુ નથી: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:193
-#, c-format
-msgid "Could not seek stream: %s"
-msgstr "સ્ટ્રીમ સુધી પહોંચી શક્યા નહિં: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:205
-#, c-format
-msgid "Could not read from stream: %s"
-msgstr "સ્ટ્રીમમાંથી વાંચી શકાતુ નથી: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:617 gdk-pixbuf/io-gdip-utils.c:752
-msgid "Couldn't load bitmap"
-msgstr "બીટમેપને લોડ કરી શકાયુ નહિ"
-
-#: gdk-pixbuf/io-gdip-utils.c:774
-msgid "Couldn't load metafile"
-msgstr "મેટાફાઇલને લોડ કરી શકાયુ નહિ"
-
-#: gdk-pixbuf/io-gdip-utils.c:933
-msgid "Unsupported image format for GDI+"
-msgstr "GDI+ માટે નિરાધારીત ચિત્ર બંધારણ"
-
-#: gdk-pixbuf/io-gdip-utils.c:940
-msgid "Couldn't save"
-msgstr "સંગ્રહી શકાતુ નથી"
-
-#: gdk-pixbuf/io-gdip-wmf.c:58
-msgid "The WMF image format"
-msgstr "WMF ચિત્ર બંધારણ"
 
 #: gdk-pixbuf/io-gif.c:221
 #, c-format
@@ -379,19 +308,6 @@ msgstr ""
 msgid "GIF image was truncated or incomplete."
 msgstr "GIF ચિત્ર છેદાયેલ અથવા અધૂરુ છે."
 
-#: gdk-pixbuf/io-icns.c:347
-#, c-format
-msgid "Error reading ICNS image: %s"
-msgstr "ICNS ચિત્ર ને વાંચવામાં ભૂલ: %s"
-
-#: gdk-pixbuf/io-icns.c:364
-msgid "Could not decode ICNS file"
-msgstr "ICNS ફાઇલ ને ડિકોડ કરી શકાતી નથી"
-
-#: gdk-pixbuf/io-icns.c:397
-msgid "The ICNS image format"
-msgstr "ICNS ચિત્ર બંધારણ"
-
 #: gdk-pixbuf/io-ico.c:228 gdk-pixbuf/io-ico.c:242 gdk-pixbuf/io-ico.c:291
 #: gdk-pixbuf/io-ico.c:302 gdk-pixbuf/io-ico.c:395
 msgid "Invalid header in icon"
@@ -435,38 +351,6 @@ msgstr "ચિત્રની બહાર કર્સરનો હોટસ્
 msgid "Unsupported depth for ICO file: %d"
 msgstr "ICO ફાઇલ માટે બિનઆઘારભૂત ઊંડાઇ: %d"
 
-#: gdk-pixbuf/io-jasper.c:74
-msgid "Couldn't allocate memory for stream"
-msgstr "સ્ટ્રીમ માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-jasper.c:104
-msgid "Couldn't decode image"
-msgstr "ચિત્ર ને ડિકોડ કરી શકાતો નથી"
-
-#: gdk-pixbuf/io-jasper.c:122
-msgid "Transformed JPEG2000 has zero width or height"
-msgstr "રૂપાંતરિત JPEG2000 પાસે શૂન્ય પહોળાઈ અથવા ઊંચાઈ હોય છે"
-
-#: gdk-pixbuf/io-jasper.c:136
-msgid "Image type currently not supported"
-msgstr "ચિત્રનો પ્રકાર હાલમાં આધાર આપતો નથી"
-
-#: gdk-pixbuf/io-jasper.c:148 gdk-pixbuf/io-jasper.c:156
-msgid "Couldn't allocate memory for color profile"
-msgstr "રંગ પ્રોફાઇલ માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-jasper.c:182
-msgid "Insufficient memory to open JPEG 2000 file"
-msgstr "JPEG ૨૦૦૦ ફાઇલ ને ખોલવા માટે મેમરી અપૂરતી છે"
-
-#: gdk-pixbuf/io-jasper.c:261
-msgid "Couldn't allocate memory to buffer image data"
-msgstr "બફર ચિત્ર માહિતી ની મેમરી ને ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-jasper.c:305
-msgid "The JPEG 2000 image format"
-msgstr "JPEG 2000 ચિત્ર બંધારણ"
-
 #: gdk-pixbuf/io-jpeg.c:116
 #, c-format
 msgid "Error interpreting JPEG image file (%s)"
@@ -492,62 +376,6 @@ msgstr "JPEG ફાઈલને લાવવા માટે કોઈ મેમ
 #: gdk-pixbuf/io-jpeg.c:925
 msgid "Transformed JPEG has zero width or height."
 msgstr "રૂપાંતરિત JPEG માટે શૂન્ય પહોળાઈ અથવા ઊંચાઈ હોય છે."
-
-#: gdk-pixbuf/io-pcx.c:186
-msgid "Couldn't allocate memory for header"
-msgstr "હેડર માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-pcx.c:201 gdk-pixbuf/io-pcx.c:559
-msgid "Couldn't allocate memory for context buffer"
-msgstr "સંદર્ભની સંરચનાની અનામત મૅમરી માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-pcx.c:600
-msgid "Image has invalid width and/or height"
-msgstr "ચિત્રને અયોગ્ય પહોળાઇ અને/અથવા ઊંચાઇ"
-
-#: gdk-pixbuf/io-pcx.c:612 gdk-pixbuf/io-pcx.c:673
-msgid "Image has unsupported bpp"
-msgstr "ચિત્રને બિઆધારભૂત bpp છે"
-
-#: gdk-pixbuf/io-pcx.c:617 gdk-pixbuf/io-pcx.c:625
-#, c-format
-msgid "Image has unsupported number of %d-bit planes"
-msgstr "ચિત્રને %d-બીટ સમતલોની સંખ્યા બિનઆધારભૂત છે"
-
-#: gdk-pixbuf/io-pcx.c:641
-msgid "Couldn't create new pixbuf"
-msgstr "નવુ Pixbuf ફાળવી શકાતુ નથી"
-
-#: gdk-pixbuf/io-pcx.c:649
-msgid "Couldn't allocate memory for line data"
-msgstr "લીટી માહિતી માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-pcx.c:656
-#, fuzzy
-msgid "Couldn't allocate memory for PCX image"
-msgstr "હેડર માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-pcx.c:703
-msgid "Didn't get all lines of PCX image"
-msgstr "PCX ચિત્ર માટે બધી લીટીઓ મેળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-pcx.c:710
-msgid "No palette found at end of PCX data"
-msgstr "PCX માહિતીના અંતે કોઇ પેલેટ મળતુ નથી"
-
-#: gdk-pixbuf/io-pcx.c:755
-msgid "The PCX image format"
-msgstr "PCX ચિત્ર બંધારણ"
-
-#: gdk-pixbuf/io-pixdata.c:148
-#, fuzzy
-msgid "Transformed pixbuf has zero width or height."
-msgstr "રૂપાંતરિત PNG માટે શૂન્ય પહોળાઈ અથવા ઊંચાઈ હોય છે."
-
-#: gdk-pixbuf/io-pixdata.c:186
-#, fuzzy
-msgid "The GdkPixdata format"
-msgstr "GIF ચિત્ર બંધારણ"
 
 #: gdk-pixbuf/io-png.c:54
 msgid "Bits per channel of PNG image is invalid."
@@ -637,203 +465,6 @@ msgstr ""
 msgid "The PNG image format"
 msgstr "PNG ચિત્ર બંધારણ"
 
-#: gdk-pixbuf/io-pnm.c:248
-msgid "PNM loader expected to find an integer, but didn't"
-msgstr "PNM લાવનારને પૂર્ણાંક શોધવાની આશા હતી, પરંતુ ન શોધી શક્યુ"
-
-#: gdk-pixbuf/io-pnm.c:280
-msgid "PNM file has an incorrect initial byte"
-msgstr "PNM ફાઈલ પાસે શરૂઆતના ખોટા બાઈટ છે"
-
-#: gdk-pixbuf/io-pnm.c:310
-msgid "PNM file is not in a recognized PNM subformat"
-msgstr "PNM ફાઈલ ઓળખી શકાય તેવા PNM ઉપબંધારણ નથી"
-
-#: gdk-pixbuf/io-pnm.c:335
-msgid "PNM file has an image width of 0"
-msgstr "PNM ફાઈલના ચિત્રની પહોળાઈ શૂન્ય છે"
-
-#: gdk-pixbuf/io-pnm.c:356
-msgid "PNM file has an image height of 0"
-msgstr "PNM ફાઈલના ચિત્રની ઊંચાઈ શૂન્ય છે"
-
-#: gdk-pixbuf/io-pnm.c:379
-msgid "Maximum color value in PNM file is 0"
-msgstr "PNM ફાઈલમાં રંગની મહત્તમ કિંમત 0 છે"
-
-#: gdk-pixbuf/io-pnm.c:387
-msgid "Maximum color value in PNM file is too large"
-msgstr "PNM ફાઈલમાં રંગની મહત્તમ કિંમત બહુ મોટી છે"
-
-#: gdk-pixbuf/io-pnm.c:427 gdk-pixbuf/io-pnm.c:457 gdk-pixbuf/io-pnm.c:502
-msgid "Raw PNM image type is invalid"
-msgstr "PNM ચિત્રનો કાચો પ્રકાર અયોગ્ય છે"
-
-#: gdk-pixbuf/io-pnm.c:652
-msgid "PNM image loader does not support this PNM subformat"
-msgstr "PNM ચિત્ર લાવનાર PNMના આ ઉપ-બંધારણને આધાર આપતો નથી"
-
-#: gdk-pixbuf/io-pnm.c:739 gdk-pixbuf/io-pnm.c:966
-msgid "Raw PNM formats require exactly one whitespace before sample data"
-msgstr "PNM ના કાચા બંધારણ માટે નમૂનાની માહિતી પહેલા એક જ ખાલી જગ્યા જરૂરી છે"
-
-#: gdk-pixbuf/io-pnm.c:766
-msgid "Cannot allocate memory for loading PNM image"
-msgstr "PNM લાવવા માટે મેમરી ફાળવી શકતુ નથી"
-
-#: gdk-pixbuf/io-pnm.c:816
-msgid "Insufficient memory to load PNM context struct"
-msgstr "PNM ના સંદર્ભની સંરચના લાવવા માટે પૂરતી માહિતી નથી"
-
-#: gdk-pixbuf/io-pnm.c:867
-msgid "Unexpected end of PNM image data"
-msgstr "PNM ચિત્રની માહિતીનો અણધાર્યો અંત"
-
-#: gdk-pixbuf/io-pnm.c:995
-msgid "Insufficient memory to load PNM file"
-msgstr "PNM ફાઈલને લાવવા માટે અપૂરતી મેમરી"
-
-#: gdk-pixbuf/io-pnm.c:1079
-msgid "The PNM/PBM/PGM/PPM image format family"
-msgstr "PNM/PBM/PGM/PPM ચિત્રના બંધારણનું કુટુંબ"
-
-#: gdk-pixbuf/io-qtif.c:128
-msgid "Input file descriptor is NULL."
-msgstr ""
-
-#: gdk-pixbuf/io-qtif.c:143
-#, fuzzy
-msgid "Failed to read QTIF header"
-msgstr "હેડર લખવામાં નિષ્ફળ\n"
-
-#: gdk-pixbuf/io-qtif.c:152 gdk-pixbuf/io-qtif.c:189 gdk-pixbuf/io-qtif.c:460
-#, c-format
-msgid "QTIF atom size too large (%d byte)"
-msgid_plural "QTIF atom size too large (%d bytes)"
-msgstr[0] ""
-msgstr[1] ""
-
-#: gdk-pixbuf/io-qtif.c:175
-#, fuzzy, c-format
-msgid "Failed to allocate %d byte for file read buffer"
-msgid_plural "Failed to allocate %d bytes for file read buffer"
-msgstr[0] "સંદર્ભની સંરચનાની અનામત મૅમરી માટે મેમરી ફાળવી શકાતી નથી"
-msgstr[1] "સંદર્ભની સંરચનાની અનામત મૅમરી માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-qtif.c:206
-#, fuzzy, c-format
-msgid "File error when reading QTIF atom: %s"
-msgstr "GIF વાંચવામાં નિષ્ફળ: %s"
-
-#: gdk-pixbuf/io-qtif.c:243
-#, c-format
-msgid "Failed to skip the next %d byte with seek()."
-msgid_plural "Failed to skip the next %d bytes with seek()."
-msgstr[0] ""
-msgstr[1] ""
-
-#: gdk-pixbuf/io-qtif.c:270
-#, fuzzy
-msgid "Failed to allocate QTIF context structure."
-msgstr "TGAના સંદર્ભની સંરચના માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-qtif.c:330
-#, fuzzy
-msgid "Failed to create GdkPixbufLoader object."
-msgstr "ફોલ્ડર અનુક્રમ લખવામાં નિષ્ફળ\n"
-
-#: gdk-pixbuf/io-qtif.c:434
-#, fuzzy
-msgid "Failed to find an image data atom."
-msgstr "TIFF ચિત્ર ખોલવામાં નિષ્ફળ"
-
-#: gdk-pixbuf/io-qtif.c:619
-#, fuzzy
-msgid "The QTIF image format"
-msgstr "TIFF ચિત્રનું બંધારણ"
-
-#: gdk-pixbuf/io-ras.c:125
-msgid "RAS image has bogus header data"
-msgstr "RAS ચિત્ર પાસે ખોટી હેડર માહિતી છે"
-
-#: gdk-pixbuf/io-ras.c:147
-msgid "RAS image has unknown type"
-msgstr "RAS ચિત્રનો પ્રકાર અજાણ્યો છે"
-
-#: gdk-pixbuf/io-ras.c:155
-msgid "unsupported RAS image variation"
-msgstr "નિરાધારીત RAS ચિત્ર બદલાવો"
-
-#: gdk-pixbuf/io-ras.c:170 gdk-pixbuf/io-ras.c:199
-msgid "Not enough memory to load RAS image"
-msgstr "RAS ચિત્રને લાવવા માટે પૂરતી મેમરી નથી"
-
-#: gdk-pixbuf/io-ras.c:544
-msgid "The Sun raster image format"
-msgstr "સન રાસ્ટર ચિત્ર બંધારણ"
-
-#: gdk-pixbuf/io-tga.c:153
-msgid "Cannot allocate memory for IOBuffer struct"
-msgstr "IO બફર સંરચના માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-tga.c:172
-msgid "Cannot allocate memory for IOBuffer data"
-msgstr "IO બફર માહિતી માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-tga.c:183
-msgid "Cannot realloc IOBuffer data"
-msgstr "IO બફર માહિતીને ફરીથી ફાળવી શકાઇ નહિ"
-
-#: gdk-pixbuf/io-tga.c:213
-msgid "Cannot allocate temporary IOBuffer data"
-msgstr "કામપૂરતી IO બફર માહિતી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-tga.c:346
-msgid "Cannot allocate new pixbuf"
-msgstr "નવુ Pixbuf ફાળવી શકાતુ નથી"
-
-#: gdk-pixbuf/io-tga.c:685
-#, fuzzy
-msgid "Image is corrupted or truncated"
-msgstr "GIF ચિત્ર છેદાયેલ અથવા અધૂરુ છે."
-
-#: gdk-pixbuf/io-tga.c:692
-msgid "Cannot allocate colormap structure"
-msgstr "રંગનક્શાની સંરચના ફાળવી શકાતુ નથી"
-
-#: gdk-pixbuf/io-tga.c:699
-msgid "Cannot allocate colormap entries"
-msgstr "રંગનક્શાના પ્રવેશો ફાળવી શકાતા નથી"
-
-#: gdk-pixbuf/io-tga.c:721
-msgid "Unexpected bitdepth for colormap entries"
-msgstr "રંગનક્શાના પ્રવેશો માટે અણધારી બીટની ઊંડાઈ"
-
-#: gdk-pixbuf/io-tga.c:739
-msgid "Cannot allocate TGA header memory"
-msgstr "TGA હેડર મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-tga.c:772
-msgid "TGA image has invalid dimensions"
-msgstr "TGA ચિત્રનું પરિમાણ અયોગ્ય છે"
-
-#: gdk-pixbuf/io-tga.c:778 gdk-pixbuf/io-tga.c:787 gdk-pixbuf/io-tga.c:797
-#: gdk-pixbuf/io-tga.c:807 gdk-pixbuf/io-tga.c:814
-msgid "TGA image type not supported"
-msgstr "TGA ચિત્રના પ્રકાર માટે આધાર નથી"
-
-#: gdk-pixbuf/io-tga.c:861
-msgid "Cannot allocate memory for TGA context struct"
-msgstr "TGAના સંદર્ભની સંરચના માટે મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-tga.c:926
-msgid "Excess data in file"
-msgstr "ફાઈલમાંથી માહિતી મેળવવી"
-
-#: gdk-pixbuf/io-tga.c:1007
-msgid "The Targa image format"
-msgstr "ટાર્ગા ચિત્ર બંધારણ"
-
 #: gdk-pixbuf/io-tiff.c:164
 msgid "Could not get image width (bad TIFF file)"
 msgstr "ચિત્રની પહોળાઈ મેળવી શકાતી નથી (ખરાબ TIFF ફાઈલ)"
@@ -889,82 +520,3 @@ msgstr "TIFF ફાઈલમાં લખી શક્યા નહિં"
 #: gdk-pixbuf/io-tiff.c:868
 msgid "The TIFF image format"
 msgstr "TIFF ચિત્રનું બંધારણ"
-
-#: gdk-pixbuf/io-wbmp.c:245
-msgid "Image has zero width"
-msgstr "ચિત્રની શૂન્ય પહોળાઈ"
-
-#: gdk-pixbuf/io-wbmp.c:263
-msgid "Image has zero height"
-msgstr "ચિત્રની શૂન્ય ઊંચાઈ"
-
-#: gdk-pixbuf/io-wbmp.c:274
-msgid "Not enough memory to load image"
-msgstr "ચિત્રને લાવવા માટે અપૂરતી મેમરી"
-
-#: gdk-pixbuf/io-wbmp.c:333
-msgid "Couldn't save the rest"
-msgstr "બાકીનું સંગ્રહી શકાતુ નથી"
-
-#: gdk-pixbuf/io-wbmp.c:374
-msgid "The WBMP image format"
-msgstr "WBMP ચિત્ર બંધારણ"
-
-#: gdk-pixbuf/io-xbm.c:296
-msgid "Invalid XBM file"
-msgstr "અયોગ્ય XBM ફાઈલ"
-
-#: gdk-pixbuf/io-xbm.c:306
-msgid "Insufficient memory to load XBM image file"
-msgstr "XBM ચિત્ર ફાઈલને લાવવા માટે અપૂરતી મેમરી"
-
-#: gdk-pixbuf/io-xbm.c:454
-msgid "Failed to write to temporary file when loading XBM image"
-msgstr "XBM ચિત્રને લાવતી વખતે કામપૂરતી ફાઈલમાં લખવામાં નિષ્ફળ"
-
-#: gdk-pixbuf/io-xbm.c:493
-msgid "The XBM image format"
-msgstr "XBM ચિત્ર બંધારણ"
-
-#: gdk-pixbuf/io-xpm.c:469
-msgid "No XPM header found"
-msgstr "કોઈ XPM હેડર મળતું નથી"
-
-#: gdk-pixbuf/io-xpm.c:478
-msgid "Invalid XPM header"
-msgstr "અયોગ્ય XPM હેડર"
-
-#: gdk-pixbuf/io-xpm.c:486
-msgid "XPM file has image width <= 0"
-msgstr "XPM ફાઈલના ચિત્રની પહોળાઈ <= 0 છે"
-
-#: gdk-pixbuf/io-xpm.c:494
-msgid "XPM file has image height <= 0"
-msgstr "XPM ફાઈલના ચિત્રની ઊંચાઈ <= 0 છે"
-
-#: gdk-pixbuf/io-xpm.c:502
-msgid "XPM has invalid number of chars per pixel"
-msgstr "XPM પાસે પ્રતિ પીક્સેલ અયોગ્ય શબ્દની સંખ્યા"
-
-#: gdk-pixbuf/io-xpm.c:511
-msgid "XPM file has invalid number of colors"
-msgstr "XPM ફાઈલ પાસે અયોગ્ય રંગની સંખ્યા છે"
-
-#: gdk-pixbuf/io-xpm.c:523 gdk-pixbuf/io-xpm.c:532 gdk-pixbuf/io-xpm.c:584
-msgid "Cannot allocate memory for loading XPM image"
-msgstr "XPM ચિત્રને લાવવા માટે પૂરતી મેમરી ફાળવી શકાતી નથી"
-
-#: gdk-pixbuf/io-xpm.c:546
-msgid "Cannot read XPM colormap"
-msgstr "XPM રંગનક્શો વાંચી શકતુ નથી"
-
-#: gdk-pixbuf/io-xpm.c:778
-msgid "Failed to write to temporary file when loading XPM image"
-msgstr "XPM ચિત્રને લાવતી વખતે કામપૂરતી ફાઈલમાં લખવામાં નિષ્ફળ"
-
-#: gdk-pixbuf/io-xpm.c:817
-msgid "The XPM image format"
-msgstr "XPM ચિત્ર બંધારણ"
-
-#~ msgid "Couldn't allocate memory for paletted data"
-#~ msgstr "પેલેટવાળી માહિતી માટે મેમરી ફાળવી શકાતી નથી"

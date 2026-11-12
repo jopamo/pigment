@@ -243,33 +243,6 @@ msgid_plural "failed to allocate image buffer of %u bytes"
 msgstr[0] "неуспешно заделяне на буфер от %u байт за изображение"
 msgstr[1] "неуспешно заделяне на буфер от %u байта за изображение"
 
-#: gdk-pixbuf/io-ani.c:239
-msgid "Unexpected icon chunk in animation"
-msgstr "Неочакван откъс за икона в анимация"
-
-#: gdk-pixbuf/io-ani.c:337 gdk-pixbuf/io-ani.c:395 gdk-pixbuf/io-ani.c:421
-#: gdk-pixbuf/io-ani.c:444 gdk-pixbuf/io-ani.c:471 gdk-pixbuf/io-ani.c:558
-msgid "Invalid header in animation"
-msgstr "Грешна заглавна част в анимацията"
-
-#: gdk-pixbuf/io-ani.c:347 gdk-pixbuf/io-ani.c:369 gdk-pixbuf/io-ani.c:453
-#: gdk-pixbuf/io-ani.c:480 gdk-pixbuf/io-ani.c:531 gdk-pixbuf/io-ani.c:607
-msgid "Not enough memory to load animation"
-msgstr "Недостатъчно памет за зареждане на анимацията"
-
-#: gdk-pixbuf/io-ani.c:387 gdk-pixbuf/io-ani.c:413 gdk-pixbuf/io-ani.c:432
-msgid "Malformed chunk in animation"
-msgstr "Грешно форматиран откъс в анимацията"
-
-#: gdk-pixbuf/io-ani.c:629
-msgid "ANI image was truncated or incomplete."
-msgstr "Изображението във формат ANI е орязано или непълно."
-
-#: gdk-pixbuf/io-ani.c:670
-msgctxt "image format"
-msgid "Windows animated cursor"
-msgstr "Анимиран курсор за Windows"
-
 #: gdk-pixbuf/io-bmp.c:231 gdk-pixbuf/io-bmp.c:269 gdk-pixbuf/io-bmp.c:376
 #: gdk-pixbuf/io-bmp.c:403 gdk-pixbuf/io-bmp.c:428 gdk-pixbuf/io-bmp.c:463
 #: gdk-pixbuf/io-bmp.c:485 gdk-pixbuf/io-bmp.c:563
@@ -330,11 +303,6 @@ msgctxt "image format"
 msgid "BMP"
 msgstr "BMP"
 
-#: gdk-pixbuf/io-gdip-emf.c:61
-msgctxt "image format"
-msgid "EMF"
-msgstr "EMF"
-
 #: gdk-pixbuf/io-gdip-gif.c:81 gdk-pixbuf/io-gif.c:1037
 msgctxt "image format"
 msgid "GIF"
@@ -371,48 +339,6 @@ msgstr "JPEG"
 msgctxt "image format"
 msgid "TIFF"
 msgstr "TIFF"
-
-#: gdk-pixbuf/io-gdip-utils.c:155
-#, c-format
-msgid "Could not allocate memory: %s"
-msgstr "Недостатъчно памет за заглавна част: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:180 gdk-pixbuf/io-gdip-utils.c:294
-#: gdk-pixbuf/io-gdip-utils.c:334
-#, c-format
-msgid "Could not create stream: %s"
-msgstr "Не може да се създаде поток: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:194
-#, c-format
-msgid "Could not seek stream: %s"
-msgstr "Не може да се търси в потока: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:206
-#, c-format
-msgid "Could not read from stream: %s"
-msgstr "Не може да се чете от потока: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:620
-msgid "Couldn’t load bitmap"
-msgstr "Изображението във формат BMP не може да бъде заредено"
-
-#: gdk-pixbuf/io-gdip-utils.c:776
-msgid "Couldn’t load metafile"
-msgstr "Мета-файлът не може да бъде зареден"
-
-#: gdk-pixbuf/io-gdip-utils.c:881
-msgid "Unsupported image format for GDI+"
-msgstr "Форматът на изображението не се поддържа от GDI+"
-
-#: gdk-pixbuf/io-gdip-utils.c:888
-msgid "Couldn’t save"
-msgstr "Грешка при запазване"
-
-#: gdk-pixbuf/io-gdip-wmf.c:60
-msgctxt "image format"
-msgid "WMF"
-msgstr "WMF"
 
 #: gdk-pixbuf/io-gif.c:158
 #, c-format
@@ -461,20 +387,6 @@ msgstr "Изображението във формат GIF е орязано и�
 #: gdk-pixbuf/io-gif.c:927
 msgid "Not all frames of the GIF image were loaded."
 msgstr "Някои кадри от изображението във формат GIF не бяха заредени."
-
-#: gdk-pixbuf/io-icns.c:363
-#, c-format
-msgid "Error reading ICNS image: %s"
-msgstr "Грешка при четене на изображение във формат ICNS: %s"
-
-#: gdk-pixbuf/io-icns.c:380 gdk-pixbuf/io-icns.c:461
-msgid "Could not decode ICNS file"
-msgstr "Изображението във формат ICNS не може да бъде декодирано"
-
-#: gdk-pixbuf/io-icns.c:517
-msgctxt "image format"
-msgid "MacOS X icon"
-msgstr "Икона за MacOS X"
 
 #: gdk-pixbuf/io-ico.c:238 gdk-pixbuf/io-ico.c:252 gdk-pixbuf/io-ico.c:342
 #: gdk-pixbuf/io-ico.c:426 gdk-pixbuf/io-ico.c:451
@@ -678,174 +590,6 @@ msgctxt "image format"
 msgid "PNG"
 msgstr "PNG"
 
-#: gdk-pixbuf/io-pnm.c:247
-msgid "PNM loader expected to find an integer, but didn’t"
-msgstr ""
-"Модулът за зареждането на изображението във формат PNM очакваше целочислена "
-"стойност, но получи друга"
-
-#: gdk-pixbuf/io-pnm.c:279
-msgid "PNM file has an incorrect initial byte"
-msgstr "Файлът във формат PNM е с неправилен начален байт"
-
-#: gdk-pixbuf/io-pnm.c:309
-msgid "PNM file is not in a recognized PNM subformat"
-msgstr "Файлът във формат PNM не е от познатите подформати на PNM"
-
-#: gdk-pixbuf/io-pnm.c:334
-msgid "PNM file has an invalid width"
-msgstr "Файлът във формат PNM е с неправилна широчина"
-
-#: gdk-pixbuf/io-pnm.c:342
-msgid "PNM file has an image width of 0"
-msgstr "Файлът във формат PNM съдържа изображение с широчина 0"
-
-#: gdk-pixbuf/io-pnm.c:363
-msgid "PNM file has an invalid height"
-msgstr "Файлът във формат PNM е с неправилна височина"
-
-#: gdk-pixbuf/io-pnm.c:371
-msgid "PNM file has an image height of 0"
-msgstr "Файлът във формат PNM съдържа изображение с височина 0"
-
-#: gdk-pixbuf/io-pnm.c:394
-msgid "Maximum color value in PNM file is 0"
-msgstr "Максималната стойност на цвят във файла във формат PNM е 0"
-
-#: gdk-pixbuf/io-pnm.c:402
-msgid "Maximum color value in PNM file is too large"
-msgstr "Максималната стойност на цвят във файла във формат PNM е твърде голяма"
-
-#: gdk-pixbuf/io-pnm.c:442 gdk-pixbuf/io-pnm.c:472 gdk-pixbuf/io-pnm.c:517
-msgid "Raw PNM image type is invalid"
-msgstr "Видът изображение „суров“ (raw) PNM е неправилен"
-
-#: gdk-pixbuf/io-pnm.c:667
-msgid "PNM image loader does not support this PNM subformat"
-msgstr "Модулът за зареждане на PNM не поддържа този подформат на PNM"
-
-#: gdk-pixbuf/io-pnm.c:754 gdk-pixbuf/io-pnm.c:991
-msgid "Raw PNM formats require exactly one whitespace before sample data"
-msgstr "Форматът за „суров“ PNM изисква точно един интервал преди самите данни"
-
-#: gdk-pixbuf/io-pnm.c:781
-msgid "Cannot allocate memory for loading PNM image"
-msgstr "Недостатъчно памет за зареждане на изображение във формат PNM"
-
-#: gdk-pixbuf/io-pnm.c:835
-msgid "Insufficient memory to load PNM context struct"
-msgstr "Недостатъчно памет за зареждане на структурата на контекста за PNM"
-
-#: gdk-pixbuf/io-pnm.c:892
-msgid "Unexpected end of PNM image data"
-msgstr "Неочакван край на данните за изображението във формат PNM"
-
-#: gdk-pixbuf/io-pnm.c:1020
-msgid "Insufficient memory to load PNM file"
-msgstr "Недостатъчно памет за зареждане на файл във формат PNM"
-
-#: gdk-pixbuf/io-pnm.c:1103
-msgctxt "image format"
-msgid "PNM/PBM/PGM/PPM"
-msgstr "PNM/PBM/PGM/PPM"
-
-#: gdk-pixbuf/io-qtif.c:126
-msgid "Input file descriptor is NULL."
-msgstr "Указателят към входния файл е NULL."
-
-#: gdk-pixbuf/io-qtif.c:141
-msgid "Failed to read QTIF header"
-msgstr "Неуспешно прочитане на заглавната част от изображение във формат QTIF"
-
-#: gdk-pixbuf/io-qtif.c:150 gdk-pixbuf/io-qtif.c:187 gdk-pixbuf/io-qtif.c:449
-#, c-format
-msgid "QTIF atom size too large (%d byte)"
-msgid_plural "QTIF atom size too large (%d bytes)"
-msgstr[0] ""
-"Размерът на атом от изображение във формат QTIF е прекалено голям (%d байт)"
-msgstr[1] ""
-"Размерът на атом от изображение във формат QTIF е прекалено голям (%d байта)"
-
-#: gdk-pixbuf/io-qtif.c:173
-#, c-format
-msgid "Failed to allocate %d byte for file read buffer"
-msgid_plural "Failed to allocate %d bytes for file read buffer"
-msgstr[0] "Неуспешно заделяне на буфер от %d байт за прочитане на файл"
-msgstr[1] "Неуспешно заделяне на буфер от %d байта за прочитане на файл"
-
-#: gdk-pixbuf/io-qtif.c:201
-#, c-format
-msgid "File error when reading QTIF atom: %s"
-msgstr ""
-"Файлова грешка при прочитането на атом от изображение във формат QTIF: %s "
-
-#: gdk-pixbuf/io-qtif.c:238
-#, c-format
-msgid "Failed to skip the next %d byte with seek()."
-msgid_plural "Failed to skip the next %d bytes with seek()."
-msgstr[0] "Неуспешно прескачане на следващия %d байт чрез seek()."
-msgstr[1] "Неуспешно прескачане на следващите %d байта чрез seek()."
-
-#: gdk-pixbuf/io-qtif.c:269
-msgid "Failed to allocate QTIF context structure."
-msgstr ""
-"Неуспешно заделяне на структурата за контекста на изображение във формат "
-"QTIF."
-
-#: gdk-pixbuf/io-qtif.c:329
-msgid "Failed to create GdkPixbufLoader object."
-msgstr "Неуспешно създаване на обект GdkPixbufLoader."
-
-#: gdk-pixbuf/io-qtif.c:424
-msgid "Failed to find an image data atom."
-msgstr "Неуспешно откриване на атом за данни в изображение."
-
-#: gdk-pixbuf/io-qtif.c:599
-msgctxt "image format"
-msgid "QuickTime"
-msgstr "QuickTime"
-
-#: gdk-pixbuf/io-tga.c:346
-msgid "Cannot allocate colormap"
-msgstr "Недостатъчно памет за палитрата за цветове"
-
-#: gdk-pixbuf/io-tga.c:371
-msgid "Cannot allocate new pixbuf"
-msgstr "Недостатъчно памет за нов буфер за изображение"
-
-#: gdk-pixbuf/io-tga.c:519
-msgid "Unexpected bitdepth for colormap entries"
-msgstr "Неочаквана дълбочина на цвят за елементите на палитрата на цветовете"
-
-#: gdk-pixbuf/io-tga.c:535
-msgid "Pseudocolor image does not contain a colormap"
-msgstr "Изображението с индексирани цветове не съдържа палитра за тях"
-
-#: gdk-pixbuf/io-tga.c:578
-msgid "Cannot allocate TGA header memory"
-msgstr "Недостатъчно памет за заглавната част на форма̀та TGA "
-
-#: gdk-pixbuf/io-tga.c:609
-msgid "TGA image has invalid dimensions"
-msgstr "Изображението във формат TGA е с грешни размери"
-
-#: gdk-pixbuf/io-tga.c:615 gdk-pixbuf/io-tga.c:622
-msgid "TGA image type not supported"
-msgstr "Видът изображение TGA не се поддържа"
-
-#: gdk-pixbuf/io-tga.c:650
-msgid "Cannot allocate memory for TGA context struct"
-msgstr "Недостатъчно памет за зареждане структурата на контекста за TGA"
-
-#: gdk-pixbuf/io-tga.c:712
-msgid "TGA image was truncated or incomplete."
-msgstr "Изображението във формат TGA е орязано или непълно."
-
-#: gdk-pixbuf/io-tga.c:764
-msgctxt "image format"
-msgid "Targa"
-msgstr "Targa"
-
 #: gdk-pixbuf/io-tiff.c:117
 msgid "Could not get image width (bad TIFF file)"
 msgstr "Широчината на изображението не може да се получи (счупен TIFF)"
@@ -916,69 +660,3 @@ msgstr ""
 #: gdk-pixbuf/io-tiff.c:1018
 msgid "Couldn’t write to TIFF file"
 msgstr "Неуспешен запис във файл във формат TIFF"
-
-#: gdk-pixbuf/io-xbm.c:320
-msgid "Invalid XBM file"
-msgstr "Грешен файл във формат XBM"
-
-#: gdk-pixbuf/io-xbm.c:331
-msgid "Insufficient memory to load XBM image file"
-msgstr "Недостатъчно памет за зареждане на изображение във формат XBM"
-
-#: gdk-pixbuf/io-xbm.c:482
-msgid "Failed to write to temporary file when loading XBM image"
-msgstr ""
-"Неуспешен запис на временния файл при зареждане на изображението във формат "
-"XBM"
-
-#: gdk-pixbuf/io-xbm.c:521
-msgctxt "image format"
-msgid "XBM"
-msgstr "XBM"
-
-#: gdk-pixbuf/io-xpm.c:472
-msgid "No XPM header found"
-msgstr "Липсва заглавната част на XPM"
-
-#: gdk-pixbuf/io-xpm.c:481 gdk-pixbuf/io-xpm.c:507
-msgid "Invalid XPM header"
-msgstr "Заглавната част на XPM е неправилна"
-
-#: gdk-pixbuf/io-xpm.c:489
-msgid "XPM file has image width <= 0"
-msgstr "Файлът във формат XPM е с широчина ≤ 0"
-
-#: gdk-pixbuf/io-xpm.c:497
-msgid "XPM file has image height <= 0"
-msgstr "Файлът във формат XPM е с височина ≤ 0"
-
-#: gdk-pixbuf/io-xpm.c:514
-msgid "XPM has invalid number of chars per pixel"
-msgstr "Броят знаци за пиксел във файла във формат XPM е неправилен"
-
-#: gdk-pixbuf/io-xpm.c:523
-msgid "XPM file has invalid number of colors"
-msgstr "Броят цветове във файла във формат XPM е неправилен"
-
-#: gdk-pixbuf/io-xpm.c:535 gdk-pixbuf/io-xpm.c:544 gdk-pixbuf/io-xpm.c:593
-msgid "Cannot allocate memory for loading XPM image"
-msgstr "Недостатъчно памет за зареждане на изображение във формат XPM"
-
-#: gdk-pixbuf/io-xpm.c:558
-msgid "Cannot read XPM colormap"
-msgstr "Палитрата от цветове за XPM не може да бъде прочетена"
-
-#: gdk-pixbuf/io-xpm.c:610
-msgid "Dimensions do not match data"
-msgstr "Размерите не съответстват на данните"
-
-#: gdk-pixbuf/io-xpm.c:806
-msgid "Failed to write to temporary file when loading XPM image"
-msgstr ""
-"Неуспешен запис на временен файл при зареждането на изображение във формат "
-"XPM"
-
-#: gdk-pixbuf/io-xpm.c:845
-msgctxt "image format"
-msgid "XPM"
-msgstr "XPM"

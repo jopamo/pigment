@@ -163,32 +163,6 @@ msgstr[3] "فشل تحصيص ذاكرة وسيطة للصورة بحجم %u با
 msgstr[4] "فشل تحصيص ذاكرة وسيطة للصورة بحجم %u بايت"
 msgstr[5] "فشل تحصيص ذاكرة وسيطة للصورة بحجم %u بايت"
 
-#: gdk-pixbuf/io-ani.c:244
-msgid "Unexpected icon chunk in animation"
-msgstr "قطعة أيقونة غير متوقعة في الرسم المتحرّك"
-
-#: gdk-pixbuf/io-ani.c:337
-msgid "Unsupported animation type"
-msgstr "نوع رسوم متحرّكة غير مدعوم"
-
-#: gdk-pixbuf/io-ani.c:348 gdk-pixbuf/io-ani.c:406 gdk-pixbuf/io-ani.c:432
-#: gdk-pixbuf/io-ani.c:455 gdk-pixbuf/io-ani.c:482 gdk-pixbuf/io-ani.c:569
-msgid "Invalid header in animation"
-msgstr "ترويسة غير صالحة في الرسم المتحرّك"
-
-#: gdk-pixbuf/io-ani.c:358 gdk-pixbuf/io-ani.c:380 gdk-pixbuf/io-ani.c:464
-#: gdk-pixbuf/io-ani.c:491 gdk-pixbuf/io-ani.c:542 gdk-pixbuf/io-ani.c:614
-msgid "Not enough memory to load animation"
-msgstr "لا ذاكرة كافية لتحميل الرسوم المتحرّكة"
-
-#: gdk-pixbuf/io-ani.c:398 gdk-pixbuf/io-ani.c:424 gdk-pixbuf/io-ani.c:443
-msgid "Malformed chunk in animation"
-msgstr "قطعة مشوّهة في الرسّم المتحرّك"
-
-#: gdk-pixbuf/io-ani.c:711
-msgid "The ANI image format"
-msgstr "صيغة صور ANI"
-
 #: gdk-pixbuf/io-bmp.c:229 gdk-pixbuf/io-bmp.c:266 gdk-pixbuf/io-bmp.c:337
 #: gdk-pixbuf/io-bmp.c:369 gdk-pixbuf/io-bmp.c:392 gdk-pixbuf/io-bmp.c:495
 msgid "BMP image has bogus header data"
@@ -222,10 +196,6 @@ msgstr "تعذّر الكتابة في ملف BMP "
 msgid "The BMP image format"
 msgstr "صيغة صور BMP"
 
-#: gdk-pixbuf/io-gdip-emf.c:59
-msgid "The EMF image format"
-msgstr "صيغة صور EMF"
-
 #: gdk-pixbuf/io-gdip-gif.c:80 gdk-pixbuf/io-gif.c:1699
 msgid "The GIF image format"
 msgstr "صيغة صور GIF"
@@ -250,47 +220,6 @@ msgstr "يجب أن تكون جودة JPEG قيمة بين 0 و 100، القيم
 #: gdk-pixbuf/io-gdip-jpeg.c:136 gdk-pixbuf/io-jpeg.c:1316
 msgid "The JPEG image format"
 msgstr "صيغة صور JPEG"
-
-#: gdk-pixbuf/io-gdip-utils.c:154
-#, c-format
-msgid "Could not allocate memory: %s"
-msgstr "تعذّر تحصيص ذاكرة: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:179 gdk-pixbuf/io-gdip-utils.c:293
-#: gdk-pixbuf/io-gdip-utils.c:333
-#, c-format
-msgid "Could not create stream: %s"
-msgstr "تعذّر إنشاء الدفق: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:193
-#, c-format
-msgid "Could not seek stream: %s"
-msgstr "تعذّر الالتماس في الدفق: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:205
-#, c-format
-msgid "Could not read from stream: %s"
-msgstr "تعذّر القراءة من الدفق: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:617 gdk-pixbuf/io-gdip-utils.c:752
-msgid "Couldn't load bitmap"
-msgstr "تعذّر تحميل الصورة النقطية"
-
-#: gdk-pixbuf/io-gdip-utils.c:774
-msgid "Couldn't load metafile"
-msgstr "تعذّر تحميل ملف المعلومات الفوقية"
-
-#: gdk-pixbuf/io-gdip-utils.c:933
-msgid "Unsupported image format for GDI+"
-msgstr "نسق صور لا يدعمه GDI+"
-
-#: gdk-pixbuf/io-gdip-utils.c:940
-msgid "Couldn't save"
-msgstr "تعذّر الحفظ"
-
-#: gdk-pixbuf/io-gdip-wmf.c:58
-msgid "The WMF image format"
-msgstr "صيغة صور WMF"
 
 #: gdk-pixbuf/io-gif.c:221
 #, c-format
@@ -354,19 +283,6 @@ msgstr "ليس لصورة GIF مخطط ألوان عام، وليس لإطار �
 msgid "GIF image was truncated or incomplete."
 msgstr "صورة GIF مقطّعة أو غير كاملة."
 
-#: gdk-pixbuf/io-icns.c:347
-#, c-format
-msgid "Error reading ICNS image: %s"
-msgstr "خطأ أثناء قراءة ملف صورة ICNS: %s"
-
-#: gdk-pixbuf/io-icns.c:364
-msgid "Could not decode ICNS file"
-msgstr "تعذّر فك ملف ترميز ملف ICNS"
-
-#: gdk-pixbuf/io-icns.c:397
-msgid "The ICNS image format"
-msgstr "صيغة صور ICNS"
-
 #: gdk-pixbuf/io-ico.c:228 gdk-pixbuf/io-ico.c:242 gdk-pixbuf/io-ico.c:291
 #: gdk-pixbuf/io-ico.c:302 gdk-pixbuf/io-ico.c:395
 msgid "Invalid header in icon"
@@ -410,38 +326,6 @@ msgstr "منطقة المؤشّر النشطة خارج الصورة"
 msgid "Unsupported depth for ICO file: %d"
 msgstr "عمق ملف ICO غير مدعوم: %Id"
 
-#: gdk-pixbuf/io-jasper.c:74
-msgid "Couldn't allocate memory for stream"
-msgstr "تعذّر تحصيص ذاكرة للتيار"
-
-#: gdk-pixbuf/io-jasper.c:104
-msgid "Couldn't decode image"
-msgstr "تعذّر فك ترميز الصورة"
-
-#: gdk-pixbuf/io-jasper.c:122
-msgid "Transformed JPEG2000 has zero width or height"
-msgstr "صورة JPEG2000 المُحوّلة ذات عرض أو ارتفاع صفري"
-
-#: gdk-pixbuf/io-jasper.c:136
-msgid "Image type currently not supported"
-msgstr "نوع الصورة غير مدعوم حاليا"
-
-#: gdk-pixbuf/io-jasper.c:148 gdk-pixbuf/io-jasper.c:156
-msgid "Couldn't allocate memory for color profile"
-msgstr "تعذّر تحصيص ذاكرة لاحة اللون"
-
-#: gdk-pixbuf/io-jasper.c:182
-msgid "Insufficient memory to open JPEG 2000 file"
-msgstr "لا ذاكرة كافية لفتح ملف JPEG 2000"
-
-#: gdk-pixbuf/io-jasper.c:261
-msgid "Couldn't allocate memory to buffer image data"
-msgstr "تعذّر تحصيص ذاكرة لبراح بيانات الصور"
-
-#: gdk-pixbuf/io-jasper.c:305
-msgid "The JPEG 2000 image format"
-msgstr "صيغة صور JPEG 2000"
-
 #: gdk-pixbuf/io-jpeg.c:116
 #, c-format
 msgid "Error interpreting JPEG image file (%s)"
@@ -467,62 +351,6 @@ msgstr "تعذّر تحصيص ذاكرة لتحميل ملف JPEG"
 #: gdk-pixbuf/io-jpeg.c:925
 msgid "Transformed JPEG has zero width or height."
 msgstr "صورة JPEG المُحوّلة ذات عرض أو ارتفاع صفري."
-
-#: gdk-pixbuf/io-pcx.c:186
-msgid "Couldn't allocate memory for header"
-msgstr "تعذّر تحصيص ذاكرة للترويسة"
-
-#: gdk-pixbuf/io-pcx.c:201 gdk-pixbuf/io-pcx.c:559
-msgid "Couldn't allocate memory for context buffer"
-msgstr "تعذّر تحصيص ذاكرة لبراح السياق"
-
-#: gdk-pixbuf/io-pcx.c:600
-msgid "Image has invalid width and/or height"
-msgstr "ارتفاع الصورة و/أو عرضها غير صحيحين"
-
-#: gdk-pixbuf/io-pcx.c:612 gdk-pixbuf/io-pcx.c:673
-msgid "Image has unsupported bpp"
-msgstr "للصورة bpp غير مدعوم"
-
-#: gdk-pixbuf/io-pcx.c:617 gdk-pixbuf/io-pcx.c:625
-#, c-format
-msgid "Image has unsupported number of %d-bit planes"
-msgstr "للصورة عدد غير مدعوم من مستويات %Id-بت"
-
-#: gdk-pixbuf/io-pcx.c:641
-msgid "Couldn't create new pixbuf"
-msgstr "تعذّر إنشاء pixbuf جديد"
-
-#: gdk-pixbuf/io-pcx.c:649
-msgid "Couldn't allocate memory for line data"
-msgstr "تعذّر تحصيص ذاكرة لبيانات السطر"
-
-#: gdk-pixbuf/io-pcx.c:656
-#, fuzzy
-msgid "Couldn't allocate memory for PCX image"
-msgstr "تعذّر تحصيص ذاكرة للترويسة"
-
-#: gdk-pixbuf/io-pcx.c:703
-msgid "Didn't get all lines of PCX image"
-msgstr "لم يتم تلقي كل سطور صورة PCX"
-
-#: gdk-pixbuf/io-pcx.c:710
-msgid "No palette found at end of PCX data"
-msgstr "لا توجد لوحة ألوان عند نهاية بيانات PCX"
-
-#: gdk-pixbuf/io-pcx.c:755
-msgid "The PCX image format"
-msgstr "صيغة صور PCX"
-
-#: gdk-pixbuf/io-pixdata.c:148
-#, fuzzy
-msgid "Transformed pixbuf has zero width or height."
-msgstr "صورة PNG المُحوّلة ذات عرض أو ارتفاع صفري."
-
-#: gdk-pixbuf/io-pixdata.c:186
-#, fuzzy
-msgid "The GdkPixdata format"
-msgstr "صيغة صور GIF"
 
 #: gdk-pixbuf/io-png.c:54
 msgid "Bits per channel of PNG image is invalid."
@@ -611,209 +439,6 @@ msgstr "تعذّر تحويل قيمة مقطع PNG النصي %s إلى ترم�
 msgid "The PNG image format"
 msgstr "صيغة صور PNG"
 
-#: gdk-pixbuf/io-pnm.c:248
-msgid "PNM loader expected to find an integer, but didn't"
-msgstr "توقَّع مُحمّل PNM العثور على رقم صحيح، لكن لم يجده"
-
-#: gdk-pixbuf/io-pnm.c:280
-msgid "PNM file has an incorrect initial byte"
-msgstr "لملف PNM بايت أوَّلي غير سليم"
-
-#: gdk-pixbuf/io-pnm.c:310
-msgid "PNM file is not in a recognized PNM subformat"
-msgstr "ملف PNM ليس في صيغة فرعيّة من PNM يمكن تمييزها"
-
-#: gdk-pixbuf/io-pnm.c:335
-msgid "PNM file has an image width of 0"
-msgstr "ملف PNM له عرض صورة يساوي 0"
-
-#: gdk-pixbuf/io-pnm.c:356
-msgid "PNM file has an image height of 0"
-msgstr "ملف PNM له ارتفاع صورة يساوي 0"
-
-#: gdk-pixbuf/io-pnm.c:379
-msgid "Maximum color value in PNM file is 0"
-msgstr "قيمة اللون القصوى في ملف PNM هي 0"
-
-#: gdk-pixbuf/io-pnm.c:387
-msgid "Maximum color value in PNM file is too large"
-msgstr "قيمة اللون القصوى في ملف PNM كبيرة جدًا"
-
-#: gdk-pixbuf/io-pnm.c:427 gdk-pixbuf/io-pnm.c:457 gdk-pixbuf/io-pnm.c:502
-msgid "Raw PNM image type is invalid"
-msgstr "نوع صورة PNM الخام غير صحيح"
-
-#: gdk-pixbuf/io-pnm.c:652
-msgid "PNM image loader does not support this PNM subformat"
-msgstr "مُحمِّل صور PNM لا يَدعم صيغة PNM الفرعية هذه"
-
-#: gdk-pixbuf/io-pnm.c:739 gdk-pixbuf/io-pnm.c:966
-msgid "Raw PNM formats require exactly one whitespace before sample data"
-msgstr "صيغ PNM الخام تحتاج إلى وَضع فراغ واحد قبل بيانات العيّنة"
-
-#: gdk-pixbuf/io-pnm.c:766
-msgid "Cannot allocate memory for loading PNM image"
-msgstr "تعذّر تحصيص ذاكرة لتحميل صورة PNM"
-
-#: gdk-pixbuf/io-pnm.c:816
-msgid "Insufficient memory to load PNM context struct"
-msgstr "ذاكرة غير كافية لتحميل بنية سياق PNM"
-
-#: gdk-pixbuf/io-pnm.c:867
-msgid "Unexpected end of PNM image data"
-msgstr "نهاية غير متوقّعة لبيانات صورة PNM"
-
-#: gdk-pixbuf/io-pnm.c:995
-msgid "Insufficient memory to load PNM file"
-msgstr "ذاكرة غير كافية لتحميل ملف PNM"
-
-#: gdk-pixbuf/io-pnm.c:1079
-msgid "The PNM/PBM/PGM/PPM image format family"
-msgstr "عائلة صيغ صور PNM/PBM/PGM/PPM"
-
-#: gdk-pixbuf/io-qtif.c:128
-msgid "Input file descriptor is NULL."
-msgstr "واصف ملف الدخل صفري."
-
-#: gdk-pixbuf/io-qtif.c:143
-msgid "Failed to read QTIF header"
-msgstr "فشلت قراءة ترويسة QTIF"
-
-#: gdk-pixbuf/io-qtif.c:152 gdk-pixbuf/io-qtif.c:189 gdk-pixbuf/io-qtif.c:460
-#, fuzzy, c-format
-msgid "QTIF atom size too large (%d byte)"
-msgid_plural "QTIF atom size too large (%d bytes)"
-msgstr[0] "حجم ذرة QTIF كبير جدا (%d بايت)"
-msgstr[1] "حجم ذرة QTIF كبير جدا (%d بايت)"
-msgstr[2] "حجم ذرة QTIF كبير جدا (%d بايت)"
-msgstr[3] "حجم ذرة QTIF كبير جدا (%d بايت)"
-msgstr[4] "حجم ذرة QTIF كبير جدا (%d بايت)"
-msgstr[5] "حجم ذرة QTIF كبير جدا (%d بايت)"
-
-#: gdk-pixbuf/io-qtif.c:175
-#, fuzzy, c-format
-msgid "Failed to allocate %d byte for file read buffer"
-msgid_plural "Failed to allocate %d bytes for file read buffer"
-msgstr[0] "فشل تحصيص  %d بايت لبراح قراءة الملف"
-msgstr[1] "فشل تحصيص  %d بايت لبراح قراءة الملف"
-msgstr[2] "فشل تحصيص  %d بايت لبراح قراءة الملف"
-msgstr[3] "فشل تحصيص  %d بايت لبراح قراءة الملف"
-msgstr[4] "فشل تحصيص  %d بايت لبراح قراءة الملف"
-msgstr[5] "فشل تحصيص  %d بايت لبراح قراءة الملف"
-
-#: gdk-pixbuf/io-qtif.c:206
-#, c-format
-msgid "File error when reading QTIF atom: %s"
-msgstr "خطأ أثناء قراءة ذرة QTIF:‏ %s"
-
-#: gdk-pixbuf/io-qtif.c:243
-#, fuzzy, c-format
-msgid "Failed to skip the next %d byte with seek()."
-msgid_plural "Failed to skip the next %d bytes with seek()."
-msgstr[0] "فشل التخطي إلى %d بايت التالية باستخدام ‪seek()‬."
-msgstr[1] "فشل التخطي إلى %d بايت التالية باستخدام ‪seek()‬."
-msgstr[2] "فشل التخطي إلى %d بايت التالية باستخدام ‪seek()‬."
-msgstr[3] "فشل التخطي إلى %d بايت التالية باستخدام ‪seek()‬."
-msgstr[4] "فشل التخطي إلى %d بايت التالية باستخدام ‪seek()‬."
-msgstr[5] "فشل التخطي إلى %d بايت التالية باستخدام ‪seek()‬."
-
-#: gdk-pixbuf/io-qtif.c:270
-msgid "Failed to allocate QTIF context structure."
-msgstr "تعذّر تحصيص ذاكرة لبنية سياق QTIF."
-
-#: gdk-pixbuf/io-qtif.c:330
-msgid "Failed to create GdkPixbufLoader object."
-msgstr "فشلت إنشاء كائن GdkPixbufLoader."
-
-#: gdk-pixbuf/io-qtif.c:434
-msgid "Failed to find an image data atom."
-msgstr "فشل العثور على ذرة بيانات صورة."
-
-#: gdk-pixbuf/io-qtif.c:619
-msgid "The QTIF image format"
-msgstr "صيغة صور QTIF"
-
-#: gdk-pixbuf/io-ras.c:125
-msgid "RAS image has bogus header data"
-msgstr "لصورة RAS بيانات ترويسة زائفة"
-
-#: gdk-pixbuf/io-ras.c:147
-msgid "RAS image has unknown type"
-msgstr "لصورة RAS نوع مجهول"
-
-#: gdk-pixbuf/io-ras.c:155
-msgid "unsupported RAS image variation"
-msgstr "انحراف صورة RAS غير مدعوم"
-
-#: gdk-pixbuf/io-ras.c:170 gdk-pixbuf/io-ras.c:199
-msgid "Not enough memory to load RAS image"
-msgstr "ذاكرة غير كافية لتحميل صورة RAS"
-
-#: gdk-pixbuf/io-ras.c:544
-msgid "The Sun raster image format"
-msgstr "صيغة صور Sun raster"
-
-#: gdk-pixbuf/io-tga.c:153
-msgid "Cannot allocate memory for IOBuffer struct"
-msgstr "تعذّر تحصيص ذاكرة لبنية IOBuffer"
-
-#: gdk-pixbuf/io-tga.c:172
-msgid "Cannot allocate memory for IOBuffer data"
-msgstr "تعذّر تحصيص ذاكرة لبيانات IOBuffer"
-
-#: gdk-pixbuf/io-tga.c:183
-msgid "Cannot realloc IOBuffer data"
-msgstr "تعذّر إعادة تحصيص بيانات IOBuffer"
-
-#: gdk-pixbuf/io-tga.c:213
-msgid "Cannot allocate temporary IOBuffer data"
-msgstr "تعذّر تحصيص بيانات IOBuffer المؤقتة"
-
-#: gdk-pixbuf/io-tga.c:346
-msgid "Cannot allocate new pixbuf"
-msgstr "تعذّر تحصيص pixbuf جديد"
-
-#: gdk-pixbuf/io-tga.c:685
-msgid "Image is corrupted or truncated"
-msgstr "الصورة تالفة أو ناقصة"
-
-#: gdk-pixbuf/io-tga.c:692
-msgid "Cannot allocate colormap structure"
-msgstr "تعذّر تحصيص تركيب مُخطط الألوان"
-
-#: gdk-pixbuf/io-tga.c:699
-msgid "Cannot allocate colormap entries"
-msgstr "تعذّر تحصيص مدخلات مُخطط الألوان"
-
-#: gdk-pixbuf/io-tga.c:721
-msgid "Unexpected bitdepth for colormap entries"
-msgstr "عمق بت غير متوقّع لخانات مُخطط الألوان"
-
-#: gdk-pixbuf/io-tga.c:739
-msgid "Cannot allocate TGA header memory"
-msgstr "تعذّر تحصيص ذاكرة ترويسة TGA"
-
-#: gdk-pixbuf/io-tga.c:772
-msgid "TGA image has invalid dimensions"
-msgstr "صورة TGA لها أبعاد غير سليمة"
-
-#: gdk-pixbuf/io-tga.c:778 gdk-pixbuf/io-tga.c:787 gdk-pixbuf/io-tga.c:797
-#: gdk-pixbuf/io-tga.c:807 gdk-pixbuf/io-tga.c:814
-msgid "TGA image type not supported"
-msgstr "نوع صور TGA غير مدعوم"
-
-#: gdk-pixbuf/io-tga.c:861
-msgid "Cannot allocate memory for TGA context struct"
-msgstr "تعذّر تحصيص ذاكرة لبنية سياق TGA"
-
-#: gdk-pixbuf/io-tga.c:926
-msgid "Excess data in file"
-msgstr "بيانات زائدة في الملف"
-
-#: gdk-pixbuf/io-tga.c:1007
-msgid "The Targa image format"
-msgstr "صيغة صور Targa"
-
 #: gdk-pixbuf/io-tiff.c:164
 msgid "Could not get image width (bad TIFF file)"
 msgstr "تعذّر معرفة عرض الصورة (ملف TIFF رديء)"
@@ -869,82 +494,3 @@ msgstr "الكتابة لملف TIFF غير ممكنة"
 #: gdk-pixbuf/io-tiff.c:868
 msgid "The TIFF image format"
 msgstr "صيغة صور TIFF"
-
-#: gdk-pixbuf/io-wbmp.c:245
-msgid "Image has zero width"
-msgstr "عرض الصورة صفر"
-
-#: gdk-pixbuf/io-wbmp.c:263
-msgid "Image has zero height"
-msgstr "ارتفاع الصورة صفر"
-
-#: gdk-pixbuf/io-wbmp.c:274
-msgid "Not enough memory to load image"
-msgstr "ذاكرة غير كافية لتحميل الصورة"
-
-#: gdk-pixbuf/io-wbmp.c:333
-msgid "Couldn't save the rest"
-msgstr "تعذّر حفظ الباقي"
-
-#: gdk-pixbuf/io-wbmp.c:374
-msgid "The WBMP image format"
-msgstr "صيغة صور WBMP"
-
-#: gdk-pixbuf/io-xbm.c:296
-msgid "Invalid XBM file"
-msgstr "ملف XBM غير سليم"
-
-#: gdk-pixbuf/io-xbm.c:306
-msgid "Insufficient memory to load XBM image file"
-msgstr "ذاكرة غير كافية لفتح صورة ملف XBM"
-
-#: gdk-pixbuf/io-xbm.c:454
-msgid "Failed to write to temporary file when loading XBM image"
-msgstr "فشلت الكتابة في ملف مؤقّت عند تحميل صورة XBM"
-
-#: gdk-pixbuf/io-xbm.c:493
-msgid "The XBM image format"
-msgstr "صيغة صور XBM"
-
-#: gdk-pixbuf/io-xpm.c:469
-msgid "No XPM header found"
-msgstr "لا توجد ترويسة XPM"
-
-#: gdk-pixbuf/io-xpm.c:478
-msgid "Invalid XPM header"
-msgstr "ترويسة XPM غير صالحة"
-
-#: gdk-pixbuf/io-xpm.c:486
-msgid "XPM file has image width <= 0"
-msgstr "عرض صورة ملف XPM قيمته <= 0"
-
-#: gdk-pixbuf/io-xpm.c:494
-msgid "XPM file has image height <= 0"
-msgstr "ارتفاع صورة ملف XPM قيمته <= 0"
-
-#: gdk-pixbuf/io-xpm.c:502
-msgid "XPM has invalid number of chars per pixel"
-msgstr "ملف XPM له عدد غير صحيح من المحارف لكل بكسل"
-
-#: gdk-pixbuf/io-xpm.c:511
-msgid "XPM file has invalid number of colors"
-msgstr "ملف XPM له عدد غير صحيح من الألوان"
-
-#: gdk-pixbuf/io-xpm.c:523 gdk-pixbuf/io-xpm.c:532 gdk-pixbuf/io-xpm.c:584
-msgid "Cannot allocate memory for loading XPM image"
-msgstr "تعذّر تحصيص ذاكرة لتحميل صورة XPM"
-
-#: gdk-pixbuf/io-xpm.c:546
-msgid "Cannot read XPM colormap"
-msgstr "تعذّر قراءة مخطط ألوان XPM"
-
-#: gdk-pixbuf/io-xpm.c:778
-msgid "Failed to write to temporary file when loading XPM image"
-msgstr "فشلت الكتابة في ملف مؤقت عند تحميل صورة XPM"
-
-#: gdk-pixbuf/io-xpm.c:817
-msgid "The XPM image format"
-msgstr "صيغة صور XPM"
-
-#~ msgid "Couldn't allocate memory for paletted data"
-#~ msgstr "تعذّر تحصيص ذاكرة للبيانات المرصّفة"

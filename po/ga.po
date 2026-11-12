@@ -164,32 +164,6 @@ msgstr[2] ""
 msgstr[3] ""
 msgstr[4] ""
 
-#: gdk-pixbuf/io-ani.c:244
-msgid "Unexpected icon chunk in animation"
-msgstr "Smután deilbhín gan choinne sa bheochan"
-
-#: gdk-pixbuf/io-ani.c:337
-msgid "Unsupported animation type"
-msgstr "Cineál beochana gan tacaíocht"
-
-#: gdk-pixbuf/io-ani.c:348 gdk-pixbuf/io-ani.c:406 gdk-pixbuf/io-ani.c:432
-#: gdk-pixbuf/io-ani.c:455 gdk-pixbuf/io-ani.c:482 gdk-pixbuf/io-ani.c:569
-msgid "Invalid header in animation"
-msgstr "Ceanntásc neamhbhailí sa bheochan"
-
-#: gdk-pixbuf/io-ani.c:358 gdk-pixbuf/io-ani.c:380 gdk-pixbuf/io-ani.c:464
-#: gdk-pixbuf/io-ani.c:491 gdk-pixbuf/io-ani.c:542 gdk-pixbuf/io-ani.c:614
-msgid "Not enough memory to load animation"
-msgstr "Níl go leor cuimhne ann an íomhá bheo a luchtú"
-
-#: gdk-pixbuf/io-ani.c:398 gdk-pixbuf/io-ani.c:424 gdk-pixbuf/io-ani.c:443
-msgid "Malformed chunk in animation"
-msgstr "Smután míchumtha sa bheochan"
-
-#: gdk-pixbuf/io-ani.c:711
-msgid "The ANI image format"
-msgstr "An fhormáid íomhá ANI"
-
 #: gdk-pixbuf/io-bmp.c:229 gdk-pixbuf/io-bmp.c:266 gdk-pixbuf/io-bmp.c:337
 #: gdk-pixbuf/io-bmp.c:369 gdk-pixbuf/io-bmp.c:392 gdk-pixbuf/io-bmp.c:495
 msgid "BMP image has bogus header data"
@@ -223,10 +197,6 @@ msgstr "Níorbh fhéidir a scríobh go comhad BMP"
 msgid "The BMP image format"
 msgstr "An fhormáid íomhá BMP"
 
-#: gdk-pixbuf/io-gdip-emf.c:59
-msgid "The EMF image format"
-msgstr "An fhormáid íomhá EMF"
-
 #: gdk-pixbuf/io-gdip-gif.c:80 gdk-pixbuf/io-gif.c:1699
 msgid "The GIF image format"
 msgstr "An fhormáid íomhá GIF"
@@ -255,47 +225,6 @@ msgstr ""
 #: gdk-pixbuf/io-gdip-jpeg.c:136 gdk-pixbuf/io-jpeg.c:1316
 msgid "The JPEG image format"
 msgstr "An fhormáid íomhá JPEG"
-
-#: gdk-pixbuf/io-gdip-utils.c:154
-#, c-format
-msgid "Could not allocate memory: %s"
-msgstr "Níorbh fhéidir cuimhne a dháileadh: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:179 gdk-pixbuf/io-gdip-utils.c:293
-#: gdk-pixbuf/io-gdip-utils.c:333
-#, c-format
-msgid "Could not create stream: %s"
-msgstr "Níorbh fhéidir sruth a chruthú: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:193
-#, c-format
-msgid "Could not seek stream: %s"
-msgstr "Níorbh fhéidir lorg i sruth: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:205
-#, c-format
-msgid "Could not read from stream: %s"
-msgstr "Níorbh fhéidir léamh ó shruth: %s"
-
-#: gdk-pixbuf/io-gdip-utils.c:617 gdk-pixbuf/io-gdip-utils.c:752
-msgid "Couldn't load bitmap"
-msgstr "Níorbh fhéidir mapa giotán a luchtú"
-
-#: gdk-pixbuf/io-gdip-utils.c:774
-msgid "Couldn't load metafile"
-msgstr "Níorbh fhéidir meiteachomhad a luchtú"
-
-#: gdk-pixbuf/io-gdip-utils.c:933
-msgid "Unsupported image format for GDI+"
-msgstr "Formáid íomhá gan tacaíocht do GDI+"
-
-#: gdk-pixbuf/io-gdip-utils.c:940
-msgid "Couldn't save"
-msgstr "Níorbh fhéidir sábháil "
-
-#: gdk-pixbuf/io-gdip-wmf.c:58
-msgid "The WMF image format"
-msgstr "An fhormáid íomhá WMF"
 
 #: gdk-pixbuf/io-gif.c:221
 #, c-format
@@ -363,19 +292,6 @@ msgstr ""
 msgid "GIF image was truncated or incomplete."
 msgstr "Bhí íomhá GIF teasctha nó neamhiomlán."
 
-#: gdk-pixbuf/io-icns.c:347
-#, c-format
-msgid "Error reading ICNS image: %s"
-msgstr "Earráid agus íomhá ICNS á léamh: %s"
-
-#: gdk-pixbuf/io-icns.c:364
-msgid "Could not decode ICNS file"
-msgstr "Níorbh fhéidir comhad ICNS a dhíchódú"
-
-#: gdk-pixbuf/io-icns.c:397
-msgid "The ICNS image format"
-msgstr "An fhormáid íomhá ICNS"
-
 #: gdk-pixbuf/io-ico.c:228 gdk-pixbuf/io-ico.c:242 gdk-pixbuf/io-ico.c:291
 #: gdk-pixbuf/io-ico.c:302 gdk-pixbuf/io-ico.c:395
 msgid "Invalid header in icon"
@@ -419,38 +335,6 @@ msgstr "Tá an ball te cúrsóra lasmuigh den íomhá"
 msgid "Unsupported depth for ICO file: %d"
 msgstr "Doimhneacht gan tacaíocht le comhad ICO: %d"
 
-#: gdk-pixbuf/io-jasper.c:74
-msgid "Couldn't allocate memory for stream"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le sruth"
-
-#: gdk-pixbuf/io-jasper.c:104
-msgid "Couldn't decode image"
-msgstr "Níorbh fhéidir íomhá a dhíchódú"
-
-#: gdk-pixbuf/io-jasper.c:122
-msgid "Transformed JPEG2000 has zero width or height"
-msgstr "Tá leithead nó airde nialais ag an JPEG2000 trasfhoirmithe"
-
-#: gdk-pixbuf/io-jasper.c:136
-msgid "Image type currently not supported"
-msgstr "Ní thacaítear le cineál íomhá faoi láthair"
-
-#: gdk-pixbuf/io-jasper.c:148 gdk-pixbuf/io-jasper.c:156
-msgid "Couldn't allocate memory for color profile"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le próifíl datha"
-
-#: gdk-pixbuf/io-jasper.c:182
-msgid "Insufficient memory to open JPEG 2000 file"
-msgstr "Níl go leor cuimhen ann an comhad JPEG 2000 a oscailt"
-
-#: gdk-pixbuf/io-jasper.c:261
-msgid "Couldn't allocate memory to buffer image data"
-msgstr "Níorbh fhéidir cuimhne a dháileadh chun sonraí íomhá a mhaolánú"
-
-#: gdk-pixbuf/io-jasper.c:305
-msgid "The JPEG 2000 image format"
-msgstr "An fhormáid íomhá JPEG 2000"
-
 #: gdk-pixbuf/io-jpeg.c:116
 #, c-format
 msgid "Error interpreting JPEG image file (%s)"
@@ -477,62 +361,6 @@ msgstr "Níorbh fhéidir cuimhne a dháileadh chun comhad JPEG a luchtú"
 #: gdk-pixbuf/io-jpeg.c:925
 msgid "Transformed JPEG has zero width or height."
 msgstr "Tá leithead nó airde nialais ag JPEG trasfhoirmithe."
-
-#: gdk-pixbuf/io-pcx.c:186
-msgid "Couldn't allocate memory for header"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le ceanntásc"
-
-#: gdk-pixbuf/io-pcx.c:201 gdk-pixbuf/io-pcx.c:559
-msgid "Couldn't allocate memory for context buffer"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le maolán comhthéacs"
-
-#: gdk-pixbuf/io-pcx.c:600
-msgid "Image has invalid width and/or height"
-msgstr "Tá leithead agus/nó airde neamhbhailí ag íomhá"
-
-#: gdk-pixbuf/io-pcx.c:612 gdk-pixbuf/io-pcx.c:673
-msgid "Image has unsupported bpp"
-msgstr "Tá bpp gan tacaíocht ag íomhá"
-
-#: gdk-pixbuf/io-pcx.c:617 gdk-pixbuf/io-pcx.c:625
-#, c-format
-msgid "Image has unsupported number of %d-bit planes"
-msgstr "Tá uimhir phlánaí %d-ghiotán gan tacaíocht ag an íomhá"
-
-#: gdk-pixbuf/io-pcx.c:641
-msgid "Couldn't create new pixbuf"
-msgstr "Níorbh fhéidir pictmhaolán nua a chruthú"
-
-#: gdk-pixbuf/io-pcx.c:649
-msgid "Couldn't allocate memory for line data"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le sonraí líne"
-
-#: gdk-pixbuf/io-pcx.c:656
-#, fuzzy
-msgid "Couldn't allocate memory for PCX image"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le ceanntásc"
-
-#: gdk-pixbuf/io-pcx.c:703
-msgid "Didn't get all lines of PCX image"
-msgstr "Ní bhfuair gach líne den íomhá PCX"
-
-#: gdk-pixbuf/io-pcx.c:710
-msgid "No palette found at end of PCX data"
-msgstr "Níor aimsíodh aon phailéad ag deireadh na sonraí PCX"
-
-#: gdk-pixbuf/io-pcx.c:755
-msgid "The PCX image format"
-msgstr "An fhormáid íomhá PCX"
-
-#: gdk-pixbuf/io-pixdata.c:148
-#, fuzzy
-msgid "Transformed pixbuf has zero width or height."
-msgstr "Tá leithead nó airde nialais ag PNG trasfhoirmithe."
-
-#: gdk-pixbuf/io-pixdata.c:186
-#, fuzzy
-msgid "The GdkPixdata format"
-msgstr "An fhormáid íomhá GIF"
 
 #: gdk-pixbuf/io-png.c:54
 msgid "Bits per channel of PNG image is invalid."
@@ -620,206 +448,6 @@ msgstr ""
 msgid "The PNG image format"
 msgstr "An fhormáid íomhá PNG"
 
-#: gdk-pixbuf/io-pnm.c:248
-msgid "PNM loader expected to find an integer, but didn't"
-msgstr ""
-
-#: gdk-pixbuf/io-pnm.c:280
-msgid "PNM file has an incorrect initial byte"
-msgstr "Tá beart tosaigh mícheart ag an gcomhad PNM"
-
-#: gdk-pixbuf/io-pnm.c:310
-msgid "PNM file is not in a recognized PNM subformat"
-msgstr "Ní fo-fhormáid PNM aitheanta é an comhad PNM"
-
-#: gdk-pixbuf/io-pnm.c:335
-msgid "PNM file has an image width of 0"
-msgstr "Tá leithead íomhá nialais ag an gcomhad PNM"
-
-#: gdk-pixbuf/io-pnm.c:356
-msgid "PNM file has an image height of 0"
-msgstr "Tá airde íomhá nialais ag an gcomhad PNM"
-
-#: gdk-pixbuf/io-pnm.c:379
-msgid "Maximum color value in PNM file is 0"
-msgstr ""
-
-#: gdk-pixbuf/io-pnm.c:387
-msgid "Maximum color value in PNM file is too large"
-msgstr ""
-
-#: gdk-pixbuf/io-pnm.c:427 gdk-pixbuf/io-pnm.c:457 gdk-pixbuf/io-pnm.c:502
-msgid "Raw PNM image type is invalid"
-msgstr "Is neamhbhailí é an cineál íomhá PNM amh"
-
-#: gdk-pixbuf/io-pnm.c:652
-msgid "PNM image loader does not support this PNM subformat"
-msgstr "Ní thacaíonn an luchtóir íomhánna PNM an fho-fhormáid PNM seo"
-
-#: gdk-pixbuf/io-pnm.c:739 gdk-pixbuf/io-pnm.c:966
-msgid "Raw PNM formats require exactly one whitespace before sample data"
-msgstr ""
-
-#: gdk-pixbuf/io-pnm.c:766
-msgid "Cannot allocate memory for loading PNM image"
-msgstr "Ní féidir cuimhne a dháileadh chun íomhá PNM a luchtú"
-
-#: gdk-pixbuf/io-pnm.c:816
-msgid "Insufficient memory to load PNM context struct"
-msgstr ""
-
-#: gdk-pixbuf/io-pnm.c:867
-msgid "Unexpected end of PNM image data"
-msgstr ""
-
-#: gdk-pixbuf/io-pnm.c:995
-msgid "Insufficient memory to load PNM file"
-msgstr "Níl go leor cuimhne ann an comhad PNM a luchtú"
-
-#: gdk-pixbuf/io-pnm.c:1079
-msgid "The PNM/PBM/PGM/PPM image format family"
-msgstr "An fhine fhormáide íomhá PNM/PBM/PGM/PPM"
-
-#: gdk-pixbuf/io-qtif.c:128
-msgid "Input file descriptor is NULL."
-msgstr ""
-
-#: gdk-pixbuf/io-qtif.c:143
-msgid "Failed to read QTIF header"
-msgstr "Theip ar léamh ceanntásc QTIF"
-
-#: gdk-pixbuf/io-qtif.c:152 gdk-pixbuf/io-qtif.c:189 gdk-pixbuf/io-qtif.c:460
-#, c-format
-msgid "QTIF atom size too large (%d byte)"
-msgid_plural "QTIF atom size too large (%d bytes)"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-
-#: gdk-pixbuf/io-qtif.c:175
-#, fuzzy, c-format
-msgid "Failed to allocate %d byte for file read buffer"
-msgid_plural "Failed to allocate %d bytes for file read buffer"
-msgstr[0] "Níorbh fhéidir cuimhne a dháileadh le maolán comhthéacs"
-msgstr[1] "Níorbh fhéidir cuimhne a dháileadh le maolán comhthéacs"
-msgstr[2] "Níorbh fhéidir cuimhne a dháileadh le maolán comhthéacs"
-msgstr[3] "Níorbh fhéidir cuimhne a dháileadh le maolán comhthéacs"
-msgstr[4] "Níorbh fhéidir cuimhne a dháileadh le maolán comhthéacs"
-
-#: gdk-pixbuf/io-qtif.c:206
-#, c-format
-msgid "File error when reading QTIF atom: %s"
-msgstr ""
-
-#: gdk-pixbuf/io-qtif.c:243
-#, c-format
-msgid "Failed to skip the next %d byte with seek()."
-msgid_plural "Failed to skip the next %d bytes with seek()."
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
-msgstr[3] ""
-msgstr[4] ""
-
-#: gdk-pixbuf/io-qtif.c:270
-msgid "Failed to allocate QTIF context structure."
-msgstr "Theip ar dháileadh struchtúir comhthéacs QTIF."
-
-#: gdk-pixbuf/io-qtif.c:330
-msgid "Failed to create GdkPixbufLoader object."
-msgstr "Theip ar chruthú réada GdkPixbufLoader."
-
-#: gdk-pixbuf/io-qtif.c:434
-msgid "Failed to find an image data atom."
-msgstr ""
-
-#: gdk-pixbuf/io-qtif.c:619
-msgid "The QTIF image format"
-msgstr "An fhormáid íomhá QTIF"
-
-#: gdk-pixbuf/io-ras.c:125
-msgid "RAS image has bogus header data"
-msgstr "Tá sonraí ceanntásc bréagacha ag íomhá RAS"
-
-#: gdk-pixbuf/io-ras.c:147
-msgid "RAS image has unknown type"
-msgstr "Tá cineál anaithnid ag íomhá RAS"
-
-#: gdk-pixbuf/io-ras.c:155
-msgid "unsupported RAS image variation"
-msgstr "comhathrú íomhá RAS gan tacaíocht"
-
-#: gdk-pixbuf/io-ras.c:170 gdk-pixbuf/io-ras.c:199
-msgid "Not enough memory to load RAS image"
-msgstr "Níl go leor cuimhne ann an íomhá RAS a luchtú"
-
-#: gdk-pixbuf/io-ras.c:544
-msgid "The Sun raster image format"
-msgstr "An fhormáid íomhá rastair Sun"
-
-#: gdk-pixbuf/io-tga.c:153
-msgid "Cannot allocate memory for IOBuffer struct"
-msgstr "Ní féidir cuimhne a dháileadh le strucht IOBuffer"
-
-#: gdk-pixbuf/io-tga.c:172
-msgid "Cannot allocate memory for IOBuffer data"
-msgstr "Ní féidir cuimhne a dháileadh le sonraí IOBuffer"
-
-#: gdk-pixbuf/io-tga.c:183
-msgid "Cannot realloc IOBuffer data"
-msgstr "Ní féidir sonraí IOBuffer a athdháileadh"
-
-#: gdk-pixbuf/io-tga.c:213
-msgid "Cannot allocate temporary IOBuffer data"
-msgstr "Ní féidir sonraí sealadacha IOBuffer a dháileadh"
-
-#: gdk-pixbuf/io-tga.c:346
-msgid "Cannot allocate new pixbuf"
-msgstr "Ní féidir pictmhaolán nua a dháileadh"
-
-#: gdk-pixbuf/io-tga.c:685
-msgid "Image is corrupted or truncated"
-msgstr "Tá an íomhá truaillithe nó teasctha"
-
-#: gdk-pixbuf/io-tga.c:692
-msgid "Cannot allocate colormap structure"
-msgstr "Ní féidir struchtúr mapa datha a dháileadh"
-
-#: gdk-pixbuf/io-tga.c:699
-msgid "Cannot allocate colormap entries"
-msgstr "Ní féidir iontrálacha mapa datha a dháileadh"
-
-#: gdk-pixbuf/io-tga.c:721
-msgid "Unexpected bitdepth for colormap entries"
-msgstr ""
-
-#: gdk-pixbuf/io-tga.c:739
-msgid "Cannot allocate TGA header memory"
-msgstr "Ní féidir cuimhne cheanntásc TGA a dháileadh"
-
-#: gdk-pixbuf/io-tga.c:772
-msgid "TGA image has invalid dimensions"
-msgstr ""
-
-#: gdk-pixbuf/io-tga.c:778 gdk-pixbuf/io-tga.c:787 gdk-pixbuf/io-tga.c:797
-#: gdk-pixbuf/io-tga.c:807 gdk-pixbuf/io-tga.c:814
-msgid "TGA image type not supported"
-msgstr "Ní thacaítear le cineál íomhá TGA"
-
-#: gdk-pixbuf/io-tga.c:861
-msgid "Cannot allocate memory for TGA context struct"
-msgstr "Níorbh fhéidir cuimhne a dháileadh le strucht comhthéacs TGA"
-
-#: gdk-pixbuf/io-tga.c:926
-msgid "Excess data in file"
-msgstr "Sonraí sa bhreis sa chomhad"
-
-#: gdk-pixbuf/io-tga.c:1007
-msgid "The Targa image format"
-msgstr "An fhormáid íomhá Targa"
-
 #: gdk-pixbuf/io-tiff.c:164
 msgid "Could not get image width (bad TIFF file)"
 msgstr "Níorbh fhéidir leithead íomhá a fháil (drochchomhad TIFF)"
@@ -875,82 +503,3 @@ msgstr "Níorbh fhéidir scríobh sa chomhad TIFF"
 #: gdk-pixbuf/io-tiff.c:868
 msgid "The TIFF image format"
 msgstr "An fhormáid íomhá TIFF"
-
-#: gdk-pixbuf/io-wbmp.c:245
-msgid "Image has zero width"
-msgstr "Tá leithead nialais ag íomhá"
-
-#: gdk-pixbuf/io-wbmp.c:263
-msgid "Image has zero height"
-msgstr "Tá airde nialais ag íomhá"
-
-#: gdk-pixbuf/io-wbmp.c:274
-msgid "Not enough memory to load image"
-msgstr "Níl go leor cuimhne ann an íomhá a luchtú"
-
-#: gdk-pixbuf/io-wbmp.c:333
-msgid "Couldn't save the rest"
-msgstr "Níorbh fhéidir an chuid eile a shábháil"
-
-#: gdk-pixbuf/io-wbmp.c:374
-msgid "The WBMP image format"
-msgstr "An fhormáid íomhá WBMP"
-
-#: gdk-pixbuf/io-xbm.c:296
-msgid "Invalid XBM file"
-msgstr "Comhad XBM neamhbhailí"
-
-#: gdk-pixbuf/io-xbm.c:306
-msgid "Insufficient memory to load XBM image file"
-msgstr "Níl go leor cuimhne ann an comhad íomhá SBM a luchtú"
-
-#: gdk-pixbuf/io-xbm.c:454
-msgid "Failed to write to temporary file when loading XBM image"
-msgstr "Theip ar scríobh go comhad sealadach agus íomhá XBM á luchtú"
-
-#: gdk-pixbuf/io-xbm.c:493
-msgid "The XBM image format"
-msgstr "An fhormáid íomhá XBM"
-
-#: gdk-pixbuf/io-xpm.c:469
-msgid "No XPM header found"
-msgstr "Níor aimsíodh aon cheanntásc XPM"
-
-#: gdk-pixbuf/io-xpm.c:478
-msgid "Invalid XPM header"
-msgstr "Ceanntásc XPM neamhbhailí"
-
-#: gdk-pixbuf/io-xpm.c:486
-msgid "XPM file has image width <= 0"
-msgstr "Tá leithead íomhá <= 0 ag an gcomhad XPM"
-
-#: gdk-pixbuf/io-xpm.c:494
-msgid "XPM file has image height <= 0"
-msgstr "Tá airde íomhá <= 0 ag an gcomhad XPM"
-
-#: gdk-pixbuf/io-xpm.c:502
-msgid "XPM has invalid number of chars per pixel"
-msgstr ""
-
-#: gdk-pixbuf/io-xpm.c:511
-msgid "XPM file has invalid number of colors"
-msgstr ""
-
-#: gdk-pixbuf/io-xpm.c:523 gdk-pixbuf/io-xpm.c:532 gdk-pixbuf/io-xpm.c:584
-msgid "Cannot allocate memory for loading XPM image"
-msgstr "Ní féidir cuimhne a dháileadh chun íomhá XPM a luchtú"
-
-#: gdk-pixbuf/io-xpm.c:546
-msgid "Cannot read XPM colormap"
-msgstr "Ní féidir mapa datha XPM a léamh"
-
-#: gdk-pixbuf/io-xpm.c:778
-msgid "Failed to write to temporary file when loading XPM image"
-msgstr "Theip ar scríobh go comhad sealadach agus íomhá XPM á luchtú"
-
-#: gdk-pixbuf/io-xpm.c:817
-msgid "The XPM image format"
-msgstr "An fhormáid íomhá XPM"
-
-#~ msgid "Couldn't allocate memory for paletted data"
-#~ msgstr "Níorbh fhéidir cuimhne a dháileadh le sonraí atá pailéad leo"
