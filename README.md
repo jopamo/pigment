@@ -35,6 +35,10 @@ libxml2, and liblexa.
 Meson checks dependency versions. The commands below use system libraries
 and disable dependency fallbacks.
 
+`meson/` contains tracked build definitions and helper scripts; keep it with
+the source. Generated output belongs in separate directories such as `build/`
+or `build-raster/`.
+
 Build with SVG support:
 
 ```sh

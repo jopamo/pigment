@@ -9,12 +9,12 @@ if host_machine.system() in ['windows', 'cygwin']
   error('Pigment supports Linux/Unix only')
 endif
 
-subdir('build-aux/pixbuf')
+subdir('meson/pixbuf')
 subdir('include/gdk-pixbuf')
 subdir('src/pixbuf')
 subdir('tools')
 if get_option('svg')
-  subdir('build-aux/svg')
+  subdir('meson/svg')
   subdir('include/librsvg')
   subdir('src/svg')
   if get_option('gdk_pixbuf_loader')
@@ -23,7 +23,7 @@ if get_option('svg')
 endif
 
 if not meson.is_cross_build()
-  meson.add_install_script('build-aux/post-install.py',
+  meson.add_install_script('meson/post-install.py',
     gdk_pixbuf_bindir,
     gdk_pixbuf_libdir,
     gdk_pixbuf_binary_version,
