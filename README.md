@@ -1,5 +1,3 @@
-# Pigment
-
 <img src="assets/piggy.png" alt="Pigment" width="560">
 
 Pigment combines GdkPixbuf and librsvg in a single C source tree with a
