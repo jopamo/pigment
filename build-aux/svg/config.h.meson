@@ -1,5 +1,0 @@
-#pragma once
-
-#mesondefine HAVE_LC_MESSAGES
-#mesondefine HAVE_RSVG_ROOTED_FILE_IO
-#mesondefine HAVE_XML_PARSE_NO_XXE
