@@ -1,91 +1,41 @@
 <img src="assets/piggy.png" alt="Pigment" width="560">
 
-Pigment combines GdkPixbuf and librsvg in a single C source tree with a
-Meson build system for 64-bit Linux and Unix.
+Pigment brings GdkPixbuf and librsvg into one C source tree for Linux and Unix. It provides raster image loading, pixel buffers, scaling, compositing, and Cairo-based SVG rendering.
 
-It provides raster image decoding, pixel buffers, scaling, compositing,
-and SVG rendering through Cairo. Existing applications can continue using
-the `gdk-pixbuf-2.0` and `librsvg-2.0` interfaces, including their headers,
-library names, and loader APIs.
-
-SVG support is optional. Raster-only builds do not require the SVG
-renderer or its dependencies. GTK is not required to build either library.
-
-Pigment's messages are English-only. No translation catalogs are maintained
-or installed.
-
-Development focuses on input validation, memory ownership, and rendering
-correctness.
+It uses the existing `gdk-pixbuf-2.0` and `librsvg-2.0` library names, headers, and pkg-config interfaces. SVG support is optional, and neither library requires GTK to build.
 
 ## Building
 
-Requirements:
+You need a C compiler, Meson 0.63+, Ninja, pkg-config, GLib 2.56+ (including GObject, GIO, and GModule), libpng, and libjpeg. The default Linux build also requires shared-mime-info.
 
-- C compiler
-- Meson 0.63 or newer
-- Ninja
-- pkg-config
-- GLib, GObject, and GIO
-- shared-mime-info
-- libpng and libjpeg
+SVG builds additionally require Cairo, Pango, HarfBuzz, Fontconfig, libxml2, gio-unix-2.0, and liblexa 0.1+.
 
-SVG support additionally requires Cairo, Pango, HarfBuzz, Fontconfig,
-libxml2, and liblexa.
-
-Meson checks dependency versions. The commands below use system libraries
-and disable dependency fallbacks.
-
-`meson/` contains tracked build definitions and helper scripts; keep it with
-the source. Generated output belongs in separate directories such as `build/`
-or `build-raster/`.
-
-Build with SVG support:
+Build with SVG support (the default):
 
 ```sh
-meson setup build --wrap-mode=nofallback
+meson setup build
 meson compile -C build
 ```
 
-Build without SVG support:
+For a raster-only build:
 
 ```sh
-meson setup build-raster -Dsvg=false --wrap-mode=nofallback
+meson setup build-raster -Dsvg=false
 meson compile -C build-raster
 ```
 
-GObject Introspection is enabled automatically when available. To control
-it explicitly, use `-Dintrospection=enabled` or
-`-Dintrospection=disabled`.
+Dependency fallbacks are disabled by default. GObject Introspection is built when available; use `-Dintrospection=enabled` or `-Dintrospection=disabled` to override this.
 
-See [meson_options.txt](meson_options.txt) for codec and loader options.
-
-Bundled raster loaders support PNG, JPEG, GIF, TIFF, BMP, and ICO/CUR.
-BMP and ICO/CUR are disabled by default; enable them with
-`-Dbmp=enabled -Dico=enabled`. These options replace `-Dothers=enabled`.
-ANI, ICNS, PNM, QTIF, TGA, XBM, and XPM loaders are no longer included.
-The public XPM data API remains available for external loader modules.
+Pigment includes PNG, JPEG, GIF, TIFF, BMP, and ICO/CUR loaders. PNG, JPEG, and GIF are enabled by default; TIFF is enabled when libtiff is available. BMP and ICO/CUR are disabled by default and can be enabled with `-Dbmp=enabled -Dico=enabled`. See [meson_options.txt](meson_options.txt) for the remaining options.
 
 ## Compatibility
 
-Pigment is under active development. API compatibility and rendering
-tests are ongoing.
+Pigment is still in development. SVG and CSS support is incomplete, and full compatibility with upstream GdkPixbuf and librsvg has not been established. Windows is not supported.
 
-Current limitations:
+ANI, ICNS, PNM, QTIF, TGA, XBM, and XPM loaders are not included. The XPM data API remains available but requires an external loader module. Diagnostic messages are English-only; no translations are shipped.
 
-- SVG and CSS support is incomplete.
-- Feature parity with current upstream librsvg is not guaranteed.
-- Linux and Unix are targeted, but not all Unix platforms have been tested.
-- Windows is not supported.
-
-Pigment installs libraries and headers at the same paths used by GdkPixbuf
-and librsvg. **Do not install it over system libraries manually.**
-Distribution packages must coordinate replacement to avoid file conflicts.
+**Do not install Pigment over system libraries manually.** Its library and header paths overlap with GdkPixbuf and librsvg; distribution packages must handle replacement and file conflicts.
 
 ## Licensing
 
-Pigment incorporates code from GdkPixbuf and librsvg. Original copyright
-notices and license terms are retained.
-
-See [COPYING](COPYING), [COPYING.librsvg](COPYING.librsvg), and individual
-source files for applicable terms. Libraries, utilities, and artwork may
-have different licenses.
+Pigment contains code from GdkPixbuf and librsvg. See [COPYING](COPYING), [COPYING.librsvg](COPYING.librsvg), and the source files for applicable licenses. Tools and artwork may have different terms.
